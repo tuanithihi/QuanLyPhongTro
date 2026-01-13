@@ -1,0 +1,55 @@
+@model QuanLyThuVien.Models.tblAuthor
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<main id="main" class="main">
+    <div class="pagetitle">
+        <h2>Xác nhận xóa tác giả</h2>
+    </div>
+
+    <div class="card shadow-sm p-4 mb-4">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label class="fw-bold">Tên tác giả</label>
+                <input type="text" class="form-control" value="@Model.AuthorName" disabled />
+            </div>
+            <div class="col-md-6">
+                <label class="fw-bold">Email</label>
+                <input type="text" class="form-control" value="@Model.Email" disabled />
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label class="fw-bold">Ngày sinh</label>
+                <input type="text" class="form-control" value="@Model.DateOfBirth?.ToString("dd/MM/yyyy")" disabled />
+            </div>
+            <div class="col-md-6">
+                <label class="fw-bold">Ngày tạo</label>
+                <input type="text" class="form-control" value="@Model.CreatedAt.ToString("dd/MM/yyyy")" disabled />
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-12">
+                <label class="fw-bold">Tiểu sử</label>
+                <textarea class="form-control" rows="3" disabled>@Model.Biography</textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Begin form -->
+    <form asp-action="Delete" method="post">
+        <input type="hidden" asp-for="AuthorID" />
+
+        <a class="btn btn-lg btn-warning p-2 me-3" asp-area="Admin" asp-controller="Author" asp-action="Index">
+            <i class="bi bi-arrow-left-circle"></i> Trở về
+        </a>
+
+        <button type="submit" class="btn btn-lg btn-danger p-2">
+            <i class="bi bi-trash"></i> Xóa tác giả
+        </button>
+    </form>
+    <!-- End form -->
+</main>

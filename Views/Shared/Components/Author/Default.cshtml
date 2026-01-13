@@ -1,0 +1,74 @@
+@using QuanLyThuVien.Models
+@model IList<tblAuthor>
+
+@if (Model != null && Model.Any())
+{
+    <div class="courses-2 author">
+        <div class="row gy-4 courses-grid">
+                            @if (Model != null && Model.Count > 0)
+                            {
+                                @foreach (var author in Model)
+                                {
+                                    <div class="col-lg-4 col-md-6 mb-4">
+                                        <div class="course-card h-100 shadow-sm">
+                                            <div class="course-image position-relative">
+                                                @if (!string.IsNullOrEmpty(author.Avatar))
+                                                {
+                                                    <img src="@author.Avatar" alt="@author.AuthorName" class="img-fluid author-avatar">
+                                                }
+                                                else
+                                                {
+                                                    <div class="bg-light d-flex align-items-center justify-content-center author-avatar-placeholder">
+                                                        <i class="bi bi-person text-muted" style="font-size: 3.5rem;"></i>
+                                                    </div>
+                                                }
+                                            </div>
+                                            <div class="course-content p-3">
+                                                <div class="course-meta mb-2 d-flex justify-content-between align-items-center">
+                                                    <span class="badge bg-light text-primary small">Tác giả</span>
+                                                    @if (author.DateOfBirth.HasValue)
+                                                    {
+                                                        <span class="badge bg-secondary small">@author.DateOfBirth.Value.ToString("yyyy")</span>
+                                                    }
+                                                </div>
+                                                <h5 class="fw-bold mb-2 text-dark">@author.AuthorName</h5>
+                                                <p class="text-muted small mb-3" style="line-height: 1.6;">@(!string.IsNullOrEmpty(author.Biography) ? (author.Biography.Length > 80 ? author.Biography.Substring(0, 80) + "..." : author.Biography) : "Chưa có tiểu sử cho tác giả này")</p>
+                                                <div class="course-stats mb-3">
+                                                    @if (author.DateOfBirth.HasValue)
+                                                    {
+                                                        <div class="stat small">
+                                                            <i class="bi bi-calendar text-primary"></i>
+                                                            <span class="text-muted">@author.DateOfBirth.Value.ToString("dd/MM/yyyy")</span>
+                                                        </div>
+                                                    }
+                                                    @if (!string.IsNullOrEmpty(author.Email))
+                                                    {
+                                                        <div class="stat small">
+                                                            <i class="bi bi-envelope text-primary"></i>
+                                                            <span class="text-muted">@author.Email</span>
+                                                        </div>
+                                                    }
+                                                </div>
+                                                
+                                                <div class="mt-auto">
+                                                    <a asp-controller="Author" asp-action="Details" asp-route-id="@author.AuthorID" class="btn btn-outline-primary btn-sm w-100">
+                                                        <i class="bi bi-info-circle me-1"></i>Xem chi tiết
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div><!-- End Course Card -->
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="col-12">
+                                    <div class="alert alert-info text-center">
+                                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                        Không tìm thấy tác giả nào.
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div><!-- End Courses Grid -->
+}

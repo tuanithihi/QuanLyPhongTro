@@ -1,0 +1,518 @@
+@using PagedList.Core.Mvc
+@using QuanLyThuVien.Models
+@model PagedList.Core.IPagedList<tblBook>
+
+<main class="main">
+    <!-- Page Title -->
+    <div class="page-title light-background">
+        <div class="container d-lg-flex justify-content-between align-items-center">
+            <h1 class="mb-2 mb-lg-0">Sách & Tài liệu</h1>
+            <nav class="breadcrumbs">
+                <ol>
+                    <li><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+                    <li class="current">Sách & Tài liệu</li>
+                </ol>
+            </nav>
+        </div>
+    </div><!-- End Page Title -->
+
+    <!-- Courses 2 Section -->
+    <section id="courses-2" class="courses-2 section">
+        <div class="container" data-aos="fade-up" data-aos-delay="100">
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle me-2"></i>@Html.Raw(TempData["ErrorMessage"])
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            <div class="row">
+                <!-- Sidebar Filters -->
+                <div class="col-lg-3">
+                    <div class="course-filters" data-aos="fade-right" data-aos-delay="100">
+                        <h4 class="filter-title">Bộ lọc</h4>
+
+                        <!-- Form tìm kiếm riêng (chỉ tìm kiếm, không áp dụng filter) -->
+                        <form method="get" asp-action="Index" class="mb-3" id="searchForm">
+                            <div class="filter-group">
+                                <h5><i class="bi bi-search me-1"></i>Tìm kiếm</h5>
+                                <div class="input-group">
+                                    <input type="text" name="searchString" class="form-control" value="@ViewBag.SearchString" placeholder="Nhập tên sách...">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-search"></i>
+                                    </button>
+                                </div>
+                                <small class="text-muted d-block mt-1">Tìm kiếm theo tên sách</small>
+                            </div>
+                        </form>
+
+                        <!-- Form bộ lọc (chỉ filter, không áp dụng tìm kiếm) -->
+                        <form method="get" asp-action="Index" id="filterForm">
+                            <!-- Danh mục -->
+                            <div class="filter-group mb-3">
+                                <h5><i class="bi bi-tags me-1"></i>Danh mục</h5>
+                                <select name="categoryId" class="form-select">
+                                    <option value="">Tất cả danh mục</option>
+                                    @if (ViewBag.Categories != null)
+                                    {
+                                        @foreach (var category in ViewBag.Categories)
+                                        {
+                                            <option value="@category.CategoryID" selected="@(ViewBag.CategoryId == category.CategoryID)">
+                                                @category.CategoryName
+                                            </option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <!-- Nhà xuất bản -->
+                            <div class="filter-group mb-3">
+                                <h5><i class="bi bi-building me-1"></i>Nhà xuất bản</h5>
+                                <select name="publisherId" class="form-select">
+                                    <option value="">Tất cả nhà xuất bản</option>
+                                    @if (ViewBag.Publishers != null)
+                                    {
+                                        @foreach (var publisher in ViewBag.Publishers)
+                                        {
+                                            <option value="@publisher.PublisherID" selected="@(ViewBag.PublisherId == publisher.PublisherID)">
+                                                @publisher.PublisherName
+                                            </option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <!-- Tác giả -->
+                            <div class="filter-group mb-3">
+                                <h5><i class="bi bi-person me-1"></i>Tác giả</h5>
+                                <select name="authorId" class="form-select">
+                                    <option value="">Tất cả tác giả</option>
+                                    @if (ViewBag.Authors != null)
+                                    {
+                                        @foreach (var author in ViewBag.Authors)
+                                        {
+                                            <option value="@author.AuthorID" selected="@(ViewBag.AuthorId == author.AuthorID)">
+                                                @author.AuthorName
+                                            </option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <!-- Năm xuất bản -->
+                            <div class="filter-group mb-3">
+                                <h5><i class="bi bi-calendar me-1"></i>Năm xuất bản</h5>
+                                <select name="publishedYear" class="form-select">
+                                    <option value="">Tất cả năm</option>
+                                    @if (ViewBag.PublishedYears != null)
+                                    {
+                                        @foreach (var year in ViewBag.PublishedYears)
+                                        {
+                                            <option value="@year" selected="@(ViewBag.PublishedYear == year)">
+                                                @year
+                                            </option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <!-- Nút áp dụng bộ lọc và xóa bộ lọc -->
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-funnel me-1"></i>Áp dụng bộ lọc
+                                </button>
+                                @if (ViewBag.CategoryId != null || ViewBag.PublisherId != null || ViewBag.AuthorId != null || ViewBag.PublishedYear != null)
+                                {
+                                    <a asp-action="Index" asp-route-searchString="@ViewBag.SearchString" class="btn btn-outline-secondary">
+                                        <i class="bi bi-x-circle me-1"></i>Xóa bộ lọc
+                                    </a>
+                                }
+                            </div>
+                        </form>
+
+                        <!-- Nút xóa tất cả (cả tìm kiếm và filter) -->
+                        @if (!string.IsNullOrWhiteSpace(ViewBag.SearchString) || ViewBag.CategoryId != null || ViewBag.PublisherId != null || ViewBag.AuthorId != null || ViewBag.PublishedYear != null)
+                        {
+                            <div class="mt-3">
+                                <a asp-action="Index" class="btn btn-outline-danger w-100">
+                                    <i class="bi bi-arrow-counterclockwise me-1"></i>Xóa tất cả
+                                </a>
+                            </div>
+                        }
+
+                        @if (QuanLyThuVien.Utilities.Functions.IsLogin())
+                        {
+                            <div class="mt-4">
+                                <button type="button" class="btn btn-primary w-100" onclick="submitBorrow()">
+                                    <i class="bi bi-cart-check me-1"></i>Mượn sách đã chọn
+                                </button>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="mt-4">
+                                <a asp-controller="Account" asp-action="Login" class="btn btn-primary w-100">
+                                    <i class="bi bi-box-arrow-in-right me-1"></i>Đăng nhập để mượn sách
+                                </a>
+                            </div>
+                        }
+                    </div><!-- End Course Filters -->
+                </div>
+
+                <!-- Main Content -->
+                <div class="col-lg-9">
+                    <div class="courses-header" data-aos="fade-left" data-aos-delay="100">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">Danh sách sách (@(Model?.TotalItemCount ?? 0) cuốn) </h5>
+                            <div class="text-muted small ms-2">
+                                @if (Model != null && Model.PageCount > 1)
+                                {
+                                    <span>Trang @Model.PageNumber / @Model.PageCount</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form mượn sách -->
+                    <form method="post" asp-action="Index" id="borrowForm" style="display: none;">
+                        @Html.AntiForgeryToken()
+                    </form>
+
+                    <div class="courses-grid" data-aos="fade-up" data-aos-delay="200">
+                        <div class="row">
+                            @if (Model != null && Model.Count > 0)
+                            {
+                                @foreach (var book in Model)
+                                {
+                                    <div class="col-lg-6 col-md-6 mb-4">
+                                        <div class="course-card h-100">
+                                            <div class="course-image position-relative">
+                                                @if (!string.IsNullOrEmpty(book.CoverImage))
+                                                {
+                                                    <img src="@book.CoverImage" alt="@book.Title" class="img-fluid">
+                                                }
+                                                else
+                                                {
+                                                    <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                                        <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                                                    </div>
+                                                }
+                                                <div class="position-absolute top-0 end-0 m-2">
+                                                    <span class="badge bg-@(book.Quantity > 0 ? "success" : "danger")">
+                                                        @(book.Quantity > 0 ? $"{book.Quantity} cuốn" : "Hết sách")
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="course-content">
+                                                <div class="course-meta">
+                                                    <span class="category">@book.Category?.CategoryName</span>
+                                                    <span class="level">@book.PublishedYear</span>
+                                                </div>
+                                                <h3>@book.Title</h3>
+                                                <p>@(string.IsNullOrEmpty(book.Description) ? "Không có mô tả" : (book.Description.Length > 100 ? book.Description.Substring(0, 100) + "..." : book.Description))</p>
+                                                <div class="course-stats">
+                                                    <div class="stat">
+                                                        <i class="bi bi-person"></i>
+                                                        <span>
+                                                            @if (book.BookAuthors != null && book.BookAuthors.Any())
+                                                            {
+                                                                @string.Join(", ", book.BookAuthors.Take(2).Select(ba => ba.Author?.AuthorName))
+                                                                @if (book.BookAuthors.Count() > 2)
+                                                                {
+                                                                    <text>...</text>
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                <text>Chưa có tác giả</text>
+                                                            }
+                                                        </span>
+                                                    </div>
+                                                    <div class="stat">
+                                                        <i class="bi bi-building"></i>
+                                                        <span>@book.Publisher?.PublisherName</span>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Nút xem chi tiết và xem trước -->
+                                                <div class="d-flex gap-2 mt-3 mb-2">
+                                                    <a asp-controller="Book" asp-action="Details" asp-route-id="@book.BookID" class="btn btn-outline-primary btn-sm flex-fill">
+                                                        <i class="bi bi-info-circle me-1"></i>Chi tiết
+                                                    </a>
+                                                    @if (!string.IsNullOrEmpty(book.BookFile))
+                                                    {
+                                                        <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                                data-bs-toggle="modal" 
+                                                                data-bs-target="#pdfPreviewModal_@book.BookID">
+                                                            <i class="bi bi-file-pdf me-1"></i>Xem PDF
+                                                        </button>
+                                                    }
+                                                </div>
+
+                                                @if (QuanLyThuVien.Utilities.Functions.IsLogin() && book.Quantity > 0)
+                                                {
+                                                    <div class="mt-2">
+                                                        <div class="input-group">
+                                                            <label class="input-group-text" style="font-size: 0.9rem;">
+                                                                <input type="checkbox" class="form-check-input me-2" name="selectedBooks" value="@book.BookID" id="book_@book.BookID" onchange="toggleQuantity(@book.BookID)">
+                                                                Số lượng:
+                                                            </label>
+                                                            <input type="number" name="quantity_@book.BookID" id="quantity_@book.BookID" 
+                                                                   class="form-control" min="1" max="@book.Quantity" value="1" 
+                                                                   disabled style="max-width: 100px;">
+                                                        </div>
+                                                    </div>
+                                                }
+                                                else if (!QuanLyThuVien.Utilities.Functions.IsLogin())
+                                                {
+                                                    <a asp-controller="Account" asp-action="Login" class="btn-course mt-2">Đăng nhập để mượn</a>
+                                                }
+                                                else if (QuanLyThuVien.Utilities.Functions.IsLogin() && book.Quantity <= 0)
+                                                {
+                                                    <div class="mt-2">
+                                                        <span class="badge bg-danger w-100 py-2">
+                                                            <i class="bi bi-x-circle me-1"></i>Hết sách
+                                                        </span>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div><!-- End Course Card -->
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="col-12">
+                                    <div class="alert alert-info text-center">
+                                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                        Không tìm thấy sách nào.
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div><!-- End Courses Grid -->
+
+                    <!-- Modal PDF - Đặt ngoài container có AOS để tránh nhấp nháy -->
+                    @if (Model != null && Model.Count > 0)
+                    {
+                        @foreach (var book in Model)
+                        {
+                            @if (!string.IsNullOrEmpty(book.BookFile))
+                            {
+                                <div class="modal fade" id="pdfPreviewModal_@book.BookID" tabindex="-1" aria-labelledby="pdfPreviewModalLabel_@book.BookID" aria-hidden="true" style="animation: none !important; transition: none !important;">
+                                    <div class="modal-dialog modal-fullscreen">
+                                        <div class="modal-content" style="animation: none !important; transition: none !important;">
+                                            <div class="modal-header bg-danger text-white">
+                                                <h5 class="modal-title" id="pdfPreviewModalLabel_@book.BookID">
+                                                    <i class="bi bi-file-pdf me-2"></i>Xem trước: @book.Title
+                                                </h5>
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body p-0" style="position: relative; overflow: hidden; height: 80vh; animation: none !important; transition: none !important;">
+                                                <iframe id="pdfEmbed_@book.BookID" 
+                                                        data-src="@book.BookFile"
+                                                        style="width: 100%; height: 100%; border: none; display: block; animation: none !important; transition: none !important;" 
+                                                        frameborder="0"
+                                                        allowfullscreen>
+                                                </iframe>
+                                            </div>
+                                            <div class="modal-footer bg-light">
+                                                <a href="@book.BookFile" target="_blank" class="btn btn-danger">
+                                                    <i class="bi bi-download me-1"></i>Tải xuống
+                                                </a>
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                    <i class="bi bi-x-circle me-1"></i>Đóng
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    }
+
+                    <!-- Pagination -->
+                    @if (Model != null && Model.PageCount > 1)
+                    {
+                        <div class="pagination-wrapper" data-aos="fade-up" data-aos-delay="300">
+                            <nav aria-label="Books pagination">
+                                <ul class="pagination justify-content-center">
+                                    @if (Model.HasPreviousPage)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" asp-action="Index" asp-route-page="@(Model.PageNumber - 1)" asp-route-searchString="@ViewBag.SearchString" asp-route-categoryId="@ViewBag.CategoryId" asp-route-publisherId="@ViewBag.PublisherId" asp-route-authorId="@ViewBag.AuthorId" asp-route-publishedYear="@ViewBag.PublishedYear">&laquo; Trước</a>
+                                        </li>
+                                    }
+                                    else
+                                    {
+                                        <li class="page-item disabled"><span class="page-link">&laquo; Trước</span></li>
+                                    }
+
+                                    @{
+                                        int current = Model.PageNumber;
+                                        int total = Model.PageCount;
+                                        int start = Math.Max(1, current - 2);
+                                        int end = Math.Min(total, current + 2);
+                                        if (start > 1)
+                                        {
+                                            <li class="page-item"><a class="page-link" asp-action="Index" asp-route-page="1" asp-route-searchString="@ViewBag.SearchString" asp-route-categoryId="@ViewBag.CategoryId" asp-route-publisherId="@ViewBag.PublisherId" asp-route-authorId="@ViewBag.AuthorId" asp-route-publishedYear="@ViewBag.PublishedYear">1</a></li>
+                                            if (start > 2)
+                                            {
+                                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                                            }
+                                        }
+
+                                        for (int i = start; i <= end; i++)
+                                        {
+                                            if (i == current)
+                                            {
+                                                <li class="page-item active" aria-current="page"><span class="page-link">@i</span></li>
+                                            }
+                                            else
+                                            {
+                                                <li class="page-item"><a class="page-link" asp-action="Index" asp-route-page="@i" asp-route-searchString="@ViewBag.SearchString" asp-route-categoryId="@ViewBag.CategoryId" asp-route-publisherId="@ViewBag.PublisherId" asp-route-authorId="@ViewBag.AuthorId" asp-route-publishedYear="@ViewBag.PublishedYear">@i</a></li>
+                                            }
+                                        }
+
+                                        if (end < total)
+                                        {
+                                            if (end < total - 1)
+                                            {
+                                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                                            }
+                                            <li class="page-item"><a class="page-link" asp-action="Index" asp-route-page="@total" asp-route-searchString="@ViewBag.SearchString" asp-route-categoryId="@ViewBag.CategoryId" asp-route-publisherId="@ViewBag.PublisherId" asp-route-authorId="@ViewBag.AuthorId" asp-route-publishedYear="@ViewBag.PublishedYear">@total</a></li>
+                                        }
+                                    }
+
+                                    @if (Model.HasNextPage)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" asp-action="Index" asp-route-page="@(Model.PageNumber + 1)" asp-route-searchString="@ViewBag.SearchString" asp-route-categoryId="@ViewBag.CategoryId" asp-route-publisherId="@ViewBag.PublisherId" asp-route-authorId="@ViewBag.AuthorId" asp-route-publishedYear="@ViewBag.PublishedYear">Tiếp &raquo;</a>
+                                        </li>
+                                    }
+                                    else
+                                    {
+                                        <li class="page-item disabled"><span class="page-link">Tiếp &raquo;</span></li>
+                                    }
+
+                                </ul>
+                            </nav>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </section><!-- /Courses 2 Section -->
+</main>
+
+@section Scripts {
+    <script>
+        function toggleQuantity(bookId) {
+            var checkbox = document.getElementById('book_' + bookId);
+            var quantityInput = document.getElementById('quantity_' + bookId);
+            quantityInput.disabled = !checkbox.checked;
+            if (!checkbox.checked) {
+                quantityInput.value = 1;
+            }
+        }
+
+        // Load PDF vào iframe chỉ khi modal được mở và tắt AOS triệt để
+        document.addEventListener('DOMContentLoaded', function() {
+            var pdfModals = document.querySelectorAll('[id^="pdfPreviewModal_"]');
+            pdfModals.forEach(function(modal) {
+                // Tắt AOS hoàn toàn cho modal
+                modal.removeAttribute('data-aos');
+                modal.removeAttribute('data-aos-delay');
+                modal.removeAttribute('data-aos-duration');
+                modal.removeAttribute('data-aos-easing');
+                
+                // Thêm CSS để tắt animation
+                modal.style.animation = 'none !important';
+                modal.style.transition = 'none !important';
+                
+                // Disable AOS observer cho modal
+                if (typeof AOS !== 'undefined') {
+                    // Remove modal khỏi AOS elements
+                    var aosElements = modal.querySelectorAll('[data-aos]');
+                    aosElements.forEach(function(el) {
+                        el.removeAttribute('data-aos');
+                    });
+                }
+                
+                var modalId = modal.id;
+                var bookId = modalId.replace('pdfPreviewModal_', '');
+                var iframe = document.getElementById('pdfEmbed_' + bookId);
+                
+                if (iframe) {
+                    // Chỉ load PDF khi modal được mở (một lần duy nhất)
+                    modal.addEventListener('show.bs.modal', function() {
+                        // Kiểm tra xem đã load chưa bằng cách kiểm tra src
+                        if (!iframe.src || iframe.src === '') {
+                            var pdfUrl = iframe.getAttribute('data-src');
+                            if (pdfUrl) {
+                                iframe.src = pdfUrl;
+                            }
+                        }
+                    });
+                }
+            });
+        });
+
+        function submitBorrow() {
+            var borrowForm = document.getElementById('borrowForm');
+            var checkedBoxes = document.querySelectorAll('input[name="selectedBooks"]:checked');
+            
+            if (checkedBoxes.length === 0) {
+                alert('Vui lòng chọn ít nhất một cuốn sách để mượn!');
+                return false;
+            }
+            
+            // Kiểm tra số lượng hợp lệ
+            var hasValidQuantity = false;
+            checkedBoxes.forEach(function(checkbox) {
+                var bookId = checkbox.value;
+                var quantityInput = document.getElementById('quantity_' + bookId);
+                if (quantityInput && parseInt(quantityInput.value) > 0) {
+                    hasValidQuantity = true;
+                }
+            });
+            
+            if (!hasValidQuantity) {
+                alert('Vui lòng nhập số lượng hợp lệ cho ít nhất một cuốn sách!');
+                return false;
+            }
+
+            // Copy các checkbox và input đã chọn vào form mượn sách
+            checkedBoxes.forEach(function(checkbox) {
+                var bookId = checkbox.value;
+                var quantityInput = document.getElementById('quantity_' + bookId);
+                
+                // Tạo input ẩn cho selectedBooks
+                var hiddenCheckbox = document.createElement('input');
+                hiddenCheckbox.type = 'hidden';
+                hiddenCheckbox.name = 'selectedBooks';
+                hiddenCheckbox.value = bookId;
+                borrowForm.appendChild(hiddenCheckbox);
+                
+                // Tạo input ẩn cho quantity
+                var hiddenQuantity = document.createElement('input');
+                hiddenQuantity.type = 'hidden';
+                hiddenQuantity.name = 'quantity_' + bookId;
+                hiddenQuantity.value = quantityInput.value;
+                borrowForm.appendChild(hiddenQuantity);
+            });
+
+            // Submit form mượn sách
+            borrowForm.submit();
+        }
+    </script>
+}

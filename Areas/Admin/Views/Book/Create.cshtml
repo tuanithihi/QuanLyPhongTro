@@ -1,0 +1,372 @@
+@model QuanLyThuVien.Models.tblBook
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+    ViewData["Title"] = "Thêm sách mới";
+}
+
+<main id="main" class="main">
+    <div class="pagetitle">
+        <h2><i class="bi bi-book-plus me-2"></i>Thêm sách mới</h2>
+        <nav>
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a>
+                </li>
+                <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Book" asp-action="Index">Quản lý
+                        sách</a></li>
+                <li class="breadcrumb-item active">Thêm mới</li>
+            </ol>
+        </nav>
+    </div>
+
+    <section class="section dashboard">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-info-circle me-2"></i>Thông tin sách
+                        </h5>
+
+                        <form asp-action="Create" method="post" enctype="multipart/form-data" class="needs-validation"
+                            novalidate>
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-8">
+                                    <label asp-for="Title" class="form-label">
+                                        Tên sách <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="Title" class="form-control" placeholder="Nhập tên sách..."
+                                        required />
+                                    <div class="invalid-feedback">Vui lòng nhập tên sách.</div>
+                                    <span asp-validation-for="Title" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-4">
+                                    <label asp-for="PublishedYear" class="form-label">
+                                        Năm xuất bản <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="number" asp-for="PublishedYear" class="form-control" min="1000"
+                                        max="@(DateTime.Now.Year + 1)" value="@DateTime.Now.Year" required />
+                                    <div class="invalid-feedback">Vui lòng nhập năm xuất bản hợp lệ.</div>
+                                    <span asp-validation-for="PublishedYear" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label asp-for="CategoryID" class="form-label">
+                                        Danh mục <span class="text-danger">*</span>
+                                    </label>
+                                    <select asp-for="CategoryID" class="form-select" asp-items="ViewBag.Categories"
+                                        required>
+                                        <option value="">-- Chọn danh mục --</option>
+                                    </select>
+                                    <div class="invalid-feedback">Vui lòng chọn danh mục.</div>
+                                    <span asp-validation-for="CategoryID" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="PublisherID" class="form-label">
+                                        Nhà xuất bản <span class="text-danger">*</span>
+                                    </label>
+                                    <select asp-for="PublisherID" class="form-select" asp-items="ViewBag.Publishers"
+                                        required>
+                                        <option value="">-- Chọn nhà xuất bản --</option>
+                                    </select>
+                                    <div class="invalid-feedback">Vui lòng chọn nhà xuất bản.</div>
+                                    <span asp-validation-for="PublisherID" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label asp-for="Quantity" class="form-label">
+                                        Số lượng <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="number" asp-for="Quantity" class="form-control" min="0" value="0"
+                                        required />
+                                    <div class="invalid-feedback">Vui lòng nhập số lượng.</div>
+                                    <span asp-validation-for="Quantity" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch mt-4">
+                                        <input type="checkbox" name="IsActive" value="true" 
+                                               class="form-check-input" role="switch" checked />
+                                        <input type="hidden" name="IsActive" value="false" />
+                                        <label class="form-check-label fw-bold">Kích hoạt sách</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label class="form-label">
+                                        <i class="bi bi-people me-1"></i>Tác giả <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group mb-2">
+                                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                        <input type="text" class="form-control" id="authorSearch" placeholder="Tìm kiếm tác giả...">
+                                        <button type="button" class="btn btn-outline-secondary" id="selectAllAuthors">
+                                            <i class="bi bi-check-all me-1"></i>Chọn tất cả
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary" id="deselectAllAuthors">
+                                            <i class="bi bi-x-circle me-1"></i>Bỏ chọn tất cả
+                                        </button>
+                                    </div>
+                                    <div class="border rounded p-3 bg-light" style="max-height: 250px; overflow-y: auto;" id="authorList">
+                                        @if (ViewBag.Authors != null)
+                                        {
+                                            @foreach (var author in ViewBag.Authors)
+                                            {
+                                                <div class="form-check author-item" data-author-name="@author.AuthorName?.ToLower()">
+                                                    <input class="form-check-input" type="checkbox" name="AuthorIDs" 
+                                                           value="@author.AuthorID" id="author_@author.AuthorID" />
+                                                    <label class="form-check-label" for="author_@author.AuthorID">
+                                                        @author.AuthorName
+                                                    </label>
+                                                </div>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <p class="text-muted">Chưa có tác giả nào. Vui lòng thêm tác giả trước.</p>
+                                        }
+                                    </div>
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Chọn một hoặc nhiều tác giả cho sách này. Đã chọn: <span id="selectedCount" class="fw-bold">0</span> tác giả.
+                                    </small>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label asp-for="Description" class="form-label">Mô tả</label>
+                                    <textarea asp-for="Description" class="form-control" rows="5"
+                                        placeholder="Nhập mô tả về sách..."></textarea>
+                                    <span asp-validation-for="Description" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label class="form-label">
+                                        <i class="bi bi-file-pdf me-1"></i>File PDF sách
+                                    </label>
+                                    <div class="d-flex gap-2 mb-2">
+                                        <input type="hidden" id="BookFilePath" name="BookFilePath" />
+                                        <button type="button" class="btn btn-info btn-sm" onclick="openFileManager('BookFilePath', 'bookFilePreview', 'pdf')">
+                                            <i class="bi bi-folder2-open me-1"></i>Chọn file PDF
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="clearBookFile()">
+                                            <i class="bi bi-trash me-1"></i>Xóa file
+                                        </button>
+                                    </div>
+                                    <div id="bookFilePreview" class="mt-2">
+                                        <div id="bookFileInfo" class="d-flex align-items-center gap-2 p-2 bg-light rounded" style="display: none;">
+                                            <i class="bi bi-file-pdf text-danger fs-4"></i>
+                                            <div class="flex-grow-1">
+                                                <strong id="bookFileName"></strong>
+                                                <br>
+                                                <small class="text-muted">File PDF đã chọn</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Chọn file PDF từ File Manager. Chỉ chấp nhận file PDF.
+                                    </small>
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="BookFile" data-valmsg-replace="true"></span>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label class="form-label">Ảnh bìa sách</label>
+                                    <div class="d-flex gap-2 mb-2">
+                                        <input type="hidden" id="CoverImagePath" name="CoverImagePath" />
+                                        <button type="button" class="btn btn-info btn-sm" onclick="openFileManager('CoverImagePath', 'coverPreview', 'image')">
+                                            <i class="bi bi-folder2-open me-1"></i>Chọn ảnh
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="clearCoverImage()">
+                                            <i class="bi bi-trash me-1"></i>Xóa ảnh
+                                        </button>
+                                    </div>
+                                    <div id="coverPreview" class="mt-2">
+                                        <img id="coverPreviewImg" src="" alt="Preview"
+                                            style="max-width: 200px; max-height: 300px; display: none; 
+                                                    border: 2px solid #dee2e6; border-radius: 8px; object-fit: cover;" />
+                                    </div>
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Chọn ảnh từ File Manager. Tỷ lệ khuyến nghị: 3:4 (chiều rộng:chiều cao)
+                                    </small>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-12">
+                                    <hr>
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <a asp-area="Admin" asp-controller="Book" asp-action="Index"
+                                            class="btn btn-secondary">
+                                            <i class="bi bi-arrow-left-circle me-1"></i>Quay lại
+                                        </a>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="bi bi-save me-1"></i>Lưu sách
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<link href="~/admin/lib/jqueryui/themes/themes/base/theme.css" rel="stylesheet" />
+<link href="~/admin/lib/jqueryui/themes/themes/base/jquery-ui.css" rel="stylesheet" />
+<link href="~/admin/lib/elFinder/css/elfinder.full.css" rel="stylesheet" />
+<link href="~/admin/lib/elFinder/css/theme.css" rel="stylesheet" />
+<script src="~/admin/lib/snote/jquery.min.js"></script>
+<script src="~/admin/lib/jqueryui/jquery-ui.js"></script>
+<script src="~/admin/lib/elFinder/js/elfinder.min.js"></script>
+
+<script type="text/javascript">
+    function openFileManager(inputId, previewDivId, fileType) {
+        var myCommands = elFinder.prototype._options.commands;
+        var disabled = ['callback', 'chmod', 'editor', 'netmount', 'ping', 'search', 'zipdl', 'help'];
+
+        $.each(disabled, function (i, cmd) {
+            (idx = $.inArray(cmd, myCommands)) !== -1 && myCommands.splice(idx, 1);
+        });
+
+        var options = {
+            baseUrl: "@Url.Content("~/admin/lib/elFinder/")",
+            url: "@Url.Action("Connector", "FileManager")",
+            rememberLastDir: false,
+            commands: myCommands,
+            lang: 'vi',
+            getFileCallback: function (file) {
+                var filePath = file.url;
+                $("#" + inputId).val(filePath);
+
+                if (previewDivId) {
+                    if (fileType === 'image') {
+                        // Xử lý preview cho ảnh
+                        $("#" + previewDivId + "Img").attr('src', filePath);
+                        $("#" + previewDivId + "Img").show();
+                    } else if (fileType === 'pdf') {
+                        // Xử lý preview cho PDF
+                        var fileName = file.name || filePath.split('/').pop();
+                        $("#bookFileName").text(fileName);
+                        $("#bookFileInfo").show();
+                    }
+                }
+
+                $("#elfinderDialog").dialog('close');
+            }
+        };
+
+        // Chỉ lọc theo loại file
+        if (fileType === 'image') {
+            options.onlyMimes = ["image"];
+        } else if (fileType === 'pdf') {
+            options.onlyMimes = ["application/pdf"];
+        }
+
+        if ($('#elfinderDialog').length == 0) {
+            $('body').append('<div id="elfinderDialog"><div id="elfinderPopup"></div></div>');
+        }
+
+        try {
+            $('#elfinderPopup').elfinder('destroy');
+        } catch (e) { }
+        $('#elfinderPopup').html('');
+        $('#elfinderPopup').elfinder(options).elfinder('instance');
+
+        var dialogTitle = fileType === 'image' ? "Chọn ảnh bìa sách" : "Chọn file PDF";
+        $("#elfinderDialog").dialog({
+            modal: true,
+            width: 900,
+            height: 600,
+            title: dialogTitle,
+            resizable: true
+        });
+    }
+
+    function clearCoverImage() {
+        $('#coverPreviewImg').hide().attr('src', '');
+        $('#CoverImagePath').val('');
+    }
+
+    function clearBookFile() {
+        $('#bookFileInfo').hide();
+        $('#bookFileName').text('');
+        $('#BookFilePath').val('');
+    }
+
+    // Bootstrap validation
+    (function () {
+        'use strict';
+        var forms = document.querySelectorAll('.needs-validation');
+        Array.prototype.slice.call(forms).forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    })();
+</script>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
+<script>
+    $(document).ready(function() {
+        // Tìm kiếm tác giả
+        $('#authorSearch').on('keyup', function() {
+            var searchText = $(this).val().toLowerCase();
+            $('.author-item').each(function() {
+                var authorName = $(this).data('author-name') || '';
+                if (authorName.includes(searchText)) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        });
+
+        // Chọn tất cả
+        $('#selectAllAuthors').on('click', function() {
+            $('.author-item:visible input[type="checkbox"]').prop('checked', true);
+            updateSelectedCount();
+        });
+
+        // Bỏ chọn tất cả
+        $('#deselectAllAuthors').on('click', function() {
+            $('.author-item:visible input[type="checkbox"]').prop('checked', false);
+            updateSelectedCount();
+        });
+
+        // Cập nhật số lượng đã chọn
+        function updateSelectedCount() {
+            var count = $('.author-item input[type="checkbox"]:checked').length;
+            $('#selectedCount').text(count);
+        }
+
+        // Lắng nghe sự kiện thay đổi checkbox
+        $(document).on('change', '.author-item input[type="checkbox"]', function() {
+            updateSelectedCount();
+        });
+
+        // Khởi tạo số lượng
+        updateSelectedCount();
+    });
+</script>

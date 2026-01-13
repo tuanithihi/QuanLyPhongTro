@@ -1,0 +1,54 @@
+@using QuanLyThuVien.Areas.Admin.Models
+@model IList<AdminMenu>
+<aside id="sidebar" class="sidebar">
+
+  <ul class="sidebar-nav" id="sidebar-nav">
+
+    <li class="nav-item">
+      <a class="nav-link " href="/Admin">
+        <i class="bi bi-grid"></i>
+        <span>Tổng quan</span>
+      </a>
+    </li><!-- End Dashboard Nav -->
+
+    @foreach (var item in Model.Where(m => m.ItemLevel == 1).OrderBy(m => m.ItemOrder))
+    {
+      var pID = item.AdminMenuID;
+      var sMenu = Model.Where(p => p.ParentLevel == pID).OrderBy(p => p.ItemOrder).ToList();
+
+      @if (sMenu.Any()) // ⬅ Có menu con → render dropdown
+      {
+        <li class="nav-item">
+          <a class="nav-link collapsed" data-bs-target="#@item.ItemTarget" data-bs-toggle="collapse" href="#">
+            <i class="@item.Icon"></i>
+            <span>@item.ItemName</span>
+            <i class="bi bi-chevron-down ms-auto"></i>
+          </a>
+
+          <ul id="@item.ItemTarget" class="nav-content collapse" data-bs-parent="#sidebar-nav">
+            @foreach (var smn in sMenu)
+            {
+              <li>
+                <a href="/Admin/@smn.ControllerName/@smn.ActionName">
+                  <i class="bi bi-circle"></i>
+                  <span>@smn.ItemName</span>
+                </a>
+              </li>
+            }
+          </ul>
+        </li>
+      }
+      else // ⬅ Không có menu con → menu đơn, đi thẳng vào trang Index
+      {
+        <li class="nav-item">
+          <a class="nav-link" href="/Admin/@item.ControllerName/@item.ActionName">
+            <i class="@item.Icon"></i>
+            <span>@item.ItemName</span>
+          </a>
+        </li>
+      }
+    }
+
+  </ul>
+
+</aside>

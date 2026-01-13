@@ -1,0 +1,87 @@
+@using PagedList.Core.Mvc
+@model PagedList.Core.IPagedList<QuanLyThuVien.Models.tblCategory>
+
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<main id="main" class="main">
+    <div class="pagetitle">
+        <h2>Danh sách danh mục</h2>
+        <p>
+            <a class="btn btn-primary" asp-area="Admin" asp-controller="Category" asp-action="Create">
+                <i class="bi bi-person-plus-fill me-1"></i> Thêm danh mục
+            </a>
+        </p>
+    </div>
+
+    <section class="section dashboard">
+        <div class="card recent-sales overflow-auto">
+            <div class="card-body mt-3">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light text-center">
+                        <tr>
+                            <th>#</th>
+                            <th>Tên danh mục</th>
+                            <th>Mô tả</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày tạo</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Count > 0)
+                        {
+                            int stt = (Model.PageNumber - 1) * Model.PageSize + 1;
+                            foreach (var category in Model)
+                            {
+                                <tr>
+                                    <td class="text-center">@stt</td>
+                                    <td>@category.CategoryName</td>
+                                    <td class="text-truncate" style="max-width:200px;">
+                                        @category.Description
+                                    </td>
+                                    <td class="text-center">
+                                        @if (category.IsActive == true)
+                                        {
+                                            <span class="badge bg-success">Hoạt động</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">Ngừng</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">@category.CreatedAt.ToString("dd/MM/yyyy")</td>
+                                    <td class="text-center">
+                                        <a asp-area="Admin" asp-controller="Category" asp-action="Edit" asp-route-id="@category.CategoryID"
+                                           class="btn btn-sm btn-primary"><i class="bi bi-pencil"></i></a>
+                                        <a asp-area="Admin" asp-controller="Category" asp-action="Delete" asp-route-id="@category.CategoryID"
+                                           class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></a>
+                                    </td>
+                                </tr>
+                                stt++;
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">Không có danh mục nào.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <!-- PHÂN TRANG -->
+                <ul class="pagination justify-content-end mb-0">
+                    <pager class="pager-container"
+                           list="@Model"
+                           options="@PagedListRenderOptions.Bootstrap4PageNumbersOnly"
+                           asp-area="Admin"
+                           asp-controller="Category"
+                           asp-action="Index">
+                    </pager>
+                </ul>
+            </div>
+        </div>
+    </section>
+</main>

@@ -1,0 +1,67 @@
+@using QuanLyThuVien.Utilities
+@model QuanLyThuVien.Models.tblPost
+
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<main id="main" class="main">
+    <div class="pagetitle">
+        <h2>Thêm bài viết mới</h2>
+    </div>
+    <div class="container shadow p-5">
+        <form method="Post" asp-action="Create">
+            <div class="form-row">
+                <input type="hidden" asp-for="MenuID" value="6" />
+                <div class="form-group col-md-6 mb-3">
+                    <label>Title</label>
+                    <input type="text" class="form-control" asp-for="Title" placeholder="Enter the title...">
+                </div>
+                <div class="form-group col-md-6 mb-3">
+                    <label>Abstract</label>
+                    <input type="text" class="form-control" asp-for="Abstract" placeholder="Enter the title...">
+                </div>
+                <div class="form-group">
+                    <label class="control-label">
+                        Image
+                    </label>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <button class="btn btn-success" type="button" onclick="openDialog()">Chọn ảnh</button>
+                        </div>
+                        <input type="text" class="form-control" asp-for="Images" id="file_input"
+                            aria-describedby="button-addon2">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label">Content</label>
+                    <textarea asp-for="Contents" class="form-control"></textarea>
+                    <span asp-validation-for="Contents" class="text-danger mp-4"></span>
+                </div>
+                <div class="form-control d-none">
+                    <input asp-for="CreatedDate" class="form-control" value="@Functions.getCurrentDate()">
+                </div>
+                <div class="form-control d-none">
+                    <input asp-for="PostOrder" class="form-control" value="0" />
+                </div>
+                <div class="form-group">
+                    <label>
+                        @Html.CheckBox("IsActive", false)
+                        Visible
+                    </label>
+                </div>
+
+                <div class="form-control mt-5">
+                    <button type="submit" value="Create" class="btn btn-primary" asp-action="Create"> Lưu thông tin
+                    </button>
+                </div>
+
+
+        </form>
+    </div>
+</main>
+
+@{
+    var summerNote = new QuanLyThuVien.Areas.Admin.Models.SummerNote("#Contents");
+    <partial name="_SummerNote" model="summerNote" />
+}

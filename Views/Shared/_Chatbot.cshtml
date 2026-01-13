@@ -1,0 +1,202 @@
+<!-- Chatbot Widget -->
+<div id="chatbot-widget" class="chatbot-widget">
+  <!-- Chatbot Button (Floating) -->
+  <button id="chatbot-toggle" class="chatbot-toggle" aria-label="Mở chatbot">
+    <i class="bi bi-chat-dots-fill"></i>
+    <span class="chatbot-badge">1</span>
+  </button>
+
+  <!-- Chatbot Window -->
+  <div id="chatbot-window" class="chatbot-window">
+    <!-- Chatbot Header -->
+    <div class="chatbot-header">
+      <div class="chatbot-header-info">
+        <div class="chatbot-avatar">
+          <i class="bi bi-robot"></i>
+        </div>
+        <div class="chatbot-header-text">
+          <h6 class="chatbot-name">LibraHub Assistant</h6>
+          <span class="chatbot-status">Đang hoạt động</span>
+        </div>
+      </div>
+      <button id="chatbot-minimize" class="chatbot-minimize" aria-label="Thu nhỏ">
+        <i class="bi bi-dash-lg"></i>
+      </button>
+      <button id="chatbot-close" class="chatbot-close" aria-label="Đóng">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <!-- Chatbot Messages Area -->
+    <div id="chatbot-messages" class="chatbot-messages">
+      <div class="chatbot-message chatbot-message-bot">
+        <div class="chatbot-message-avatar">
+          <i class="bi bi-robot"></i>
+        </div>
+        <div class="chatbot-message-content">
+          <div class="chatbot-message-bubble">
+            <p>Xin chào! 👋 Tôi là trợ lý ảo của LibraHub. Tôi có thể giúp bạn tìm sách, hướng dẫn mượn sách, hoặc trả
+              lời các câu hỏi về thư viện. Bạn cần hỗ trợ gì?</p>
+          </div>
+          <span class="chatbot-message-time">Bây giờ</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Typing Indicator -->
+    <div id="chatbot-typing" class="chatbot-typing" style="display: none;">
+      <div class="chatbot-typing-avatar">
+        <i class="bi bi-robot"></i>
+      </div>
+      <div class="chatbot-typing-dots">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+
+    <!-- Chatbot Input Area -->
+    <div class="chatbot-input-area">
+      <div class="chatbot-input-wrapper">
+        <input type="text" id="chatbot-input" class="chatbot-input" placeholder="Nhập câu hỏi của bạn..."
+          autocomplete="off" />
+        <button id="chatbot-send" class="chatbot-send" aria-label="Gửi tin nhắn">
+          <i class="bi bi-send-fill"></i>
+        </button>
+      </div>
+      <div class="chatbot-quick-actions">
+        <button class="chatbot-quick-btn" data-message="Cách mượn sách?">
+          <i class="bi bi-book"></i> Mượn sách
+        </button>
+        <button class="chatbot-quick-btn" data-message="Tìm sách">
+          <i class="bi bi-search"></i> Tìm sách
+        </button>
+        <button class="chatbot-quick-btn" data-message="Lịch sử mượn">
+          <i class="bi bi-clock-history"></i> Lịch sử
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let sendMessage; // global
+
+document.addEventListener('DOMContentLoaded', function () {
+
+  const chatbotToggle = document.getElementById('chatbot-toggle');
+  const chatbotWindow = document.getElementById('chatbot-window');
+  const chatbotClose = document.getElementById('chatbot-close');
+  const chatbotMinimize = document.getElementById('chatbot-minimize');
+  const chatbotInput = document.getElementById('chatbot-input');
+  const chatbotSend = document.getElementById('chatbot-send');
+  const chatbotMessages = document.getElementById('chatbot-messages');
+  const chatbotTyping = document.getElementById('chatbot-typing');
+  const quickButtons = document.querySelectorAll('.chatbot-quick-btn');
+
+  let isOpen = false;
+  let isMinimized = false;
+
+  // ===== UI =====
+  chatbotToggle.onclick = () => {
+    isOpen ? closeChatbot() : openChatbot();
+  };
+
+  chatbotClose.onclick = (e) => {
+    e.stopPropagation();
+    closeChatbot();
+  };
+
+  chatbotMinimize.onclick = (e) => {
+    e.stopPropagation();
+    toggleMinimize();
+  };
+
+  function openChatbot() {
+    isOpen = true;
+    isMinimized = false;
+    chatbotWindow.classList.add('active');
+    chatbotWindow.classList.remove('minimized');
+    chatbotInput.focus();
+  }
+
+  function closeChatbot() {
+    isOpen = false;
+    chatbotWindow.classList.remove('active', 'minimized');
+  }
+
+  function toggleMinimize() {
+    isMinimized = !isMinimized;
+    chatbotWindow.classList.toggle('minimized', isMinimized);
+  }
+
+  // ===== MESSAGE =====
+  function addMessage(text, sender) {
+    const div = document.createElement('div');
+    div.className = `chatbot-message chatbot-message-${sender}`;
+    div.innerHTML = `
+      <div class="chatbot-message-content">
+        <div class="chatbot-message-bubble">
+          <p>${escapeHtml(text)}</p>
+        </div>
+      </div>`;
+    chatbotMessages.appendChild(div);
+    scrollToBottom();
+  }
+
+  function showTyping() {
+    chatbotTyping.style.display = 'flex';
+    scrollToBottom();
+  }
+
+  function hideTyping() {
+    chatbotTyping.style.display = 'none';
+  }
+
+  function scrollToBottom() {
+    chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // ===== SEND MESSAGE =====
+  sendMessage = function (message) {
+    if (!message || !message.trim()) return;
+
+    addMessage(message, 'user');
+    chatbotInput.value = '';
+    showTyping();
+
+    fetch('/api/chatbot/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message })
+    })
+    .then(res => res.json())
+    .then(data => {
+      hideTyping();
+      addMessage(data.reply || 'Không có phản hồi.', 'bot');
+    })
+    .catch(err => {
+      hideTyping();
+      addMessage('Lỗi hệ thống.', 'bot');
+      console.error(err);
+    });
+  };
+
+  chatbotSend.onclick = () => sendMessage(chatbotInput.value);
+
+  chatbotInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') sendMessage(chatbotInput.value);
+  });
+
+  quickButtons.forEach(btn => {
+    btn.onclick = () => sendMessage(btn.dataset.message);
+  });
+
+});
+</script>

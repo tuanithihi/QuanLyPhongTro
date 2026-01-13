@@ -1,0 +1,197 @@
+﻿  <!DOCTYPE html>
+  <html lang="vi">
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    
+    <!-- SEO Meta Tags -->
+    <title>@(ViewData["Title"] ?? "LibraHub - Hệ thống quản lý thư viện số")</title>
+    <meta name="description" content="@(ViewData["Description"] ?? "LibraHub - Trung tâm thư viện số hiện đại, nơi kết nối tri thức. Quản lý sách, tài liệu và tài nguyên học tập một cách hiệu quả.")">
+    <meta name="keywords" content="@(ViewData["Keywords"] ?? "thư viện số, quản lý sách, LibraHub, thư viện điện tử, tài liệu số")">
+    <meta name="author" content="Group 12">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="@(Context.Request.Scheme)://@(Context.Request.Host)@(Context.Request.Path)">
+    <meta property="og:title" content="@(ViewData["Title"] ?? "LibraHub - Hệ thống quản lý thư viện số")">
+    <meta property="og:description" content="@(ViewData["Description"] ?? "Trung tâm thư viện số hiện đại, nơi kết nối tri thức")">
+    <meta property="og:image" content="@(Context.Request.Scheme)://@(Context.Request.Host)/assets/img/logo.webp">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="@(Context.Request.Scheme)://@(Context.Request.Host)@(Context.Request.Path)">
+    <meta property="twitter:title" content="@(ViewData["Title"] ?? "LibraHub - Hệ thống quản lý thư viện số")">
+    <meta property="twitter:description" content="@(ViewData["Description"] ?? "Trung tâm thư viện số hiện đại, nơi kết nối tri thức")">
+    <meta property="twitter:image" content="@(Context.Request.Scheme)://@(Context.Request.Host)/assets/img/logo.webp">
+
+    <!-- Favicons -->
+    <link href="~/assets/img/school.png" rel="icon">
+    <link href="~/assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Raleway:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap" rel="stylesheet">
+
+    <!-- Vendor CSS Files -->
+    <link href="~/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="~/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+    <link href="~/assets/vendor/aos/aos.css" rel="stylesheet">
+    <link href="~/assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+
+    <!-- Main CSS File -->
+    <link href="~/assets/css/main.css" rel="stylesheet">
+    
+    <!-- Chatbot CSS -->
+    <link href="~/css/chatbot.css" rel="stylesheet">
+
+    <!-- Structured Data for SEO -->
+    <script type="application/ld+json">
+    {
+      "@@context": "https://schema.org",
+      "@@type": "Library",
+      "name": "LibraHub",
+      "description": "Trung tâm thư viện số hiện đại, nơi kết nối tri thức",
+      "url": "@(Context.Request.Scheme)://@(Context.Request.Host)",
+      "logo": "@(Context.Request.Scheme)://@(Context.Request.Host)/assets/img/logo.webp",
+      "address": {
+        "@@type": "PostalAddress",
+        "addressLocality": "Vinh",
+        "addressRegion": "Nghệ An",
+        "addressCountry": "VN"
+      }
+    }
+    </script>
+  </head>
+
+  <body class="index-page">
+
+   @await Component.InvokeAsync("MenuView")
+
+    <main id="main">
+      @RenderBody()
+    </main>
+
+    <footer id="footer" class="footer accent-background">
+
+      <div class="container footer-top">
+        <div class="row gy-4">
+          <div class="col-lg-5 col-md-12 footer-about">
+            <a asp-controller="Home" asp-action="Index" class="logo d-flex align-items-center">
+              <img src="~/assets/img/learning_16566016.png" alt="LibraHub Logo" class="me-2" style="height: 40px;">
+              <span class="sitename">LibraHub</span>
+            </a>
+            <p>Trung tâm thư viện số hiện đại, nơi kết nối tri thức. Chúng tôi cung cấp hệ thống quản lý thư viện số toàn diện, giúp bạn dễ dàng tìm kiếm, mượn và quản lý tài liệu học tập một cách hiệu quả.</p>
+            <div class="social-links d-flex mt-4">
+              <a href="https://www.facebook.com/ngonguyentienquang" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                <i class="bi bi-facebook"></i>
+              </a>
+              <a href="#" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
+                <i class="bi bi-twitter-x"></i>
+              </a>
+              <a href="#" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                <i class="bi bi-instagram"></i>
+              </a>
+              <a href="#" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+                <i class="bi bi-linkedin"></i>
+              </a>
+            </div>
+          </div>
+
+          <div class="col-lg-2 col-6 footer-links">
+            <h4>Liên kết hữu ích</h4>
+            <ul>
+              <li><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+              <li><a href="#about">Về chúng tôi</a></li>
+              <li><a href="#courses">Sách & Tài liệu</a></li>
+              <li><a asp-controller="Home" asp-action="Privacy">Chính sách bảo mật</a></li>
+              <li><a href="#contact">Liên hệ</a></li>
+            </ul>
+          </div>
+
+          <div class="col-lg-2 col-6 footer-links">
+            <h4>Dịch vụ</h4>
+            <ul>
+              <li><a href="#courses">Mượn sách</a></li>
+              <li><a href="#categories">Danh mục sách</a></li>
+              <li><a href="#instructors">Tác giả</a></li>
+              <li><a href="#publishers">Nhà xuất bản</a></li>
+              <li><a asp-area="Admin" asp-controller="Login" asp-action="Index">Quản trị</a></li>
+            </ul>
+          </div>
+
+          <div class="col-lg-3 col-md-12 footer-contact text-center text-md-start">
+            <h4>Liên hệ</h4>
+            <p>
+              <i class="bi bi-geo-alt-fill me-2"></i>
+              <strong>Địa chỉ:</strong><br>
+              Vinh, Nghệ An<br>
+              Việt Nam
+            </p>
+            <p class="mt-3">
+              <i class="bi bi-telephone-fill me-2"></i>
+              <strong>Điện thoại:</strong> 
+              <span>+84 XXX XXX XXX</span>
+            </p>
+            <p>
+              <i class="bi bi-envelope-fill me-2"></i>
+              <strong>Email:</strong> 
+              <a href="mailto:nntienquang1704@gmail.com">nntienquang1704@gmail.com</a>
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="copyright text-center mt-4">
+        <div class="container">
+          <p class="mb-2">
+            &copy; @DateTime.Now.Year Copyright by <strong><span>Group 12</span></strong>. All Rights Reserved
+          </p>
+          <div class="credits">
+            <p class="mb-1">Designed by:</p>
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+              <a href="https://www.facebook.com/ngonguyentienquang" target="_blank" rel="noopener noreferrer">
+                Ngô Nguyễn Tiến Quang
+              </a>
+              <a href="#" target="_blank" rel="noopener noreferrer">
+                Hồ Đức Tuấn
+              </a>
+              <a href="https://www.facebook.com/share/16UXp6WdrM/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer">
+                Nguyễn Văn Phúc
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </footer>
+
+    <!-- Scroll Top -->
+    <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center" aria-label="Scroll to top">
+      <i class="bi bi-arrow-up-short"></i>
+    </a>
+
+    <!-- Preloader -->
+    <div id="preloader"></div>
+
+    <!-- Vendor JS Files -->
+    <script src="~/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="~/assets/vendor/php-email-form/validate.js"></script>
+    <script src="~/assets/vendor/aos/aos.js"></script>
+    <script src="~/assets/vendor/purecounter/purecounter_vanilla.js"></script>
+    <script src="~/assets/vendor/swiper/swiper-bundle.min.js"></script>
+
+    <!-- Main JS File -->
+    <script src="~/assets/js/main.js"></script>
+
+    <!-- Chatbot Widget -->
+    @await Html.PartialAsync("_Chatbot")
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+  </body>
+
+  </html>

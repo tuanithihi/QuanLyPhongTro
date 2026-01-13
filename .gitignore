@@ -1,0 +1,25 @@
+# Các thư mục chứa file đã biên dịch (Đây là thủ phạm gây ra hàng nghìn file)
+bin/
+obj/
+
+# Thư mục cấu hình ẩn của Visual Studio
+.vs/
+.vscode/
+
+# Các tệp người dùng tự tạo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Thư mục thư viện client (nếu có)
+lib/
+# Chặn thư mục ảnh upload (thường rất nặng và không nên đưa lên Git)
+**/uploads/
+*.png
+*.jpg
+*.jpeg
+*.gif
+
+# Chặn thư viện bên thứ ba
+wwwroot/lib/
+wwwroot/admin/assets/vendor/

@@ -1,0 +1,219 @@
+@using PagedList.Core.Mvc
+@model PagedList.Core.IPagedList<QuanLyThuVien.Models.tblBorrow>
+
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+    ViewData["Title"] = "Quản lý mượn trả";
+}
+
+<main id="main" class="main">
+    <div class="pagetitle">
+        <h2><i class="bi bi-book-half me-2"></i>Quản lý mượn trả</h2>
+        <nav>
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+                <li class="breadcrumb-item active">Quản lý mượn trả</li>
+            </ol>
+        </nav>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>@Html.Raw(TempData["ErrorMessage"])
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <section class="section dashboard">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-4">
+                            <i class="bi bi-list-ul me-2"></i>Danh sách phiếu mượn
+                        </h5>
+
+                        <!-- Bộ lọc -->
+                        <form method="get" asp-action="Index" class="row g-3 mb-4">
+                            <div class="col-md-3">
+                                <label class="form-label">Người dùng</label>
+                                <select name="userId" class="form-select" asp-items="ViewBag.Users">
+                                    <option value="">Tất cả người dùng</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Trạng thái</label>
+                                <select name="status" class="form-select" asp-items="ViewBag.Statuses">
+                                    <option value="">Tất cả trạng thái</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Từ ngày</label>
+                                <input type="date" name="fromDate" class="form-control" value="@ViewBag.FromDate">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Đến ngày</label>
+                                <input type="date" name="toDate" class="form-control" value="@ViewBag.ToDate">
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end gap-2">
+                                <button type="submit" class="btn btn-primary flex-fill">
+                                    <i class="bi bi-search me-1"></i>Tìm kiếm
+                                </button>
+                                <a asp-action="Index" class="btn btn-outline-secondary" title="Xóa bộ lọc">
+                                    <i class="bi bi-x-circle"></i>
+                                </a>
+                            </div>
+                        </form>
+
+                        <!-- Bảng danh sách -->
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Mã phiếu</th>
+                                        <th>Người mượn</th>
+                                        <th>Ngày mượn</th>
+                                        <th>Hạn trả</th>
+                                        <th>Số lượng sách</th>
+                                        <th class="text-center">Trạng thái</th>
+                                        <th class="text-center" style="width: 120px;">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model != null && Model.Count > 0)
+                                    {
+                                        @foreach (var borrow in Model)
+                                        {
+                                            <tr>
+                                                <td><strong>#@borrow.BorrowID</strong></td>
+                                                <td>@borrow.User?.FullName</td>
+                                                <td>@borrow.BorrowDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                                <td>
+                                                    <div>
+                                                        <span class="@(DateTime.Now > borrow.DueDate && borrow.Status != "Returned" ? "text-danger fw-bold" : "")">
+                                                            @borrow.DueDate.ToString("dd/MM/yyyy")
+                                                        </span>
+                                                        @{
+                                                            var daysRemaining = 0;
+                                                            var isOverdue = false;
+                                                            if (borrow.Status != "Returned")
+                                                            {
+                                                                var timeSpan = borrow.DueDate - DateTime.Now;
+                                                                daysRemaining = (int)timeSpan.TotalDays;
+                                                                isOverdue = daysRemaining < 0;
+                                                            }
+                                                        }
+                                                        @if (borrow.Status != "Returned")
+                                                        {
+                                                            <br>
+                                                            @if (isOverdue)
+                                                            {
+                                                                <small class="badge bg-danger">
+                                                                    Quá hạn @Math.Abs(daysRemaining) ngày
+                                                                </small>
+                                                            }
+                                                            else if (daysRemaining <= 3)
+                                                            {
+                                                                <small class="badge bg-warning">
+                                                                    Còn @daysRemaining ngày
+                                                                </small>
+                                                            }
+                                                            else
+                                                            {
+                                                                <small class="badge bg-success">
+                                                                    Còn @daysRemaining ngày
+                                                                </small>
+                                                            }
+                                                        }
+                                                    </div>
+                                                </td>
+                                                <td>@(borrow.BorrowDetails?.Count ?? 0) cuốn</td>
+                                                <td class="text-center">
+                                                    @if (borrow.Status == "Returned")
+                                                    {
+                                                        <span class="badge bg-success">Đã trả</span>
+                                                    }
+                                                    else if (borrow.Status == "Overdue")
+                                                    {
+                                                        <span class="badge bg-danger">Quá hạn</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-warning">Đang mượn</span>
+                                                    }
+                                                </td>
+                                                <td class="text-center">
+                                                    <a asp-action="Details" asp-route-id="@borrow.BorrowID" 
+                                                       class="btn btn-sm btn-info" title="Chi tiết">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td colspan="7" class="text-center text-muted py-4">
+                                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                                Không có phiếu mượn nào.
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Phân trang -->
+                        @if (Model != null && Model.PageCount > 1)
+                        {
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <div class="text-muted">
+                                    Hiển thị @((Model.PageNumber - 1) * Model.PageSize + 1) - @(Math.Min(Model.PageNumber * Model.PageSize, Model.TotalItemCount)) 
+                                    trong tổng số @Model.TotalItemCount phiếu mượn
+                                </div>
+                                <ul class="pagination mb-0">
+                                    <pager class="pager-container"
+                                           list="@Model"
+                                           options="@PagedListRenderOptions.Bootstrap4PageNumbersOnly"
+                                           asp-area="Admin"
+                                           asp-controller="Borrow"
+                                           asp-action="Index"
+                                           asp-route-userId="@ViewBag.UserId"
+                                           asp-route-status="@ViewBag.Status"
+                                           asp-route-fromDate="@ViewBag.FromDate"
+                                           asp-route-toDate="@ViewBag.ToDate">
+                                    </pager>
+                                </ul>
+                            </div>
+                        }
+                        else if (Model != null && Model.TotalItemCount > 0)
+                        {
+                            <div class="text-muted mt-3">
+                                Hiển thị tất cả @Model.TotalItemCount phiếu mượn
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+@section Scripts {
+    <script>
+        setTimeout(function() {
+            $('.alert').fadeOut('slow');
+        }, 5000);
+    </script>
+}
+

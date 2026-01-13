@@ -1,0 +1,104 @@
+@using PagedList.Core.Mvc
+@model PagedList.Core.IPagedList<QuanLyThuVien.Models.tblUser>
+
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<main id="main" class="main">
+    <div class="pagetitle">
+        <h2>Danh sách người dùng</h2>
+        <p>
+            <a class="btn btn-primary" asp-area="Admin" asp-controller="User" asp-action="Create">
+                <i class="bi bi-person-plus-fill me-1"></i> Thêm người dùng
+            </a>
+        </p>
+    </div>
+
+    <section class="section dashboard">
+        <div class="card recent-sales overflow-auto">
+            <div class="card-body mt-3">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light text-center">
+                        <tr>
+                            <th>#</th>
+                            <th>Ảnh</th>
+                            <th>Tên đăng nhập</th>
+                            <th>Họ tên</th>
+                            <th>Email</th>
+                            <th>Quyền</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày tạo</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Count > 0)
+                        {
+                            int stt = (Model.PageNumber - 1) * Model.PageSize + 1;
+                            foreach (var user in Model)
+                            {
+                                <tr>
+                                    <td class="text-center">@stt</td>
+                                    <td class="text-center">
+                                        @if (!string.IsNullOrEmpty(user.Avatar))
+                                        {
+                                            <img src="@user.Avatar" alt="Avatar" class="rounded-circle border" width="45" height="45" />
+                                        }
+                                        else
+                                        {
+                                            <img src="/uploads/avatars/default.png" alt="No Avatar" class="rounded-circle border" width="45" height="45" />
+                                        }
+                                    </td>
+                                    <td class="text-center">@user.UserName</td>
+                                    <td class="text-center">@user.FullName</td>
+                                    <td class="text-center">@user.Email</td>
+                                    <td class="text-center">
+                                        <span class="badge @(user.Role == "admin" ? "bg-danger" : "bg-secondary")">@user.Role</span>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (user.IsActive == true)
+                                        {
+                                            <span class="badge bg-success">Hoạt động</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">Khóa</span>
+                                        }
+                                    </td>
+                                    <td>@user.CreatedDate?.ToString("dd/MM/yyyy")</td>
+                                    <td class="text-center">
+                                        <a asp-area="Admin" asp-controller="User" asp-action="Details" asp-route-id="@user.UserID"
+                                           class="btn btn-sm btn-info"><i class="bi bi-eye"></i></a>
+                                        <a asp-area="Admin" asp-controller="User" asp-action="Edit" asp-route-id="@user.UserID"
+                                           class="btn btn-sm btn-primary"><i class="bi bi-pencil"></i></a>
+                                        <a asp-area="Admin" asp-controller="User" asp-action="Delete" asp-route-id="@user.UserID"
+                                           class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></a>
+                                    </td>
+                                </tr>
+                                stt++;
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="9" class="text-center text-muted">Không có người dùng nào.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <!-- PHÂN TRANG -->
+                <ul class="pagination justify-content-end mb-0">
+                    <pager class="pager-container"
+                           list="@Model"
+                           options="@PagedListRenderOptions.Bootstrap4PageNumbersOnly"
+                           asp-area="Admin"
+                           asp-controller="User"
+                           asp-action="Index">
+                    </pager>
+                </ul>
+            </div>
+        </div>
+    </section>
+</main>

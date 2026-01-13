@@ -1,0 +1,58 @@
+@model QuanLyThuVien.Models.tblUser
+@{
+    ViewData["Title"] = "Cài đặt tài khoản";
+}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card shadow border-0" style="margin-top: 100px;">
+                <div class="card-body p-4">
+                    <h2 class="text-center mb-4">Cài đặt tài khoản Admin</h2>
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+                    }
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger">
+                            @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                            {
+                                <div>@err.ErrorMessage</div>
+                            }
+                        </div>
+                    }
+                    <form asp-action="Settings" asp-controller="Account" asp-area="Admin" method="post" enctype="multipart/form-data">
+                        <div class="mb-3 text-center">
+                            <img src="@(Model.Avatar ?? "/admin/assets/img/profile-img.jpg")" alt="Avatar" class="rounded-circle mb-2 border" style="width:110px;height:110px;object-fit:cover;">
+                            <input type="file" class="form-control mt-2" name="AvatarFile" accept="image/*">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tên đăng nhập</label>
+                            <input type="text" class="form-control" value="@Model.UserName" disabled />
+                        </div>
+                        <div class="mb-3">
+                            <label for="FullName" class="form-label">Họ và tên</label>
+                            <input type="text" class="form-control" id="FullName" name="FullName" value="@Model.FullName" required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="Email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="Email" name="Email" value="@Model.Email" required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="DateOfBirth" class="form-label">Ngày sinh</label>
+                            <input type="date" class="form-control" id="DateOfBirth" name="DateOfBirth" value="@(Model.DateOfBirth?.ToString("yyyy-MM-dd"))" />
+                        </div>
+                        <div class="mb-3">
+                            <label for="Phone" class="form-label">Số điện thoại</label>
+                            <input type="text" class="form-control" id="Phone" name="Phone" value="@Model.Phone" />
+                        </div>
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                            <a asp-area="Admin" asp-controller="Account" asp-action="Info" class="btn btn-secondary ms-2">Quay lại</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

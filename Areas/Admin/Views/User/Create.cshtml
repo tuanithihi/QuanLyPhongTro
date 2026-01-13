@@ -1,0 +1,206 @@
+@model QuanLyThuVien.Models.tblUser
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+}
+<main id="main" class="main">
+    <div class="pagetitle">
+        <h2>Thêm mới người dùng</h2>
+    </div>
+
+    <div class="container shadow p-5">
+        <form asp-action="Create" method="post" enctype="multipart/form-data" class="row g-3 needs-validation"
+            novalidate>
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="col-md-6">
+                <label for="UserName" class="form-label">Tên đăng nhập</label>
+                <input type="text" class="form-control" id="UserName" name="UserName"
+                    placeholder="Nhập tên đăng nhập..." required asp-for="UserName" />
+                <div class="invalid-feedback">Vui lòng nhập tên đăng nhập.</div>
+                <span class="text-danger" asp-validation-for="UserName"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label for="Password" class="form-label">Mật khẩu</label>
+                <input type="password" class="form-control" id="Password" name="Password" placeholder="Nhập mật khẩu..."
+                    required asp-for="Password" />
+                <div class="invalid-feedback">Vui lòng nhập mật khẩu.</div>
+                <span class="text-danger" asp-validation-for="Password"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label for="FullName" class="form-label">Họ và tên</label>
+                <input type="text" class="form-control" id="FullName" required asp-for="FullName"
+                    placeholder="Nhập họ tên người dùng..." />
+                <div class="invalid-feedback">Vui lòng nhập họ tên.</div>
+                <span class="text-danger" asp-validation-for="FullName"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label for="Email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="Email"
+                    placeholder="Nhập địa chỉ email..." required asp-for="Email" />
+                <div class="invalid-feedback">Vui lòng nhập email hợp lệ.</div>
+                <span class="text-danger" asp-validation-for="Email"></span>
+            </div>
+
+            <div class="col-md-4">
+                <label for="Phone" class="form-label">Số điện thoại</label>
+                <input type="text" class="form-control" id="Phone" 
+                    placeholder="Nhập số điện thoại..." required asp-for="Phone" />
+                <span class="text-danger" asp-validation-for="Phone"></span>
+            </div>
+
+            <div class="col-md-4">
+                <label for="DateOfBirth" class="form-label">Ngày sinh</label>
+                <input type="date" class="form-control" id="DateOfBirth" required asp-for="DateOfBirth" />
+                <div class="invalid-feedback">Vui lòng chọn ngày sinh.</div>
+                <span class="text-danger" asp-validation-for="DateOfBirth"></span>
+            </div>
+
+            <div class="col-md-4">
+                <label for="Role" class="form-label">Quyền hạn</label>
+                <select class="form-select" id="Role" required asp-for="Role" asp-items="ViewBag.RoleList"></select>
+                <div class="invalid-feedback">Vui lòng chọn quyền hạn.</div>
+                <span class="text-danger" asp-validation-for="Role"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label fw-bold">Ảnh đại diện</label>
+                <div class="d-flex gap-2 mb-2">
+                    <input type="hidden" id="AvatarPath" name="AvatarPath" />
+                    <button type="button" class="btn btn-info btn-sm"
+                        onclick="openFileManager('AvatarPath', 'avatarPreview')">
+                        <i class="bi bi-folder2-open"></i> Chọn ảnh
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="clearAvatar()">
+                        <i class="bi bi-trash"></i> Xóa ảnh
+                    </button>
+                </div>
+                <div id="avatarPreview" class="mt-2">
+                    <img id="avatarPreviewImg" src="" alt="Preview"
+                        style="max-width:150px;max-height:150px;display:none;border:2px solid #dee2e6;border-radius:8px;" />
+                </div>
+                <small class="text-muted">Có thể upload trực tiếp từ máy hoặc chọn từ File Manager</small>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-check form-switch mt-4">
+                    <input type="checkbox" name="IsActive" value="true" class="form-check-input" id="IsActive"
+                        checked />
+                    <input type="hidden" name="IsActive" value="false" />
+                    <label class="form-check-label fw-bold" for="IsActive">Kích hoạt tài khoản</label>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <a asp-area="Admin" asp-controller="User" asp-action="Index" class="btn btn-warning me-3">
+                    <i class="bi bi-arrow-left-circle"></i> Quay lại
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-file-plus-fill"></i> Lưu thông tin
+                </button>   
+            </div>
+        </form>
+
+    </div>
+</main>
+
+<link href="~/admin/lib/jqueryui/themes/themes/base/theme.css" rel="stylesheet" />
+<link href="~/admin/lib/jqueryui/themes/themes/base/jquery-ui.css" rel="stylesheet" />
+<link href="~/admin/lib/elFinder/css/elfinder.full.css" rel="stylesheet" />
+<link href="~/admin/lib/elFinder/css/theme.css" rel="stylesheet" />
+<script src="~/admin/lib/snote/jquery.min.js"></script>
+<script src="~/admin/lib/jqueryui/jquery-ui.js"></script>
+<script src="~/admin/lib/elFinder/js/elfinder.min.js"></script>
+
+<script type="text/javascript">
+    function openFileManager(inputId, previewDivId) {
+        var myCommands = elFinder.prototype._options.commands;
+        var disabled = ['callback', 'chmod', 'editor', 'netmount', 'ping', 'search', 'zipdl', 'help'];
+
+        $.each(disabled, function (i, cmd) {
+            (idx = $.inArray(cmd, myCommands)) !== -1 && myCommands.splice(idx, 1);
+        });
+
+        var options = {
+            baseUrl: "@Url.Content("~/admin/lib/elFinder/")",
+            url: "@Url.Action("Connector", "FileManager")",
+            rememberLastDir: false,
+            commands: myCommands,
+            onlyMimes: ["image"],
+            lang: 'vi',
+            getFileCallback: function (file) {
+                var filePath = file.url;
+                $("#" + inputId).val(filePath);
+
+                // Hiển thị preview
+                if (previewDivId) {
+                    $("#" + previewDivId + "Img").attr('src', filePath);
+                    $("#" + previewDivId + "Img").show();
+                }
+
+                // Đóng dialog
+                $("#elfinderDialog").dialog('close');
+            }
+        };
+
+        // Tạo dialog nếu chưa tồn tại
+        if ($('#elfinderDialog').length == 0) {
+            $('body').append('<div id="elfinderDialog"><div id="elfinderPopup"></div></div>');
+        }
+
+        // Khởi tạo elFinder trong dialog (re-init an toàn)
+        try {
+            $('#elfinderPopup').elfinder('destroy');
+        } catch (e) { }
+        $('#elfinderPopup').html('');
+        $('#elfinderPopup').elfinder(options).elfinder('instance');
+
+        // Mở dialog
+        $("#elfinderDialog").dialog({
+            modal: true,
+            width: 900,
+            height: 600,
+            title: "Chọn ảnh",
+            resizable: true
+        });
+    }
+
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                $('#avatarPreviewImg').attr('src', e.target.result).show();
+                $('#AvatarPath').val(''); 
+                $('#avatarFileUpload').show(); 
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function clearAvatar() {
+        $('#avatarPreviewImg').hide().attr('src', '');
+        $('#AvatarPath').val('');
+        $('#avatarFileUpload').val('');
+    }
+</script>
+
+@{ await Html.RenderPartialAsync("~/Views/Shared/_ValidationScriptsPartial.cshtml"); }
+
+<script>
+    // Script xác thực Bootstrap
+    (function () {
+        'use strict';
+        var forms = document.querySelectorAll('.needs-validation');
+        Array.prototype.slice.call(forms)
+            .forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+    })();
+</script>

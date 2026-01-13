@@ -1,0 +1,137 @@
+@using QuanLyThuVien.Models
+
+@model viewPostMenu
+
+@{
+    ViewData["Title"] = Model?.Title ?? "Chi tiết bài viết";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<main class="main">
+
+    <!-- Page Title -->
+    <div class="page-title light-background">
+        <div class="container d-lg-flex justify-content-between align-items-center">
+            <h1 class="mb-2 mb-lg-0">@Model?.Title</h1>
+            <nav class="breadcrumbs">
+                <ol>
+                    <li><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+                    <li><a asp-controller="Blog" asp-action="Index">Tin Tức</a></li>
+                    <li class="current">@Model?.Title</li>
+                </ol>
+            </nav>
+        </div>
+    </div><!-- End Page Title -->
+
+    <!-- Blog Details Section -->
+    <section id="blog-details" class="blog-details section">
+        <div class="container">
+            <div class="row gy-4 posts-list">
+
+                <!-- Main Post Content -->
+                <div class="col-lg-8">
+                    <article class="article">
+
+                        <!-- Featured Image -->
+                        <div class="post-img">
+                            @if (!string.IsNullOrEmpty(Model?.Images))
+                            {
+                                <img src="@Model.Images" alt="@Model.Title" class="img-fluid" style="height: 400px; object-fit: cover;">
+                            }
+                            else
+                            {
+                                <div class="bg-light d-flex align-items-center justify-content-center" style="height: 400px;">
+                                    <i class="bi bi-image text-muted" style="font-size: 5rem;"></i>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Metadata -->
+                        <div class="meta-top">
+                            <ul>
+                                @if (!string.IsNullOrEmpty(Model?.Author))
+                                {
+                                    <li class="d-flex align-items-center">
+                                        <i class="bi bi-person-circle"></i>
+                                        <a href="javascript:void(0)">@Model.Author</a>
+                                    </li>
+                                }
+                                <li class="d-flex align-items-center">
+                                    <i class="bi bi-clock"></i>
+                                    <a href="javascript:void(0)">
+                                        <time datetime="@Model?.CreatedDate?.ToString("yyyy-MM-dd")">
+                                            @Model?.CreatedDate?.ToString("dd/MM/yyyy", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))
+                                        </time>
+                                    </a>
+                                </li>
+                                @if (!string.IsNullOrEmpty(Model?.MenuName))
+                                {
+                                    <li class="d-flex align-items-center">
+                                        <i class="bi bi-folder"></i>
+                                        <a href="javascript:void(0)">@Model.MenuName</a>
+                                    </li>
+                                }
+                            </ul>
+                        </div><!-- End meta top -->
+
+                        <!-- Article Content -->
+                        <div class="content">
+                            @if (!string.IsNullOrEmpty(Model?.Abstract))
+                            {
+                                <p class="lead">
+                                    <strong>@Model.Abstract</strong>
+                                </p>
+                            }
+
+                            @if (!string.IsNullOrEmpty(Model?.Contents))
+                            {
+                                @Html.Raw(Model.Contents)
+                            }
+                        </div><!-- End post content -->
+
+                        <!-- Meta Bottom -->
+                        <div class="meta-bottom">
+                            <i class="bi bi-folder"></i>
+                            <ul class="cats">
+                                @if (!string.IsNullOrEmpty(Model?.MenuName))
+                                {
+                                    <li><a href="javascript:void(0)">@Model.MenuName</a></li>
+                                }
+                            </ul>
+                        </div><!-- End meta bottom -->
+
+                        <!-- Back Link -->
+                        <div class="post-nav">
+                            <div class="text-center mb-4">
+                                <a asp-controller="Blog" asp-action="Index" class="btn btn-primary">
+                                    <i class="bi bi-arrow-left"></i> Quay lại danh sách tin tức
+                                </a>
+                            </div>
+                        </div>
+
+                    </article>
+                </div><!-- End main content -->
+
+                <!-- Sidebar -->
+                <div class="col-lg-4">
+
+                    <!-- About Box -->
+                    <div class="about-box">
+                        <h3 class="title">Về bài viết này</h3>
+                        <p>
+                            <strong>Tác giả:</strong> @(Model?.Author ?? "Không rõ") <br>
+                            <strong>Ngày đăng:</strong> @Model?.CreatedDate?.ToString("dd/MM/yyyy") <br>
+                            @if (!string.IsNullOrEmpty(Model?.MenuName))
+                            {
+                                <span><strong>Chuyên mục:</strong> @Model.MenuName</span>
+                            }
+                        </p>
+                    </div><!-- End About Box -->
+
+                </div><!-- End sidebar -->
+
+            </div><!-- End posts list -->
+        </div>
+    </section><!-- /Blog Details Section -->
+
+</main>

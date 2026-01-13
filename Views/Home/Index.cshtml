@@ -1,0 +1,286 @@
+﻿@using QuanLyThuVien.Models
+<main class="main">
+
+  <!-- Library Showcase Slider -->
+  <section id="library-showcase" class="library-showcase-slider">
+    <div id="libraryCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="2000">
+      <div class="carousel-indicators">
+        <button type="button" data-bs-target="#libraryCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+        <button type="button" data-bs-target="#libraryCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+        <button type="button" data-bs-target="#libraryCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+      </div>
+      
+      <div class="carousel-inner">
+        <div class="carousel-item active">
+          <div class="carousel-overlay"></div>
+          <img src="~/images/slide1.jpg" class="d-block w-100" alt="Thư viện hiện đại">
+          <div class="carousel-caption">
+            <h2 class="animate__animated animate__fadeInDown">Không Gian Đọc Sách Hiện Đại</h2>
+            <p class="animate__animated animate__fadeInUp">Trải nghiệm không gian đọc sách yên tĩnh, thoải mái với đầy đủ tiện nghi</p>
+          </div>
+        </div>
+        
+        <div class="carousel-item">
+          <div class="carousel-overlay"></div>
+          <img src="~/images/slide2.jpg" class="d-block w-100" alt="Bộ sưu tập sách phong phú">
+          <div class="carousel-caption">
+            <h2 class="animate__animated animate__fadeInDown">Bộ Sưu Tập Sách Phong Phú</h2>
+            <p class="animate__animated animate__fadeInUp">Hàng nghìn đầu sách từ văn học, khoa học đến nghệ thuật và công nghệ</p>
+          </div>
+        </div>
+        
+        <div class="carousel-item">
+          <div class="carousel-overlay"></div>
+          <img src="~/images/slide3.jpg" class="d-block w-100" alt="Dịch vụ thư viện chuyên nghiệp">
+          <div class="carousel-caption">
+            <h2 class="animate__animated animate__fadeInDown">Dịch Vụ Chuyên Nghiệp</h2>
+            <p class="animate__animated animate__fadeInUp">Đội ngũ thủ thư tận tâm, hỗ trợ bạn tìm kiếm và mượn sách nhanh chóng</p>
+          </div>
+        </div>
+      </div>
+      
+      <button class="carousel-control-prev" type="button" data-bs-target="#libraryCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Previous</span>
+      </button>
+      <button class="carousel-control-next" type="button" data-bs-target="#libraryCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Next</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Courses Hero Section -->
+  <section id="courses-hero" class="courses-hero section light-background">
+
+    <div class="hero-content">
+      <div class="container">
+        <div class="row align-items-center">
+
+          <div class="col-lg-6" data-aos="fade-up" data-aos-delay="100">
+            <div class="hero-text">
+              <h1>Thư viện số LibraHub - Nơi kết nối tri thức</h1>
+              <p>Khám phá hàng nghìn đầu sách chất lượng cao từ nhiều lĩnh vực khác nhau. Đọc sách mọi lúc mọi nơi, mở
+                rộng kiến thức và phát triển bản thân từ bất cứ đâu.</p>
+
+              <div class="hero-stats">
+                <div class="stat-item">
+                  <span class="number purecounter" data-purecounter-start="0"
+                    data-purecounter-end="@(ViewBag.TotalBooks ?? 0)" data-purecounter-duration="2"></span>
+                  <span class="label">Tổng Sách</span>
+                </div>
+                <div class="stat-item">
+                  <span class="number purecounter" data-purecounter-start="0"
+                    data-purecounter-end="@(ViewBag.TotalAuthors ?? 0)" data-purecounter-duration="2"></span>
+                  <span class="label">Tác giả</span>
+                </div>
+                <div class="stat-item">
+                  <span class="number purecounter" data-purecounter-start="0"
+                    data-purecounter-end="@(ViewBag.TotalCategories ?? 0)" data-purecounter-duration="2"></span>
+                  <span class="label">Danh Mục</span>
+                </div>
+              </div>
+
+              <div class="hero-buttons">
+                <a asp-controller="Book" asp-action="Index" class="btn btn-primary">
+                  <i class="bi bi-book me-2"></i>Xem Sách
+                </a>
+                <a asp-controller="Contact" asp-action="Index" class="btn btn-outline">
+                  <i class="bi bi-info-circle me-2"></i>Tìm Hiểu Thêm
+                </a>
+              </div>
+
+              <div class="hero-features">
+                <div class="feature">
+                  <i class="bi bi-book-half"></i>
+                  <span>Sách Đa Dạng</span>
+                </div>
+                <div class="feature">
+                  <i class="bi bi-gift"></i>
+                  <span>Mượn Miễn Phí</span>
+                </div>
+                <div class="feature">
+                  <i class="bi bi-headset"></i>
+                  <span>Dịch Vụ Chuyên Nghiệp</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-6" data-aos="fade-up" data-aos-delay="200">
+            <div class="hero-image">
+              <div class="main-image">
+                <img src="~/assets/img/education/courses-13.webp" alt="Thư viện số LibraHub" class="img-fluid">
+              </div>
+
+              <div class="floating-cards">
+                @if (ViewBag.TopCategories != null && ViewBag.TopCategoriesWithCount != null)
+                {
+                  var categories = (List<QuanLyThuVien.Models.tblCategory>)ViewBag.TopCategories;
+                  var categoryCounts = (Dictionary<int, int>)ViewBag.TopCategoriesWithCount;
+                  var delays = new[] { 300, 400, 500 };
+                  var icons = new[] { "bi-book", "bi-journal-text", "bi-stack" };
+
+                  @for (int i = 0; i < categories.Count && i < 3; i++)
+                  {
+                    var category = categories[i];
+                    var bookCount = categoryCounts.ContainsKey(category.CategoryID) ? categoryCounts[category.CategoryID] :
+                    0;
+
+                    <div class="course-card" data-aos="fade-up" data-aos-delay="@delays[i]">
+                      <div class="card-icon">
+                        <i class="bi @icons[i]"></i>
+                      </div>
+                      <div class="card-content">
+                        <h6>@(category.CategoryName ?? "Danh mục")</h6>
+                        <span>@bookCount Cuốn sách</span>
+                      </div>
+                    </div>
+                  }
+                }
+                else
+                {
+                  <!-- Fallback nếu không có dữ liệu -->
+                  <div class="course-card" data-aos="fade-up" data-aos-delay="300">
+                    <div class="card-icon">
+                      <i class="bi bi-book"></i>
+                    </div>
+                    <div class="card-content">
+                      <h6>Văn Học</h6>
+                      <span>Nhiều sách</span>
+                    </div>
+                  </div>
+                  <div class="course-card" data-aos="fade-up" data-aos-delay="400">
+                    <div class="card-icon">
+                      <i class="bi bi-journal-text"></i>
+                    </div>
+                    <div class="card-content">
+                      <h6>Khoa Học</h6>
+                      <span>Nhiều sách</span>
+                    </div>
+                  </div>
+                  <div class="course-card" data-aos="fade-up" data-aos-delay="500">
+                    <div class="card-icon">
+                      <i class="bi bi-stack"></i>
+                    </div>
+                    <div class="card-content">
+                      <h6>Lịch Sử</h6>
+                      <span>Nhiều sách</span>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-background">
+      <div class="bg-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+      </div>
+    </div>
+
+  </section><!-- /Courses Hero Section -->
+
+  <!-- Sách mới nhất -->
+  <section id="featured-courses" class="featured-courses section">
+    <div class="container section-title" data-aos="fade-up">
+      <h2>Sách Mới Nhất</h2>
+      <p>Cập nhật những thông tin mới nhất về sách</p>
+    </div>
+
+    <div class="container" data-aos="fade-up" data-aos-delay="100">
+      @await Component.InvokeAsync("RecentBook")
+    </div>
+
+    <div class="container text-center mt-4" data-aos="fade-up" data-aos-delay="500">
+      <a asp-controller="Book" asp-action="Index" class="btn btn-primary">
+        <i class="bi bi-book me-2"></i>Xem tất cả sách
+      </a>
+    </div>
+
+  </section><!-- Sách-->
+
+  <!-- Tác Giả Section -->
+  <section id="author" class="author section">
+    <div class="container section-title" data-aos="fade-up">
+      <h2>Tác giả mới</h2>
+      <p>Cập nhật những tác giả mới nhất</p>
+    </div>
+
+    <div class="container" data-aos="fade-up" data-aos-delay="100">
+      @await Component.InvokeAsync("Author")
+    </div>
+
+    <div class="container text-center mt-4" data-aos="fade-up" data-aos-delay="500">
+      <a asp-controller="Author" asp-action="Index" class="btn btn-primary">
+        <i class="bi bi-book me-2"></i>Xem tất cả tác giả
+      </a>
+    </div>
+
+  </section><!-- /Tác Giả Section -->
+
+  <!-- Sách mới nhất -->
+  <section id="category" class="category section">
+    <div class="container section-title" data-aos="fade-up">
+      <h2>Danh mục mới</h2>
+      <p>Cập nhật những danh mục mới nhất</p>
+    </div>
+
+    <div class="container" data-aos="fade-up" data-aos-delay="100">
+      @await Component.InvokeAsync("Category")
+    </div>
+
+    <div class="container text-center mt-4" data-aos="fade-up" data-aos-delay="500">
+      <a asp-controller="Category" asp-action="Index" class="btn btn-primary">
+        <i class="bi bi-book me-2"></i>Xem tất cả danh mục
+      </a>
+    </div>
+
+  </section><!-- Sách-->
+
+
+ <!-- Nhà Xuất Bản Section -->
+   <section id="publisher" class="publisher section">
+    <div class="container section-title" data-aos="fade-up">
+      <h2>Nhà xuất bản mới</h2>
+      <p>Cập nhật những nhà xuất bản mới nhất</p>
+    </div>
+
+    <div class="container" data-aos="fade-up" data-aos-delay="100">
+      @await Component.InvokeAsync("Publisher")
+    </div>
+
+    <div class="container text-center mt-4" data-aos="fade-up" data-aos-delay="500">
+      <a asp-controller="Publisher" asp-action="Index" class="btn btn-primary">
+        <i class="bi bi-book me-2"></i>Xem tất cả nhà xuất bản
+      </a>
+    </div><!-- /Nhà Xuất Bản Section -->
+
+  <!-- Recent Blog Posts Section -->
+  <section id="recent-blog-posts" class="recent-blog-posts section">
+
+    <!-- Section Title -->
+    <div class="container section-title" data-aos="fade-up">
+      <h2>Tin Tức Mới Nhất</h2>
+      <p>Cập nhật những thông tin mới nhất về thư viện và sách</p>
+    </div><!-- End Section Title -->
+
+    <div class="container" data-aos="fade-up" data-aos-delay="100">
+      @await Component.InvokeAsync("Post")
+    </div>
+
+    <div class="container text-center mt-4" data-aos="fade-up" data-aos-delay="500">
+      <a asp-controller="Blog" asp-action="Index" class="btn btn-primary">
+        <i class="bi bi-newspaper me-2"></i>Xem tất cả tin tức
+      </a>
+    </div>
+
+  </section><!-- /Recent Blog Posts Section -->
+
+</main>

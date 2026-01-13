@@ -1,0 +1,204 @@
+@using PagedList.Core.Mvc
+@using QuanLyThuVien.Models
+@using QuanLyThuVien.Utilities
+@model PagedList.Core.IPagedList<viewPostMenu>
+
+@{
+    ViewData["Title"] = "Tin tức - LibraHub";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<main class="main">
+
+    <!-- Page Title -->
+    <div class="page-title light-background">
+        <div class="container d-lg-flex justify-content-between align-items-center">
+            <h1 class="mb-2 mb-lg-0">Tin Tức & Blog</h1>
+            <nav class="breadcrumbs">
+                <ol>
+                    <li><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+                    <li class="current">Tin Tức</li>
+                </ol>
+            </nav>
+        </div>
+    </div><!-- End Page Title -->
+
+    <!-- Blog Section -->
+    <section id="blog" class="blog section">
+        <div class="container" data-aos="fade-up" data-aos-delay="100">
+
+            <!-- Search & Filter -->
+            <div class="row mb-4">
+                <div class="col-lg-8">
+                    <form asp-action="Index" method="get" class="d-flex gap-2">
+                        <input type="text" name="search" class="form-control" placeholder="Tìm kiếm tin tức..."
+                            value="@ViewBag.SearchString">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search"></i> Tìm
+                        </button>
+                    </form>
+                </div>
+                <div class="col-lg-4 text-end">
+                    <small class="text-muted">Tổng cộng: @(Model?.TotalItemCount ?? 0) bài viết </small>
+                </div>
+            </div>
+
+            <!-- Posts Grid -->
+            @if (Model != null && Model.Any())
+            {
+                <div class="row gy-4">
+                    @foreach (var post in Model)
+                    {
+                        string url = Functions.TitleSlugGeneration("post", post.Title, post.PostID);
+                        <div class="col-lg-4" data-aos="fade-up" data-aos-delay="100">
+                            <article class="position-relative h-100">
+
+                                <!-- Featured Image -->
+                                <div class="post-img position-relative overflow-hidden">
+                                    @if (!string.IsNullOrEmpty(post.Images))
+                                    {
+                                        <img src="@post.Images" class="img-fluid" alt="@post.Title"
+                                            style="height: 250px; object-fit: cover;">
+                                    }
+                                    else
+                                    {
+                                        <div class="bg-light d-flex align-items-center justify-content-center"
+                                            style="height: 250px;">
+                                            <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- Metadata -->
+                                <div class="meta d-flex align-items-end gap-3">
+                                    <span class="post-date">
+                                        <span>@post.CreatedDate?.Day</span>
+                                        @post.CreatedDate?.ToString("MMMM",
+                                        System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))
+                            </span>
+                            @if (!string.IsNullOrEmpty(post.Author))
+                                    {
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-person"></i>
+                                            <span class="ps-2">@post.Author</span>
+                                        </div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(post.MenuName))
+                                    {
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-folder2"></i>
+                                            <span class="ps-2">@post.MenuName</span>
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- Content -->
+                                <div class="post-content d-flex flex-column">
+                                    <h3 class="post-title">
+                                        <a href="/@url">
+                                            @(post.Title ?? "Không có tiêu đề")
+                                        </a>
+                                    </h3>
+
+                                    @if (!string.IsNullOrEmpty(post.Abstract))
+                                    {
+                                        <p class="text-muted">
+                                            @(post.Abstract.Length > 100 ? post.Abstract.Substring(0, 100) + "..." : post.Abstract)
+                                        </p>
+                                    }
+
+                                    <div class="mt-auto pt-3">
+                                        <a asp-action="Details" asp-route-id="@post.PostID" class="readmore">
+                                            <span>Đọc thêm</span>
+                                            <i class="bi bi-arrow-right"></i>
+                                        </a>
+                                    </div>
+                                </div>
+
+                            </article>
+                        </div>
+                    }
+                </div>
+
+                <!-- Pagination -->
+                @if (Model != null && Model.PageCount > 1)
+                {
+                    <div class="pagination-wrapper mt-5" data-aos="fade-up" data-aos-delay="300">
+                        <nav aria-label="Blog pagination">
+                            <ul class="pagination justify-content-center">
+                                @if (Model.HasPreviousPage)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" asp-action="Index" asp-route-page="@(Model.PageNumber - 1)" asp-route-search="@ViewBag.SearchString">&laquo; Trước</a>
+                                    </li>
+                                }
+                                else
+                                {
+                                    <li class="page-item disabled"><span class="page-link">&laquo; Trước</span></li>
+                                }
+
+                                @{
+                                    int current = Model.PageNumber;
+                                    int total = Model.PageCount;
+                                    int start = Math.Max(1, current - 2);
+                                    int end = Math.Min(total, current + 2);
+                                    if (start > 1)
+                                    {
+                                        <li class="page-item"><a class="page-link" asp-action="Index" asp-route-page="1" asp-route-search="@ViewBag.SearchString">1</a></li>
+                                        if (start > 2)
+                                        {
+                                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                                        }
+                                    }
+
+                                    for (int i = start; i <= end; i++)
+                                    {
+                                        if (i == current)
+                                        {
+                                            <li class="page-item active" aria-current="page"><span class="page-link">@i</span></li>
+                                        }
+                                        else
+                                        {
+                                            <li class="page-item"><a class="page-link" asp-action="Index" asp-route-page="@i" asp-route-search="@ViewBag.SearchString">@i</a></li>
+                                        }
+                                    }
+
+                                    if (end < total)
+                                    {
+                                        if (end < total - 1)
+                                        {
+                                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                                        }
+                                        <li class="page-item"><a class="page-link" asp-action="Index" asp-route-page="@total" asp-route-search="@ViewBag.SearchString">@total</a></li>
+                                    }
+                                }
+
+                                @if (Model.HasNextPage)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" asp-action="Index" asp-route-page="@(Model.PageNumber + 1)" asp-route-search="@ViewBag.SearchString">Tiếp &raquo;</a>
+                                    </li>
+                                }
+                                else
+                                {
+                                    <li class="page-item disabled"><span class="page-link">Tiếp &raquo;</span></li>
+                                }
+
+                            </ul>
+                        </nav>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="alert alert-info text-center py-5">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Không có tin tức nào</strong>
+                    <p class="mt-2 mb-0">Vui lòng quay lại sau để cập nhật thêm tin tức mới.</p>
+                </div>
+            }
+
+        </div>
+    </section><!-- /Blog Section -->
+
+</main>

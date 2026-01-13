@@ -1,0 +1,88 @@
+@model QuanLyThuVien.Models.tblUser
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<main id="main" class="main">
+    <div class="pagetitle">
+        <h2>Xác nhận xóa người dùng</h2>
+    </div>
+
+    <div class="card shadow-sm p-4 mb-4">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label class="fw-bold">Tên đăng nhập</label>
+                <input type="text" class="form-control" value="@Model.UserName" disabled />
+            </div>
+            <div class="col-md-6">
+                <label class="fw-bold">Họ và tên</label>
+                <input type="text" class="form-control" value="@Model.FullName" disabled />
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label class="fw-bold">Email</label>
+                <input type="text" class="form-control" value="@Model.Email" disabled />
+            </div>
+            <div class="col-md-6">
+                <label class="fw-bold">Số điện thoại</label>
+                <input type="text" class="form-control" value="@Model.Phone" disabled />
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label class="fw-bold">Ngày sinh</label>
+                <input type="text" class="form-control" value="@Model.DateOfBirth?.ToString("dd/MM/yyyy")" disabled />
+            </div>
+            <div class="col-md-6">
+                <label class="fw-bold">Quyền</label>
+                <input type="text" class="form-control" value="@Model.Role" disabled />
+            </div>
+        </div>
+    </div>
+
+    @if (ViewBag.Message != null)
+    {
+        <div class="alert alert-danger">
+            <strong>@ViewBag.Message</strong>
+        </div>
+    }
+    @if (ViewBag.Borrowing != null)
+    {
+        <div class="card border-danger mb-4">
+            <div class="card-header bg-danger text-white">Danh sách sách đang mượn</div>
+            <div class="card-body p-2">
+                @foreach (var borrow in ViewBag.Borrowing)
+                {
+                    <div class="mb-2">
+                        <span class="fw-bold">Phiếu mượn #@borrow.BorrowID</span> - Ngày mượn: @(borrow.BorrowDate != null ? ((DateTime)borrow.BorrowDate).ToString("dd/MM/yyyy") : "-") - Hạn trả: @(borrow.DueDate != null ? ((DateTime)borrow.DueDate).ToString("dd/MM/yyyy") : "-") - Trạng thái: @borrow.Status
+                        <ul class="mb-1">
+                            @foreach (var detail in borrow.Details)
+                            {
+                                <li>
+                                    <span class="fw-bold">@detail.Title</span> | SL: @detail.Quantity | Trạng thái: @detail.BorrowStatus | Ngày trả: @(detail.ReturnDate != null ? ((DateTime)detail.ReturnDate).ToString("dd/MM/yyyy") : "Chưa trả") | Ghi chú: @detail.Note
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Begin form -->
+    <form asp-action="Delete" method="post">
+        <input type="hidden" asp-for="UserID" />
+
+        <a class="btn btn-lg btn-warning p-2 me-3" asp-area="Admin" asp-controller="User" asp-action="Index">
+            <i class="bi bi-arrow-left-circle"></i> Trở về
+        </a>
+
+        <button type="submit" class="btn btn-lg btn-danger p-2">
+            <i class="bi bi-trash"></i> Xóa người dùng
+        </button>
+    </form>
+    <!-- End form -->
+</main>

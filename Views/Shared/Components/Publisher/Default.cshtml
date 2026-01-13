@@ -1,0 +1,75 @@
+@using QuanLyThuVien.Models
+@model IList<tblPublisher>
+
+@if (Model != null && Model.Any())
+{
+    <section id="featured-instructors" class="featured-instructors section publisher">
+        <div class="container" data-aos="fade-up" data-aos-delay="100">
+
+            <div class="row gy-4">
+                @if (Model != null && Model.Count > 0)
+                {
+                    @foreach (var publisher in Model)
+                    {
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="instructor-card h-100 shadow-sm">
+                                <div class="instructor-image">
+                                    @if (!string.IsNullOrEmpty(publisher.Avatar))
+                                    {
+                                        <img src="@publisher.Avatar" alt="@publisher.PublisherName" class="img-fluid"
+                                            style="height: 250px; width: 100%; object-fit: cover;">
+                                    }
+                                    else
+                                    {
+                                        <div class="bg-light d-flex align-items-center justify-content-center" style="height: 250px;">
+                                            <i class="bi bi-building text-muted" style="font-size: 3.5rem;"></i>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="instructor-info p-3">
+                                    <div class="course-meta mb-2">
+                                        <span class="badge bg-light text-primary small">Nhà xuất bản</span>
+                                    </div>
+                                    <h5 class="fw-bold mb-2 text-dark">@publisher.PublisherName</h5>
+                                    <p class="text-muted small mb-3" style="line-height: 1.6;">@(!string.IsNullOrEmpty(publisher.Address) ? (publisher.Address.Length > 60 ? publisher.Address.Substring(0, 60) + "..." : publisher.Address) : "Chưa cập nhật địa chỉ")</p>
+                                    <div class="course-stats mb-3">
+                                        @if (!string.IsNullOrEmpty(publisher.Phone))
+                                        {
+                                            <div class="stat small">
+                                                <i class="bi bi-telephone text-primary"></i>
+                                                <span class="text-muted">@publisher.Phone</span>
+                                            </div>
+                                        }
+                                        @if (!string.IsNullOrEmpty(publisher.Email))
+                                        {
+                                            <div class="stat small">
+                                                <i class="bi bi-envelope text-primary"></i>
+                                                <span class="text-muted">@publisher.Email</span>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <div class="mt-auto">
+                                        <a asp-controller="Publisher" asp-action="Details" asp-route-id="@publisher.PublisherID"
+                                            class="btn btn-outline-primary btn-sm w-100">
+                                            <i class="bi bi-info-circle me-1"></i>Xem chi tiết
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                            {
+                                <div class="col-12">
+                                    <div class="alert alert-info text-center">
+                                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                        Không tìm thấy nhà xuất bản nào.
+                                    </div>
+                                </div>
+                            }
+    </section>
+
+    <!-- /Featured Instructors Section -->
+}

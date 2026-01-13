@@ -1,0 +1,56 @@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Truy cập bị từ chối";
+}
+
+<main class="main">
+    <div class="page-title light-background">
+        <div class="container d-lg-flex justify-content-between align-items-center">
+            <h1 class="mb-2 mb-lg-0">Truy cập bị từ chối</h1>
+            <nav class="breadcrumbs">
+                <ol>
+                    <li><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+                    <li class="current">Truy cập bị từ chối</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <section class="section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card shadow-sm">
+                        <div class="card-body text-center py-5">
+                            <div class="mb-4">
+                                <i class="bi bi-shield-exclamation text-danger" style="font-size: 5rem;"></i>
+                            </div>
+                            <h2 class="card-title mb-3">Truy cập bị từ chối</h2>
+                            <p class="text-muted mb-4">
+                                Bạn không có quyền truy cập trang này. Chỉ có quản trị viên mới được phép truy cập khu vực quản trị.
+                            </p>
+                            <div class="d-flex gap-2 justify-content-center">
+                                <a asp-controller="Home" asp-action="Index" class="btn btn-primary">
+                                    <i class="bi bi-house me-2"></i>Về trang chủ
+                                </a>
+                                @if (QuanLyThuVien.Utilities.Functions.IsLogin())
+                                {
+                                    <a asp-controller="Account" asp-action="Logout" class="btn btn-outline-secondary">
+                                        <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
+                                    </a>
+                                }
+                                else
+                                {
+                                    <a asp-controller="Account" asp-action="Login" class="btn btn-outline-primary">
+                                        <i class="bi bi-box-arrow-in-right me-2"></i>Đăng nhập
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+

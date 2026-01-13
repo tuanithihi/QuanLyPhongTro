@@ -1,0 +1,70 @@
+@model QuanLyThuVien.Models.tblUser
+
+@{
+    ViewData["Title"] = "Thông tin tài khoản";
+}
+
+<main id="main" class="main">
+    
+
+    <div class="container shadow p-5">
+        <div class="pagetitle">
+        <h4 class="mb-2"><i class="fas fa-user"></i> Thông tin tài khoản</h4>
+    </div>
+        <div class="row mb-4">
+            <div class="col-md-3 text-center">
+                @if (!string.IsNullOrEmpty(Model.Avatar))
+                {
+                    <img src="@Model.Avatar" alt="Avatar" class="rounded-circle border mb-3" width="150" height="150" style="object-fit: cover;" />
+                }
+                else
+                {
+                    <div class="bg-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 150px; height: 150px;">
+                        <i class="fas fa-user text-white" style="font-size: 60px;"></i>
+                    </div>
+                }
+
+                <h5 class="fw-bold">@Model.FullName</h5>
+                            <div class="mt-3">
+                                <a asp-controller="Account" asp-action="ChangePassword" class="btn btn-warning btn-sm">Đổi mật khẩu</a>
+                            </div>
+            </div>
+
+            <div class="col-md-9">
+                <table class="table table-bordered">
+                    <tbody>
+                        <tr>
+                            <th style="width:200px;">Họ và tên</th>
+                            <td>@Model.FullName</td>
+                        </tr>
+                        <tr>
+                            <th>Email</th>
+                            <td>@Model.Email</td>
+                        </tr>
+                        <tr>
+                            <th>Số điện thoại</th>
+                            <td>@(string.IsNullOrEmpty(Model.Phone) ? "Chưa cập nhật" : Model.Phone)</td>
+                        </tr>
+                        <tr>
+                            <th>Ngày sinh</th>
+                            <td>@(Model.DateOfBirth.HasValue ? Model.DateOfBirth.Value.ToString("dd/MM/yyyy") : "Chưa cập nhật")</td>
+                        </tr>
+                        <tr>
+                            <th>Ngày tạo tài khoản</th>
+                            <td>@(Model.CreatedDate.HasValue ? Model.CreatedDate.Value.ToString("dd/MM/yyyy HH:mm") : "N/A")</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="text-end mt-4">
+            <a href="@Url.Action("Settings", "Account")" class="btn btn-primary">
+                <i class="fas fa-edit"></i> Chỉnh sửa thông tin
+            </a>
+            <a href="@Url.Action("Index", "Home")" class="btn btn-secondary">
+                <i class="fas fa-home"></i> Về trang chủ
+            </a>
+        </div>
+    </div>
+</main>

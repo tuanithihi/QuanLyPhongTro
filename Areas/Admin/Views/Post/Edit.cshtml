@@ -1,0 +1,67 @@
+@using QuanLyThuVien.Utilities
+@model QuanLyThuVien.Models.tblPost
+
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<main id="main" class="main">
+    <div class="pagetitle">
+        <h2>Chỉnh sửa bài viết</h2>
+    </div>
+    <div class="container shadow p-5">
+        <form method="post" asp-action="Edit" asp-route-id="@Model.PostID">
+            <div class="form-row">
+                <input type="hidden" asp-for="PostID" />
+                <div class="form-group col-md-6 mb-3">
+                    <label>Title</label>
+                    <input type="text" class="form-control" asp-for="Title" placeholder="Enter the title...">
+                </div>
+                <div class="form-group col-md-6 mb-3">
+                    <label>Abstract</label>
+                    <input type="text" class="form-control" asp-for="Abstract" placeholder="Enter the abstract...">
+                </div>
+                <div class="form-group">
+                    <label class="control-label">
+                        Image
+                    </label>
+                    <div class="input-group mb-3">
+                        <div class="input-group-prepend">
+                            <button class="btn btn-success" type="button" onclick="openDialog()">Chọn ảnh</button>
+                        </div>
+                        <input type="text" class="form-control" asp-for="Images" id="file_input"
+                            aria-describedby="button-addon2">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label">Content</label>
+                    <textarea asp-for="Contents" class="form-control"></textarea>
+                    <span asp-validation-for="Contents" class="text-danger mp-4"></span>
+                </div>
+                <div class="form-group">
+                    <label>Author</label>
+                    <input type="text" class="form-control" asp-for="Author" />
+                </div>
+                <div class="form-group d-none">
+                    <input asp-for="CreatedDate" class="form-control" value="@Model.CreatedDate" />
+                </div>
+                <div class="form-group">
+                    <label>
+                        @Html.CheckBox("IsActive", Model.IsActive.GetValueOrDefault())
+                        Visible
+                    </label>
+                </div>
+
+                <div class="form-control mt-5">
+                    <button type="submit" class="btn btn-primary"> Lưu thay đổi</button>
+                    <a asp-area="Admin" asp-controller="Post" asp-action="Index" class="btn btn-secondary ms-2">Hủy</a>
+                </div>
+
+        </form>
+    </div>
+</main>
+
+@{
+    var summerNote = new QuanLyThuVien.Areas.Admin.Models.SummerNote("#Contents");
+    <partial name="_SummerNote" model="summerNote" />
+}

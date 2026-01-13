@@ -1,0 +1,28 @@
+@model QuanLyThuVien.Models.tblUser
+@{
+    ViewData["Title"] = "Thông tin tài khoản";
+}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card shadow border-0" style="margin-top: 100px;">
+                <div class="card-body p-4">
+                    <h2 class="text-center mb-4">Thông tin tài khoản Admin</h2>
+                    <div class="text-center mb-3">
+                        <img src="@(Model.Avatar ?? "/admin/assets/img/profile-img.jpg")" alt="Avatar" class="rounded-circle border" style="width:110px;height:110px;object-fit:cover;">
+                    </div>
+                    <div class="mb-2"><strong>Tên đăng nhập:</strong> @Model.UserName</div>
+                    <div class="mb-2"><strong>Họ và tên:</strong> @Model.FullName</div>
+                    <div class="mb-2"><strong>Email:</strong> @Model.Email</div>
+                    <div class="mb-2"><strong>Ngày sinh:</strong> @(Model.DateOfBirth?.ToString("dd/MM/yyyy") ?? "")</div>
+                    <div class="mb-2"><strong>Số điện thoại:</strong> @Model.Phone</div>
+                    <div class="mb-2"><strong>Quyền:</strong> @Model.Role</div>
+                    <div class="text-center mt-4">
+                        <a asp-area="Admin" asp-controller="Account" asp-action="Settings" class="btn btn-primary">Chỉnh sửa thông tin</a>
+                        <a asp-area="Admin" asp-controller="Account" asp-action="ChangePassword" class="btn btn-warning ms-2">Đổi mật khẩu</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,409 @@
+@using QuanLyThuVien.Models
+@model QuanLyThuVien.Models.StatisticViewModel
+
+@{
+    ViewData["Title"] = "Thống kê thư viện";
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<main id="main" class="main">
+    <div class="pagetitle">
+        <h2><i class="bi bi-graph-up me-2"></i>Thống kê thư viện</h2>
+        <nav>
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+                <li class="breadcrumb-item active">Thống kê</li>
+            </ol>
+        </nav>
+    </div>
+
+    <section class="section dashboard">
+        
+        <!-- BỘ LỌC NGÀY THÁNG -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body py-3">
+                        <h5 class="card-title py-0 mb-3">Bộ lọc thống kê</h5>
+                        <form method="get" asp-action="Index" class="row g-3 align-items-end">
+                            <div class="col-md-4">
+                                <label for="fromDate" class="form-label fw-bold">Từ ngày</label>
+                                <input type="date" class="form-control" id="fromDate" name="fromDate" value="@ViewBag.FromDate">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="toDate" class="form-label fw-bold">Đến ngày</label>
+                                <input type="date" class="form-control" id="toDate" name="toDate" value="@ViewBag.ToDate">
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-filter me-1"></i> Xem thống kê</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SỐ LIỆU TỔNG QUAN -->
+        <div class="row">
+            <!-- Tổng Sách -->
+            <div class="col-xxl col-md-6">
+                <div class="card info-card sales-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Tổng Sách</h5>
+                        <div class="d-flex align-items-center">
+                            <div class="card-icon rounded-circle bg-primary-light text-primary d-flex align-items-center justify-content-center">
+                                <i class="bi bi-book" style="font-size: 2rem;"></i>
+                            </div>
+                            <div class="ps-3">
+                                <h6>@ViewBag.TotalBooks</h6>
+                                <span class="text-muted small pt-1">Cuốn</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Đang Mượn -->
+            <div class="col-xxl col-md-6">
+                <div class="card info-card revenue-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Đang Mượn</h5>
+                        <div class="d-flex align-items-center">
+                            <div class="card-icon rounded-circle bg-success-light text-success d-flex align-items-center justify-content-center">
+                                <i class="bi bi-journal-arrow-up" style="font-size: 2rem;"></i>
+                            </div>
+                            <div class="ps-3">
+                                <h6>@ViewBag.BooksCurrentlyBorrowed</h6>
+                                <span class="text-muted small pt-1">Cuốn</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Người Mượn -->
+            <div class="col-xxl col-md-6">
+                <div class="card info-card customers-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Người Mượn</h5>
+                        <div class="d-flex align-items-center">
+                            <div class="card-icon rounded-circle text-info d-flex align-items-center justify-content-center" style="background-color: #e0f8ff;">
+                                <i class="bi bi-person-lines-fill" style="font-size: 2rem;"></i>
+                            </div>
+                            <div class="ps-3">
+                                <h6>@ViewBag.UsersCurrentlyBorrowing</h6>
+                                <span class="text-muted small pt-1">Độc giả</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quá Hạn -->
+            <div class="col-xxl col-md-6">
+                <div class="card info-card customers-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Quá Hạn</h5>
+                        <div class="d-flex align-items-center">
+                            <div class="card-icon rounded-circle bg-danger-light text-danger d-flex align-items-center justify-content-center" style="background-color: #ffe6e6;">
+                                <i class="bi bi-exclamation-triangle-fill" style="font-size: 2rem;"></i>
+                            </div>
+                            <div class="ps-3">
+                                <h6>@ViewBag.OverdueBooks</h6>
+                                <span class="text-muted small pt-1">Phiếu</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tổng Độc Giả -->
+            <div class="col-xxl col-md-6">
+                <div class="card info-card customers-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Tổng Độc Giả</h5>
+                        <div class="d-flex align-items-center">
+                            <div class="card-icon rounded-circle bg-warning-light text-warning d-flex align-items-center justify-content-center">
+                                <i class="bi bi-people" style="font-size: 2rem;"></i>
+                            </div>
+                            <div class="ps-3">
+                                <h6>@ViewBag.Users</h6>
+                                <span class="text-muted small pt-1">Người</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DANH SÁCH CHI TIẾT -->
+        <div class="row">
+            
+            <!-- Cột Trái: Top Sách -->
+            <div class="col-lg-6 col-12">
+                <div class="card top-selling overflow-auto h-100">
+                    <div class="card-body pb-0 d-flex flex-column">
+                        <h5 class="card-title">
+                            <i class="bi bi-trophy me-2 text-warning"></i>Sách Mượn Nhiều
+                        </h5>
+                        
+                        @if (Model?.PagedTopBooks != null && Model.PagedTopBooks.Any())
+                        {
+                            <div class="text-muted small mb-2">
+                                <span>Trang @Model.PagedTopBooks.PageNumber / @Model.PagedTopBooks.PageCount</span>
+                            </div>
+                        }
+
+                        <div class="flex-grow-1">
+                        <table class="table table-borderless">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Sách</th>
+                                    <th scope="col">Tên</th>
+                                    <th scope="col" class="text-center">Kho</th>
+                                    <th scope="col" class="text-center">Lượt</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model?.PagedTopBooks != null && Model.PagedTopBooks.Any())
+                                {
+                                    @foreach (var item in Model.PagedTopBooks)
+                                    {
+                                        <tr>
+                                            <td scope="row" class="align-middle">
+                                                <a href="#">
+                                                    @if (item.Book != null && !string.IsNullOrEmpty(item.Book.CoverImage))
+                                                    {
+                                                        <img src="@item.Book.CoverImage" alt="" class="rounded" style="width: 40px; height: 60px; object-fit: cover;">
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="bg-light rounded d-flex align-items-center justify-content-center text-muted" style="width: 40px; height: 60px;">
+                                                            <i class="bi bi-image"></i>
+                                                        </div>
+                                                    }
+                                                </a>
+                                            </td>
+                                            <td class="align-middle">
+                                                <a href="#" class="text-primary fw-bold text-truncate d-inline-block" style="max-width: 150px;">
+                                                    @(item.Book?.Title ?? "Không có tên")
+                                                </a>
+                                            </td>
+                                            <td class="text-center align-middle">
+                                                @if (item.Book?.Quantity > 0)
+                                                {
+                                                    <span class="text-dark">@item.Book.Quantity</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger">Hết</span>
+                                                }
+                                            </td>
+                                            <td class="text-center fw-bold align-middle">@item.BorrowCount</td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="4" class="text-center py-4 text-muted">Chưa có dữ liệu.</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        </div>
+                        
+                        <!-- Pagination cho Top Sách -->
+                        @if (Model?.PagedTopBooks != null && Model.PagedTopBooks.PageCount > 1)
+                        {
+                            <div class="d-flex justify-content-center mt-auto mb-3">
+                                <nav aria-label="Books pagination">
+                                    <ul class="pagination pagination-sm mb-0">
+                                        <!-- Previous Button -->
+                                        @if (Model.PagedTopBooks.PageNumber > 1)
+                                        {
+                                            <li class="page-item">
+                                                <a class="page-link" href="@Url.Action("Index", "Statistic", new { area = "Admin", fromDate = ViewBag.FromDate, toDate = ViewBag.ToDate, bookPage = Model.PagedTopBooks.PageNumber - 1, userPage = Model.UserPage })">
+                                                    &laquo;
+                                                </a>
+                                            </li>
+                                        }
+                                        else
+                                        {
+                                            <li class="page-item disabled">
+                                                <span class="page-link">&laquo;</span>
+                                            </li>
+                                        }
+                                        
+                                        <!-- Page Numbers -->
+                                        @for (int i = 1; i <= Model.PagedTopBooks.PageCount; i++)
+                                        {
+                                            @if (i == Model.PagedTopBooks.PageNumber)
+                                            {
+                                                <li class="page-item active" aria-current="page">
+                                                    <span class="page-link">@i</span>
+                                                </li>
+                                            }
+                                            else
+                                            {
+                                                <li class="page-item">
+                                                    <a class="page-link" href="@Url.Action("Index", "Statistic", new { area = "Admin", fromDate = ViewBag.FromDate, toDate = ViewBag.ToDate, bookPage = i, userPage = Model.UserPage })">@i</a>
+                                                </li>
+                                            }
+                                        }
+                                        
+                                        <!-- Next Button -->
+                                        @if (Model.PagedTopBooks.PageNumber < Model.PagedTopBooks.PageCount)
+                                        {
+                                            <li class="page-item">
+                                                <a class="page-link" href="@Url.Action("Index", "Statistic", new { area = "Admin", fromDate = ViewBag.FromDate, toDate = ViewBag.ToDate, bookPage = Model.PagedTopBooks.PageNumber + 1, userPage = Model.UserPage })">
+                                                    &raquo;
+                                                </a>
+                                            </li>
+                                        }
+                                        else
+                                        {
+                                            <li class="page-item disabled">
+                                                <span class="page-link">&raquo;</span>
+                                            </li>
+                                        }
+                                    </ul>
+                                </nav>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cột Phải: Top Người Mượn -->
+            <div class="col-lg-6 col-12">
+                <div class="card top-selling overflow-auto h-100">
+                    <div class="card-body pb-0 d-flex flex-column">
+                        <h5 class="card-title">
+                            <i class="bi bi-person-check me-2 text-info"></i>Độc Giả Tích Cực
+                        </h5>
+                        
+                        @if (Model?.PagedTopUsers != null && Model.PagedTopUsers.Any())
+                        {
+                            <div class="text-muted small mb-2">
+                                <span>Trang @Model.PagedTopUsers.PageNumber / @Model.PagedTopUsers.PageCount</span>
+                            </div>
+                        }
+
+                        <div class="flex-grow-1">
+                        <table class="table table-borderless">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Avatar</th>
+                                    <th scope="col">Họ Tên</th>
+                                    <th scope="col" class="text-center">Tên Đăng Nhập</th>
+                                    <th scope="col" class="text-center">Lần Mượn</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model?.PagedTopUsers != null && Model.PagedTopUsers.Any())
+                                {
+                                    @foreach (var user in Model.PagedTopUsers)
+                                    {
+                                        <tr style="height: 60px;">
+                                            <td scope="row" class="align-middle">
+                                                <div class="rounded-circle d-flex align-items-center justify-content-center overflow-hidden" style="width: 45px; height: 45px; background-color: #f0f0f0;">
+                                                     @if (!string.IsNullOrEmpty(user.Avatar))
+                                                     {
+                                                         <img src="@user.Avatar" alt="" style="width: 100%; height: 100%; object-fit: cover;">
+                                                     }
+                                                     else
+                                                     {
+                                                         <i class="bi bi-person-fill text-primary" style="font-size: 1.5rem;"></i>
+                                                     }
+                                                </div>
+                                            </td>
+                                            <td class="align-middle">
+                                                <span class="text-primary fw-bold">@user.FullName</span>
+                                            </td>
+                                            <td class="text-center align-middle">
+                                                <span class="small text-muted">
+                                                    @(string.IsNullOrEmpty(user.ClassName) ? user.UserCode : user.ClassName)
+                                                </span>
+                                            </td>
+                                            <td class="text-center fw-bold align-middle">@user.BorrowCount</td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted small py-4">
+                                            Chưa có dữ liệu người mượn.
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        </div>
+                        
+                        <!-- Pagination cho Top Người Mượn -->
+                        @if (Model?.PagedTopUsers != null && Model.PagedTopUsers.PageCount > 1)
+                        {
+                            <div class="d-flex justify-content-center mt-auto mb-3">
+                                <nav aria-label="Users pagination">
+                                    <ul class="pagination pagination-sm mb-0">
+                                        <!-- Previous Button -->
+                                        @if (Model.PagedTopUsers.PageNumber > 1)
+                                        {
+                                            <li class="page-item">
+                                                <a class="page-link" href="@Url.Action("Index", "Statistic", new { area = "Admin", fromDate = ViewBag.FromDate, toDate = ViewBag.ToDate, bookPage = Model.BookPage, userPage = Model.PagedTopUsers.PageNumber - 1 })">
+                                                    &laquo;
+                                                </a>
+                                            </li>
+                                        }
+                                        else
+                                        {
+                                            <li class="page-item disabled">
+                                                <span class="page-link">&laquo;</span>
+                                            </li>
+                                        }
+                                        
+                                        <!-- Page Numbers -->
+                                        @for (int i = 1; i <= Model.PagedTopUsers.PageCount; i++)
+                                        {
+                                            @if (i == Model.PagedTopUsers.PageNumber)
+                                            {
+                                                <li class="page-item active" aria-current="page">
+                                                    <span class="page-link">@i</span>
+                                                </li>
+                                            }
+                                            else
+                                            {
+                                                <li class="page-item">
+                                                    <a class="page-link" href="@Url.Action("Index", "Statistic", new { area = "Admin", fromDate = ViewBag.FromDate, toDate = ViewBag.ToDate, bookPage = Model.BookPage, userPage = i })">@i</a>
+                                                </li>
+                                            }
+                                        }
+                                        
+                                        <!-- Next Button -->
+                                        @if (Model.PagedTopUsers.PageNumber < Model.PagedTopUsers.PageCount)
+                                        {
+                                            <li class="page-item">
+                                                <a class="page-link" href="@Url.Action("Index", "Statistic", new { area = "Admin", fromDate = ViewBag.FromDate, toDate = ViewBag.ToDate, bookPage = Model.BookPage, userPage = Model.PagedTopUsers.PageNumber + 1 })">
+                                                    &raquo;
+                                                </a>
+                                            </li>
+                                        }
+                                        else
+                                        {
+                                            <li class="page-item disabled">
+                                                <span class="page-link">&raquo;</span>
+                                            </li>
+                                        }
+                                    </ul>
+                                </nav>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+</main>

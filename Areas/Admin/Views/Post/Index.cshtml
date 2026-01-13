@@ -1,0 +1,63 @@
+@using PagedList.Core.Mvc
+@model PagedList.Core.IPagedList<QuanLyThuVien.Models.tblPost>
+
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<main id="main" class="main">
+    <div class="pagetitle">
+        <h2>Danh sách các bài viết</h2>
+        <div class="row">
+            <div class="col-4">
+                <a type="button" class="btn btn-success" asp-area="Admin" asp-controller="Post" asp-action="Create">
+                    <i class="bi bi-file-earmark-text me-1"></i>Thêm mới bài viết
+                </a>
+            </div>
+        </div>
+        <section class="section dashboard">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card recent-sales overflow-auto">
+                        <div class="card-body mt-4">
+                            <table class="table table-bolderless">
+                                <thead>
+                                    <tr>
+                                        <th class="col-1 text-center">Mã bài viết</th>
+                                        <th class="col-9 text-center">Tiêu đề</th>
+                                        <th class="col-2 text-center">Chức năng</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model)
+                                    {
+                                        <tr>
+                                            <td class="text-center" scope="row">@item.PostID</td>
+
+                                            <td class="text-left" scope="row">@item.Title</td>
+                                            <td class="text-center" scope="row">
+                                                <a asp-area="Admin" asp-controller="Post" asp-action="Edit"
+                                                    asp-route-id="@item.PostID" class="btn btn-primary btn-sm"
+                                                    title="Edit the menu"><i class="bi bi-pencil"></i></a>
+                                                <a asp-area="Admin" asp-controller="Post" asp-action="Delete"
+                                                    asp-route-id="@item.PostID" class="btn btn-danger btn-sm"
+                                                    title="Delete the menu"><i class="bi bi-trash"></i></a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            <ul class="pagination float-end">
+                                <pager class="pager-container" list="@Model"
+                                    options="@PagedListRenderOptions.Bootstrap4PageNumbersOnly" asp-area="Admin"
+                                    asp-controller="Post" asp-action="Index">
+                                </pager>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+</main>
