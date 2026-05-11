@@ -1,0 +1,237 @@
+@model QuanLyPhongTro.Models.tblInvoice
+@using QuanLyPhongTro.Models
+@{
+    ViewData["Title"] = "Chi tiết hóa đơn";
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<main id="main" class="main">
+<div class="pagetitle">
+    <h1>Hóa đơn</h1>
+    <nav><ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Invoice" asp-action="Index">Danh sách</a></li>
+        <li class="breadcrumb-item active">@Model.InvoiceCode</li>
+    </ol></nav>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="bi bi-check-circle me-1"></i> @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<section class="section">
+<div class="row">
+
+    @* ── Thông tin hóa đơn ── *@
+    <div class="col-xl-7">
+    <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center py-3">
+        <h5 class="mb-0"><i class="bi bi-receipt me-2"></i>@Model.InvoiceCode</h5>
+        <div class="d-flex gap-2 flex-wrap">
+            @if (Model.Status != InvoiceStatus.Paid)
+            {
+                <form asp-area="Admin" asp-controller="Invoice" asp-action="MarkPaid"
+                      asp-route-id="@Model.InvoiceId" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-sm btn-success">
+                        <i class="bi bi-check-lg me-1"></i>Xác nhận đã thu tiền
+                    </button>
+                </form>
+            }
+            <a asp-area="Admin" asp-controller="Invoice" asp-action="Edit"
+               asp-route-id="@Model.InvoiceId" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-pencil me-1"></i>Sửa
+            </a>
+            <button type="button" class="btn btn-sm btn-outline-danger"
+                    onclick="confirmDelete(@Model.InvoiceId, '@Model.InvoiceCode')">
+                <i class="bi bi-trash me-1"></i>Xóa
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <table class="table table-borderless table-sm mb-0">
+            <tr>
+                <th class="text-muted fw-normal" style="width:40%">Số hóa đơn</th>
+                <td class="fw-semibold font-monospace">@Model.InvoiceCode</td>
+            </tr>
+            <tr>
+                <th class="text-muted fw-normal">Trạng thái</th>
+                <td>
+                    @switch (Model.Status)
+                    {
+                        case InvoiceStatus.Paid:
+                            <span class="badge bg-success">Đã thanh toán</span>
+                            if (Model.PaidDate.HasValue)
+                            { <span class="text-muted small ms-2">@Model.PaidDate.Value.ToString("dd/MM/yyyy")</span> }
+                            break;
+                        case InvoiceStatus.Overdue:
+                            <span class="badge bg-danger">Quá hạn</span>
+                            break;
+                        default:
+                            <span class="badge bg-warning text-dark">Chưa thanh toán</span>
+                            break;
+                    }
+                </td>
+            </tr>
+            <tr>
+                <th class="text-muted fw-normal">Kỳ thanh toán</th>
+                <td class="fw-semibold">Tháng @Model.BillingMonth/@Model.BillingYear</td>
+            </tr>
+            <tr>
+                <th class="text-muted fw-normal">Hạn thanh toán</th>
+                <td class="@(Model.DueDate < DateTime.Today && Model.Status != InvoiceStatus.Paid ? "text-danger fw-semibold" : "")">
+                    @Model.DueDate.ToString("dd/MM/yyyy")
+                    @if (Model.DueDate < DateTime.Today && Model.Status == InvoiceStatus.Unpaid)
+                    { <span class="badge bg-danger ms-1">Quá hạn</span> }
+                </td>
+            </tr>
+            <tr>
+                <th class="text-muted fw-normal">Phòng</th>
+                <td>
+                    <a asp-area="Admin" asp-controller="Room" asp-action="Detail"
+                       asp-route-id="@Model.RoomId">@Model.Room?.RoomCode — @Model.Room?.RoomName</a>
+                </td>
+            </tr>
+            <tr>
+                <th class="text-muted fw-normal">Hợp đồng</th>
+                <td>
+                    <a asp-area="Admin" asp-controller="Contract" asp-action="Details"
+                       asp-route-id="@Model.ContractId">@Model.Contract?.ContractCode</a>
+                    <span class="text-muted small ms-1">(@(Model.Contract?.Tenant?.FullName))</span>
+                </td>
+            </tr>
+            <tr>
+                <th class="text-muted fw-normal">Chỉ số điện</th>
+                <td class="font-monospace">
+                    @Model.ElectricIndexStart.ToString("N1") → @Model.ElectricIndexEnd.ToString("N1")
+                    <span class="text-muted small ms-1">(@((Model.ElectricIndexEnd - Model.ElectricIndexStart).ToString("N1")) kWh)</span>
+                </td>
+            </tr>
+            <tr>
+                <th class="text-muted fw-normal">Chỉ số nước</th>
+                <td class="font-monospace">
+                    @Model.WaterIndexStart.ToString("N1") → @Model.WaterIndexEnd.ToString("N1")
+                    <span class="text-muted small ms-1">(@((Model.WaterIndexEnd - Model.WaterIndexStart).ToString("N1")) m³)</span>
+                </td>
+            </tr>
+            @if (!string.IsNullOrEmpty(Model.PaymentMethod))
+            {
+                <tr>
+                    <th class="text-muted fw-normal">Hình thức TT</th>
+                    <td>@Model.PaymentMethod</td>
+                </tr>
+            }
+            @if (!string.IsNullOrEmpty(Model.Notes))
+            {
+                <tr>
+                    <th class="text-muted fw-normal">Ghi chú</th>
+                    <td class="text-muted">@Model.Notes</td>
+                </tr>
+            }
+        </table>
+    </div>
+    </div>
+    </div>
+
+    @* ── Tổng kết chi phí ── *@
+    <div class="col-xl-5">
+    <div class="card">
+    <div class="card-header py-3">
+        <h5 class="mb-0"><i class="bi bi-calculator me-2"></i>Chi tiết chi phí</h5>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Khoản thu</th>
+                    <th class="text-center">Số lượng</th>
+                    <th class="text-end">Đơn giá</th>
+                    <th class="text-end">Thành tiền</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="table-primary">
+                    <td colspan="3" class="fw-semibold">Tiền thuê phòng</td>
+                    <td class="text-end fw-semibold">@Model.RoomRentAmount.ToString("N0") ₫</td>
+                </tr>
+                @foreach (var d in Model.InvoiceDetails)
+                {
+                    <tr>
+                        <td>
+                            @(d.Service?.ServiceName ?? "—")
+                            @if (!string.IsNullOrEmpty(d.Description))
+                            { <div class="text-muted small">@d.Description</div> }
+                        </td>
+                        <td class="text-center small">
+                            @d.Quantity.ToString("N2") @(d.Service?.Unit ?? "")
+                        </td>
+                        <td class="text-end small">@d.UnitPrice.ToString("N0")</td>
+                        <td class="text-end">@d.Amount.ToString("N0") ₫</td>
+                    </tr>
+                }
+                @if (!Model.InvoiceDetails.Any())
+                {
+                    <tr><td colspan="4" class="text-center text-muted small py-2">Không có dịch vụ phát sinh</td></tr>
+                }
+            </tbody>
+            <tfoot class="table-light">
+                <tr>
+                    <td colspan="3" class="text-end text-muted small">Tổng dịch vụ</td>
+                    <td class="text-end">@Model.TotalServiceAmount.ToString("N0") ₫</td>
+                </tr>
+                @if (Model.Discount > 0)
+                {
+                    <tr>
+                        <td colspan="3" class="text-end text-muted small">Giảm giá</td>
+                        <td class="text-end text-success">- @Model.Discount.ToString("N0") ₫</td>
+                    </tr>
+                }
+                <tr class="fw-bold fs-5">
+                    <td colspan="3" class="text-end">Tổng cộng</td>
+                    <td class="text-end text-primary">@Model.TotalAmount.ToString("N0") ₫</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    </div>
+    </div>
+
+</div>
+</section>
+</main>
+
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger"><i class="bi bi-trash me-2"></i>Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body small">
+                Xóa hóa đơn <strong id="deleteCode"></strong>?<br/>
+                Tất cả chi tiết hóa đơn sẽ bị xóa. Thao tác không thể hoàn tác.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                <form id="deleteForm" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function confirmDelete(id, code) {
+    document.getElementById('deleteCode').textContent = code;
+    document.getElementById('deleteForm').action = '/Admin/Invoice/Delete/' + id;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+</script>
+}

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Humanizer;
 
-namespace QuanLyThuVien.Areas.Admin.Models
+namespace QuanLyPhongTro.Areas.Admin.Models
 {
     public class SummerNote
     {

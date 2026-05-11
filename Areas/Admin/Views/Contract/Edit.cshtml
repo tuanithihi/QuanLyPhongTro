@@ -1,0 +1,191 @@
+@model QuanLyPhongTro.Models.tblContract
+@using QuanLyPhongTro.Models
+@{
+    ViewData["Title"] = "Sửa hợp đồng";
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+    bool isActive = Model.Status == ContractStatus.Active;
+}
+
+<main id="main" class="main">
+<div class="pagetitle">
+    <h1>Hợp đồng</h1>
+    <nav><ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Contract" asp-action="Index">Danh sách</a></li>
+        <li class="breadcrumb-item active">Sửa</li>
+    </ol></nav>
+</div>
+
+<section class="section">
+<div class="row">
+<div class="col-xl-9">
+<div class="card">
+<div class="card-body pt-4">
+
+<form asp-area="Admin" asp-controller="Contract" asp-action="Edit" asp-route-id="@Model.ContractId" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="ContractId" />
+    <input type="hidden" asp-for="RoomId" />
+    <input type="hidden" asp-for="TenantId" />
+    <input type="hidden" asp-for="ContractCode" />
+    <input type="hidden" asp-for="CreatedAt" />
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+    @* Thông tin chỉ đọc *@
+    <div class="row mb-3">
+        <label class="col-sm-3 col-form-label fw-semibold">Mã hợp đồng</label>
+        <div class="col-sm-4">
+            <input type="text" class="form-control font-monospace" value="@Model.ContractCode" readonly />
+        </div>
+    </div>
+    <div class="row mb-3">
+        <label class="col-sm-3 col-form-label fw-semibold">Phòng</label>
+        <div class="col-sm-6">
+            <input type="text" class="form-control" value="@(Model.Room?.RoomCode) — @(Model.Room?.RoomName)" readonly />
+        </div>
+    </div>
+    <div class="row mb-3">
+        <label class="col-sm-3 col-form-label fw-semibold">Người thuê</label>
+        <div class="col-sm-6">
+            <input type="text" class="form-control" value="@Model.Tenant?.FullName (@Model.Tenant?.IdentityNumber)" readonly />
+        </div>
+    </div>
+
+    <hr class="my-3" />
+
+    @* Ngày *@
+    <div class="row mb-3">
+        <label asp-for="StartDate" class="col-sm-3 col-form-label fw-semibold"></label>
+        <div class="col-sm-3">
+            <input asp-for="StartDate" type="date" class="form-control" />
+        </div>
+        <label asp-for="EndDate" class="col-sm-2 col-form-label fw-semibold"></label>
+        <div class="col-sm-3">
+            <input asp-for="EndDate" type="date" class="form-control" />
+        </div>
+    </div>
+
+    @* Tài chính *@
+    <div class="row mb-3">
+        <label asp-for="MonthlyRent" class="col-sm-3 col-form-label fw-semibold"></label>
+        <div class="col-sm-3">
+            <div class="input-group">
+                <input asp-for="MonthlyRent" type="number" min="0" step="50000" class="form-control" />
+                <span class="input-group-text">đ</span>
+            </div>
+        </div>
+        <label asp-for="Deposit" class="col-sm-2 col-form-label fw-semibold"></label>
+        <div class="col-sm-3">
+            <div class="input-group">
+                <input asp-for="Deposit" type="number" min="0" step="50000" class="form-control" />
+                <span class="input-group-text">đ</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <label asp-for="PaymentDayOfMonth" class="col-sm-3 col-form-label fw-semibold"></label>
+        <div class="col-sm-2">
+            <div class="input-group">
+                <input asp-for="PaymentDayOfMonth" type="number" min="1" max="28" class="form-control" />
+                <span class="input-group-text">hàng tháng</span>
+            </div>
+        </div>
+    </div>
+
+    <hr class="my-3" />
+
+    @* Chỉ số điện nước *@
+    <div class="row mb-3">
+        <label asp-for="InitialElectricIndex" class="col-sm-3 col-form-label fw-semibold"></label>
+        <div class="col-sm-4">
+            <div class="input-group">
+                <input asp-for="InitialElectricIndex" type="number" min="0" step="0.1" class="form-control" />
+                <span class="input-group-text">kWh</span>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <label asp-for="InitialWaterIndex" class="col-sm-3 col-form-label fw-semibold"></label>
+        <div class="col-sm-4">
+            <div class="input-group">
+                <input asp-for="InitialWaterIndex" type="number" min="0" step="0.1" class="form-control" />
+                <span class="input-group-text">m³</span>
+            </div>
+        </div>
+    </div>
+
+    <hr class="my-3" />
+
+    @* Điều khoản & ghi chú *@
+    <div class="row mb-3">
+        <label asp-for="Terms" class="col-sm-3 col-form-label fw-semibold"></label>
+        <div class="col-sm-9">
+            <textarea asp-for="Terms" class="form-control" rows="4"></textarea>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <label asp-for="Notes" class="col-sm-3 col-form-label fw-semibold"></label>
+        <div class="col-sm-9">
+            <textarea asp-for="Notes" class="form-control" rows="2"></textarea>
+        </div>
+    </div>
+
+    <hr class="my-3" />
+
+    @* Trạng thái *@
+    <div class="row mb-3">
+        <label asp-for="Status" class="col-sm-3 col-form-label fw-semibold"></label>
+        <div class="col-sm-4">
+            <select asp-for="Status" class="form-select" asp-items="@((SelectList)ViewBag.StatusList)"
+                    id="statusSelect">
+            </select>
+        </div>
+    </div>
+
+    @* Chấm dứt trước hạn *@
+    <div id="terminateBlock" class="@(Model.Status == ContractStatus.Terminated ? "" : "d-none")">
+        <div class="row mb-3">
+            <label asp-for="ActualEndDate" class="col-sm-3 col-form-label fw-semibold"></label>
+            <div class="col-sm-3">
+                <input asp-for="ActualEndDate" type="date" class="form-control" />
+                <span asp-validation-for="ActualEndDate" class="text-danger small"></span>
+            </div>
+        </div>
+        <div class="row mb-3">
+            <label asp-for="TerminationReason" class="col-sm-3 col-form-label fw-semibold"></label>
+            <div class="col-sm-7">
+                <textarea asp-for="TerminationReason" class="form-control" rows="2"
+                          placeholder="Ghi lý do chấm dứt hợp đồng..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <hr class="my-3" />
+    <div class="row">
+        <div class="col-sm-9 offset-sm-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-save me-1"></i> Lưu thay đổi
+            </button>
+            <a asp-area="Admin" asp-controller="Contract" asp-action="Details"
+               asp-route-id="@Model.ContractId" class="btn btn-outline-secondary">Hủy</a>
+        </div>
+    </div>
+</form>
+
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+
+@section Scripts {
+<partial name="_ValidationScriptsPartial" />
+<script>
+document.getElementById('statusSelect').addEventListener('change', function() {
+    const block = document.getElementById('terminateBlock');
+    block.classList.toggle('d-none', this.value !== '2');
+});
+</script>
+}

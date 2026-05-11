@@ -1,63 +1,183 @@
-@using PagedList.Core.Mvc
-@model PagedList.Core.IPagedList<QuanLyThuVien.Models.tblPost>
-
+@model List<QuanLyPhongTro.Models.tblPost>
 @{
+    ViewData["Title"] = "Bài viết";
     Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+    int page       = ViewBag.Page ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+    int total      = ViewBag.TotalItems ?? 0;
+    string? search    = ViewBag.Search;
+    string? published = ViewBag.Published;
 }
 
 <main id="main" class="main">
-    <div class="pagetitle">
-        <h2>Danh sách các bài viết</h2>
-        <div class="row">
-            <div class="col-4">
-                <a type="button" class="btn btn-success" asp-area="Admin" asp-controller="Post" asp-action="Create">
-                    <i class="bi bi-file-earmark-text me-1"></i>Thêm mới bài viết
-                </a>
-            </div>
-        </div>
-        <section class="section dashboard">
-            <div class="row">
-                <div class="col-12">
-                    <div class="card recent-sales overflow-auto">
-                        <div class="card-body mt-4">
-                            <table class="table table-bolderless">
-                                <thead>
-                                    <tr>
-                                        <th class="col-1 text-center">Mã bài viết</th>
-                                        <th class="col-9 text-center">Tiêu đề</th>
-                                        <th class="col-2 text-center">Chức năng</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var item in Model)
-                                    {
-                                        <tr>
-                                            <td class="text-center" scope="row">@item.PostID</td>
+<div class="pagetitle">
+    <h1>Bài viết &amp; Thông báo</h1>
+    <nav><ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item active">Bài viết</li>
+    </ol></nav>
+</div>
 
-                                            <td class="text-left" scope="row">@item.Title</td>
-                                            <td class="text-center" scope="row">
-                                                <a asp-area="Admin" asp-controller="Post" asp-action="Edit"
-                                                    asp-route-id="@item.PostID" class="btn btn-primary btn-sm"
-                                                    title="Edit the menu"><i class="bi bi-pencil"></i></a>
-                                                <a asp-area="Admin" asp-controller="Post" asp-action="Delete"
-                                                    asp-route-id="@item.PostID" class="btn btn-danger btn-sm"
-                                                    title="Delete the menu"><i class="bi bi-trash"></i></a>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                            <ul class="pagination float-end">
-                                <pager class="pager-container" list="@Model"
-                                    options="@PagedListRenderOptions.Bootstrap4PageNumbersOnly" asp-area="Admin"
-                                    asp-controller="Post" asp-action="Index">
-                                </pager>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
+<section class="section">
+<div class="card">
+<div class="card-body pt-3">
+
+    @* Toolbar *@
+    <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-3 pt-2">
+        <form method="get" class="d-flex gap-2 flex-wrap">
+            <input type="text" name="search" value="@search" class="form-control form-control-sm"
+                   style="width:220px;" placeholder="Tìm tiêu đề, danh mục..." />
+            <select name="published" class="form-select form-select-sm" style="width:160px;">
+                <option value="">Tất cả trạng thái</option>
+                <option value="1" selected="@(published == "1")">Đã đăng</option>
+                <option value="0" selected="@(published == "0")">Bản nháp</option>
+            </select>
+            <button type="submit" class="btn btn-sm btn-primary">Lọc</button>
+            @if (!string.IsNullOrEmpty(search) || !string.IsNullOrEmpty(published))
+            {
+                <a asp-action="Index" class="btn btn-sm btn-outline-secondary">Xóa lọc</a>
+            }
+        </form>
+        <a asp-action="Create" class="btn btn-sm btn-success">
+            <i class="bi bi-plus-circle me-1"></i> Thêm bài viết
+        </a>
     </div>
 
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-newspaper fs-1 mb-3 d-block"></i>
+            <p>Chưa có bài viết nào.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+        <table class="table table-hover align-middle table-sm">
+            <thead class="table-light">
+                <tr>
+                    <th style="width:40%">Tiêu đề</th>
+                    <th>Danh mục</th>
+                    <th class="text-center">Trạng thái</th>
+                    <th class="text-center">Ghim</th>
+                    <th class="text-center">Lượt xem</th>
+                    <th>Ngày tạo</th>
+                    <th class="text-end">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var post in Model)
+                {
+                    <tr>
+                        <td>
+                            @if (post.IsPinned)
+                            {
+                                <i class="bi bi-pin-fill text-warning me-1" title="Đang ghim"></i>
+                            }
+                            <span class="fw-semibold">@post.Title</span>
+                            @if (!string.IsNullOrEmpty(post.Summary))
+                            {
+                                <div class="text-muted small text-truncate" style="max-width:320px;">
+                                    @post.Summary
+                                </div>
+                            }
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(post.Category))
+                            {
+                                <span class="badge bg-secondary">@post.Category</span>
+                            }
+                            else { <span class="text-muted small">—</span> }
+                        </td>
+                        <td class="text-center">
+                            <form asp-action="TogglePublished" asp-route-id="@post.PostId" method="post">
+                                @Html.AntiForgeryToken()
+                                <button type="submit"
+                                        class="btn btn-sm @(post.IsPublished ? "btn-success" : "btn-outline-secondary")"
+                                        title="@(post.IsPublished ? "Đang đăng — click để ẩn" : "Bản nháp — click để đăng")">
+                                    @(post.IsPublished ? "Đã đăng" : "Nháp")
+                                </button>
+                            </form>
+                        </td>
+                        <td class="text-center">
+                            <form asp-action="TogglePinned" asp-route-id="@post.PostId" method="post">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-link p-0"
+                                        title="@(post.IsPinned ? "Bỏ ghim" : "Ghim lên đầu")">
+                                    <i class="bi @(post.IsPinned ? "bi-pin-fill text-warning" : "bi-pin text-secondary") fs-5"></i>
+                                </button>
+                            </form>
+                        </td>
+                        <td class="text-center">@post.ViewCount</td>
+                        <td class="text-nowrap small text-muted">@post.CreatedAt.ToString("dd/MM/yyyy")</td>
+                        <td class="text-end text-nowrap">
+                            <a asp-action="Edit" asp-route-id="@post.PostId"
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <button type="button" class="btn btn-sm btn-outline-danger ms-1"
+                                    onclick="confirmDelete(@post.PostId, '@Html.Raw(post.Title.Replace("'","\\\'"))')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        </div>
+
+        @* Phân trang *@
+        @if (totalPages > 1)
+        {
+            <nav class="d-flex justify-content-between align-items-center mt-2">
+                <small class="text-muted">Hiển thị @Model.Count / @total bài viết</small>
+                <ul class="pagination pagination-sm mb-0">
+                    @for (int p = 1; p <= totalPages; p++)
+                    {
+                        <li class="page-item @(p == page ? "active" : "")">
+                            <a class="page-link"
+                               asp-action="Index"
+                               asp-route-page="@p"
+                               asp-route-search="@search"
+                               asp-route-published="@published">@p</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+    }
+
+</div>
+</div>
+</section>
 </main>
+
+@* Modal xóa *@
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title text-danger"><i class="bi bi-trash me-2"></i>Xác nhận xóa</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body small">Xóa bài viết <strong id="delName"></strong>?</div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                <form id="deleteForm" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function confirmDelete(id, name) {
+    document.getElementById('delName').textContent = name;
+    document.getElementById('deleteForm').action = '/Admin/Post/Delete/' + id;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+</script>
+}

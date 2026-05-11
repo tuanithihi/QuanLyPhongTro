@@ -1,0 +1,28 @@
+<script>
+(function () {
+    // Defaults: ServiceType → { unit, pricingMethod }
+    const defaults = {
+        1: { unit: 'kWh',       method: '1' },   // Electric → PerUnit
+        2: { unit: 'm³',        method: '1' },   // Water    → PerUnit
+        3: { unit: 'tháng',     method: '2' },   // Garbage  → Fixed
+        4: { unit: 'tháng',     method: '2' },   // Wifi     → Fixed
+        5: { unit: 'xe/tháng',  method: '2' },   // Parking  → Fixed
+        99:{ unit: '',          method: '2' },   // Other    → Fixed
+    };
+
+    const typeSelect  = document.getElementById('serviceTypeSelect');
+    const unitInput   = document.getElementById('unitInput');
+    const RadioPerUnit = document.getElementById('pmPerUnit');
+    const RadioFixed   = document.getElementById('pmFixed');
+
+    // Only auto-fill when unit is blank (new form) or user explicitly changed type
+    typeSelect.addEventListener('change', function () {
+        const d = defaults[this.value];
+        if (!d) return;
+        // Only replace unit if it's still the previous default (don't overwrite custom input)
+        unitInput.value = d.unit;
+        if (d.method === '1') RadioPerUnit.checked = true;
+        else                  RadioFixed.checked   = true;
+    });
+})();
+</script>

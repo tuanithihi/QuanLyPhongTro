@@ -1,0 +1,95 @@
+@model List<QuanLyPhongTro.Models.tblReview>
+
+@{
+    ViewData["Title"] = "Tất Cả Đánh Giá - Phòng Trọ Mới";
+    int currentPage = ViewBag.Page ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+}
+
+<section class="all-reviews-section py-5" style="background: white; min-height: calc(100vh - 120px);">
+    <div class="container">
+        <div class="mb-5">
+            <h1 class="display-5 fw-bold text-dark mb-2" style="color: #1E8449;">Tất Cả Đánh Giá</h1>
+            <p class="fs-5 text-muted">Những phản hồi mới nhất từ khách hàng của Phòng Trọ Mới</p>
+        </div>
+
+        @if (Model.Count > 0)
+        {
+            <div class="row g-4 mb-4">
+                @foreach (var review in Model)
+                {
+                    var shortName = "KH";
+                    if (!string.IsNullOrWhiteSpace(review.FullName))
+                    {
+                        var parts = review.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        var initials = "";
+                        for (var idx = 0; idx < parts.Length && idx < 2; idx++)
+                        {
+                            initials += char.ToUpperInvariant(parts[idx][0]);
+                        }
+                        if (!string.IsNullOrEmpty(initials))
+                        {
+                            shortName = initials;
+                        }
+                    }
+
+                    <div class="col-lg-4 col-md-6">
+                        <div class="review-card p-4 h-100" style="background: white; border: 1px solid #D5F4E6; border-radius: 12px; box-shadow: 0 4px 12px rgba(39, 174, 96, 0.08);">
+                            <div class="mb-3">
+                                @for (var i = 1; i <= 5; i++)
+                                {
+                                    <i class="bi bi-star-fill" style="color: @(i <= review.Rating ? "#FFD700" : "#E5E7EB");"></i>
+                                }
+                            </div>
+                            <h6 class="fw-bold mb-2" style="color:#1E8449;">@review.Title</h6>
+                            <p class="small text-muted mb-3" style="line-height: 1.6;">"@review.Content"</p>
+                            <div class="d-flex align-items-center gap-2">
+                                <div style="width: 40px; height: 40px; border-radius: 50%; background: #27AE60; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.9rem;">
+                                    @shortName
+                                </div>
+                                <div>
+                                    <p class="fw-bold mb-0 small">@review.FullName</p>
+                                    <p class="small text-muted mb-0">@review.CreatedAt.ToString("dd/MM/yyyy")</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @if (totalPages > 1)
+            {
+                <nav aria-label="Reviews pagination" class="mt-2">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                            <a class="page-link" href="@Url.Action("AllReviews", new { page = currentPage - 1 })">Trước</a>
+                        </li>
+
+                        @for (var p = 1; p <= totalPages; p++)
+                        {
+                            <li class="page-item @(p == currentPage ? "active" : "")">
+                                <a class="page-link" href="@Url.Action("AllReviews", new { page = p })">@p</a>
+                            </li>
+                        }
+
+                        <li class="page-item @(currentPage >= totalPages ? "disabled" : "")">
+                            <a class="page-link" href="@Url.Action("AllReviews", new { page = currentPage + 1 })">Sau</a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        }
+        else
+        {
+            <div class="alert alert-light border" style="border-color:#D5F4E6 !important;">
+                Chưa có đánh giá nào.
+            </div>
+        }
+
+        <div class="text-center mt-4">
+            <a href="/" class="btn btn-lg fw-bold" style="background: #27AE60; color: white; border: none; padding: 0.75rem 2rem;">
+                <i class="bi bi-house me-2"></i>Quay Lại Trang Chủ
+            </a>
+        </div>
+    </div>
+</section>

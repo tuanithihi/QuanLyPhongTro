@@ -1,20 +1,4 @@
-@model QuanLyThuVien.Models.tblPost
+@* Redirect to Index - Delete is handled via modal on Index page *@
 @{
-    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+    Context.Response.Redirect("/Admin/Post");
 }
-<main id="main" class="main">
-    <div class="pagetitle">
-        <h2>Xóa bài viết</h2>
-    </div>
-    <div class="container shadow p-5">
-        <h4>Bạn có chắc muốn xóa bài viết này không?</h4>
-        <div class="mb-3">
-            <strong>@Model.Title</strong>
-            <p class="text-muted">@Model.Abstract</p>
-        </div>
-        <form method="post" asp-action="Delete" asp-route-id="@Model.PostID">
-            <button type="submit" class="btn btn-danger">Xóa</button>
-            <a asp-area="Admin" asp-controller="Post" asp-action="Index" class="btn btn-secondary ms-2">Hủy</a>
-        </form>
-    </div>
-</main>

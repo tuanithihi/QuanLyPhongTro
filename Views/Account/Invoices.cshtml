@@ -1,0 +1,287 @@
+@model List<QuanLyPhongTro.Models.tblInvoice>
+@using QuanLyPhongTro.Models
+@{
+    ViewData["Title"] = "Hóa đơn của tôi";
+    int unpaidCount  = Model.Count(i => i.Status == InvoiceStatus.Unpaid);
+    int overdueCount = Model.Count(i => i.Status == InvoiceStatus.Overdue);
+    string bankId      = ViewBag.BankId      ?? "";
+    string bankAccount = ViewBag.BankAccount ?? "";
+    string bankName    = ViewBag.BankName    ?? "";
+    string bankOwner   = ViewBag.BankOwner   ?? "";
+    bool hasBankInfo   = !string.IsNullOrEmpty(bankAccount);
+}
+
+<div class="container py-4" style="max-width:960px; min-height:calc(100vh - 70px);">
+
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h4 class="fw-bold mb-1"><i class="bi bi-receipt me-2"></i>Hóa đơn của tôi</h4>
+            <div class="text-muted small">Tất cả hóa đơn cho các phòng bạn đang thuê</div>
+        </div>
+        <a asp-controller="Account" asp-action="Info" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Quay lại hồ sơ
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="bi bi-check-circle me-1"></i> @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @* Thống kê nhanh *@
+    <div class="row g-3 mb-4">
+        <div class="col-4">
+            <div class="card border-0 bg-danger-subtle text-center py-3">
+                <div class="fs-2 fw-bold text-danger">@overdueCount</div>
+                <div class="small text-danger fw-semibold">Quá hạn</div>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="card border-0 bg-warning-subtle text-center py-3">
+                <div class="fs-2 fw-bold text-warning">@unpaidCount</div>
+                <div class="small text-warning fw-semibold">Chưa thanh toán</div>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="card border-0 bg-success-subtle text-center py-3">
+                <div class="fs-2 fw-bold text-success">@Model.Count(i => i.Status == InvoiceStatus.Paid)</div>
+                <div class="small text-success fw-semibold">Đã thanh toán</div>
+            </div>
+        </div>
+    </div>
+
+    @* Bảng danh sách hóa đơn *@
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-receipt fs-1 d-block mb-2"></i>
+                    Chưa có hóa đơn nào.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">#</th>
+                                <th>Mã hóa đơn</th>
+                                <th>Tháng</th>
+                                <th>Phòng</th>
+                                <th class="text-end">Tiền thuê</th>
+                                <th class="text-end">Tổng cộng</th>
+                                <th class="text-center">Hạn TT</th>
+                                <th class="text-center">Trạng thái</th>
+                                <th class="text-center pe-3">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{ int idx = 0; }
+                            @foreach (var inv in Model)
+                            {
+                                idx++;
+                                bool needPay    = inv.Status != InvoiceStatus.Paid;
+                                string detailId = $"detail_{idx}";
+                                string rowCls   = inv.Status == InvoiceStatus.Overdue ? "table-danger"
+                                                : inv.Status == InvoiceStatus.Unpaid  ? "table-warning"
+                                                : "";
+                                <tr class="@rowCls">
+                                    <td class="ps-3 text-muted small">@idx</td>
+                                    <td class="font-monospace fw-semibold">@inv.InvoiceCode</td>
+                                    <td class="small">@inv.BillingMonth/@inv.BillingYear</td>
+                                    <td>
+                                        @if (inv.Room != null)
+                                        { <span class="badge bg-secondary">@inv.Room.RoomCode</span> }
+                                        else
+                                        { <span class="text-muted">—</span> }
+                                    </td>
+                                    <td class="text-end small">@inv.RoomRentAmount.ToString("N0") đ</td>
+                                    <td class="text-end fw-bold text-primary">@inv.TotalAmount.ToString("N0") đ</td>
+                                    <td class="text-center small">@inv.DueDate.ToString("dd/MM/yyyy")</td>
+                                    <td class="text-center">
+                                        @switch (inv.Status)
+                                        {
+                                            case InvoiceStatus.Paid:
+                                                <span class="badge bg-success">Đã TT</span>
+                                                break;
+                                            case InvoiceStatus.Overdue:
+                                                <span class="badge bg-danger">Quá hạn</span>
+                                                break;
+                                            default:
+                                                <span class="badge bg-warning text-dark">Chưa TT</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td class="text-center pe-3">
+                                        <button class="btn btn-sm btn-outline-primary"
+                                                type="button"
+                                                data-bs-toggle="collapse"
+                                                data-bs-target="#@detailId"
+                                                aria-expanded="false">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="collapse" id="@detailId">
+                                    <td colspan="9" class="p-0">
+                                        <div class="bg-light border-top border-bottom px-4 py-3">
+                                            <div class="row g-3">
+                                                <div class="col-md-7">
+                                                    <p class="fw-semibold text-muted small mb-2">Chi tiết hóa đơn</p>
+                                                    <table class="table table-sm table-borderless mb-0 bg-transparent">
+                                                        <tr>
+                                                            <td class="text-muted" style="width:55%">Tiền thuê phòng</td>
+                                                            <td class="text-end fw-semibold">@inv.RoomRentAmount.ToString("N0") đ</td>
+                                                        </tr>
+                                                        @foreach (var d in inv.InvoiceDetails)
+                                                        {
+                                                            <tr>
+                                                                <td class="text-muted">
+                                                                    @if (!string.IsNullOrEmpty(d.Description))
+                                                                    { @d.Description }
+                                                                    else if (d.Service != null)
+                                                                    { @d.Service.ServiceName }
+                                                                    else
+                                                                    { <span>Phát sinh</span> }
+                                                                    <span class="text-muted small ms-1">
+                                                                        (@d.Quantity.ToString("G4") × @d.UnitPrice.ToString("N0") đ)
+                                                                    </span>
+                                                                </td>
+                                                                <td class="text-end">@d.Amount.ToString("N0") đ</td>
+                                                            </tr>
+                                                        }
+                                                        @if (inv.Discount > 0)
+                                                        {
+                                                            <tr>
+                                                                <td class="text-muted">Chiết khấu</td>
+                                                                <td class="text-end text-success">- @inv.Discount.ToString("N0") đ</td>
+                                                            </tr>
+                                                        }
+                                                        <tr class="border-top">
+                                                            <td class="fw-bold">TỔNG CỘNG</td>
+                                                            <td class="text-end fw-bold text-primary">@inv.TotalAmount.ToString("N0") đ</td>
+                                                        </tr>
+                                                    </table>
+                                                </div>
+                                                <div class="col-md-5">
+                                                    <p class="fw-semibold text-muted small mb-2">Thông tin thanh toán</p>
+                                                    @if (inv.Status == InvoiceStatus.Paid && inv.PaidDate.HasValue)
+                                                    {
+                                                        <div class="text-success small mb-1">
+                                                            <i class="bi bi-check-circle me-1"></i>Đã thanh toán ngày @inv.PaidDate.Value.ToString("dd/MM/yyyy")
+                                                        </div>
+                                                        @if (!string.IsNullOrEmpty(inv.PaymentMethod))
+                                                        {
+                                                            <div class="text-muted small"><i class="bi bi-credit-card me-1"></i>@inv.PaymentMethod</div>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="text-muted small mb-1">
+                                                            <i class="bi bi-calendar me-1"></i>Hạn thanh toán:
+                                                            <strong>@inv.DueDate.ToString("dd/MM/yyyy")</strong>
+                                                        </div>
+                                                    }
+                                                    @if (!string.IsNullOrEmpty(inv.Notes))
+                                                    {
+                                                        <div class="text-muted small fst-italic mt-1">@inv.Notes</div>
+                                                    }
+                                                    @if (needPay && hasBankInfo)
+                                                    {
+                                                        <button type="button"
+                                                                class="btn btn-primary btn-sm mt-3 w-100"
+                                                                onclick="showPayment('@inv.InvoiceCode', @inv.TotalAmount, '@System.Net.WebUtility.UrlEncode("Thanh toan " + inv.InvoiceCode)')">
+                                                            <i class="bi bi-qr-code me-1"></i>Thanh toán trực tuyến
+                                                        </button>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+</div>
+
+@* ── Modal VietQR ── *@
+@if (hasBankInfo)
+{
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <h4 class="modal-title fw-bold"><i class="bi bi-qr-code me-2 text-primary"></i>Thanh toán trực tuyến</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-3 pb-4 px-4">
+                <div class="row g-4 align-items-center">
+                    <div class="col-md-5 text-center">
+                        <div class="border rounded-3 p-3 d-inline-block bg-white shadow-sm">
+                            <img id="qrImg" src="" alt="VietQR" class="img-fluid" style="width:320px;height:320px;object-fit:contain;" />
+                        </div>
+                        <div class="text-muted small mt-2"><i class="bi bi-camera me-1"></i>Quét bằng app ngân hàng</div>
+                    </div>
+                    <div class="col-md-7">
+                        <table class="table table-borderless mb-3" style="font-size:1.05rem;">
+                            <tr>
+                                <td class="text-muted fw-semibold py-2" style="width:42%">Ngân hàng</td>
+                                <td class="fw-bold py-2">@bankName</td>
+                            </tr>
+                            <tr class="border-top">
+                                <td class="text-muted fw-semibold py-2">Số tài khoản</td>
+                                <td class="font-monospace fw-bold fs-5 py-2">@bankAccount</td>
+                            </tr>
+                            <tr class="border-top">
+                                <td class="text-muted fw-semibold py-2">Chủ tài khoản</td>
+                                <td class="fw-bold py-2">@bankOwner</td>
+                            </tr>
+                            <tr class="border-top">
+                                <td class="text-muted fw-semibold py-2">Số tiền</td>
+                                <td class="fw-bold py-2"><span id="payAmount" class="text-primary fs-3"></span></td>
+                            </tr>
+                            <tr class="border-top">
+                                <td class="text-muted fw-semibold py-2">Nội dung CK</td>
+                                <td class="font-monospace fw-semibold py-2" id="payDesc"></td>
+                            </tr>
+                        </table>
+                        <div class="alert alert-info mb-0 py-3">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            Quét mã QR bằng ứng dụng ngân hàng để chuyển khoản.
+                            Sau khi chuyển thành công, vui lòng thông báo để chủ nhà xác nhận.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+}
+
+@section Scripts {
+<script>
+function showPayment(invoiceCode, amount, addInfo) {
+    const bankId  = '@bankId';
+    const account = '@bankAccount';
+    const owner   = encodeURIComponent('@bankOwner');
+    const qrUrl   = `https://img.vietqr.io/image/${bankId}-${account}-compact2.png?amount=${amount}&addInfo=${addInfo}&accountName=${owner}`;
+    document.getElementById('qrImg').src = qrUrl;
+    document.getElementById('payAmount').textContent = new Intl.NumberFormat('vi-VN').format(amount) + ' đ';
+    document.getElementById('payDesc').textContent   = decodeURIComponent(addInfo);
+    new bootstrap.Modal(document.getElementById('paymentModal')).show();
+}
+</script>
+}

@@ -1,70 +1,245 @@
-@model QuanLyThuVien.Models.tblUser
-
+@model QuanLyPhongTro.Models.ProfileViewModel
 @{
-    ViewData["Title"] = "Thông tin tài khoản";
+    ViewData["Title"] = "Thông tin cá nhân";
+    bool showPwTab = TempData["ShowPasswordTab"] != null;
+    bool isTenant  = Model.UserType == "Tenant";
 }
 
-<main id="main" class="main">
-    
+<div class="container py-5" style="max-width:760px;">
 
-    <div class="container shadow p-5">
-        <div class="pagetitle">
-        <h4 class="mb-2"><i class="fas fa-user"></i> Thông tin tài khoản</h4>
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="bi bi-check-circle me-1"></i> @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            <i class="bi bi-exclamation-triangle me-1"></i> @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @* Avatar + tên *@
+    <div class="d-flex align-items-center gap-4 mb-4">
+        @if (!string.IsNullOrEmpty(Model.Avatar))
+        {
+            <img src="@Model.Avatar" class="rounded-circle border shadow-sm"
+                 style="width:90px;height:90px;object-fit:cover;" id="avatarPreview" />
+        }
+        else
+        {
+            <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white shadow-sm"
+                 style="width:90px;height:90px;font-size:2rem;flex-shrink:0;" id="avatarPreview">
+                @(Model.FullName.Length > 0 ? Model.FullName[0].ToString().ToUpper() : "?")
+            </div>
+        }
+        <div>
+            <h4 class="mb-1 fw-bold">@Model.FullName</h4>
+            <span class="badge @(isTenant ? "bg-success" : "bg-primary") mb-1">
+                <i class="bi @(isTenant ? "bi-house" : "bi-person") me-1"></i>
+                @(isTenant ? "Người thuê" : "Tài khoản")
+            </span>
+            @if (isTenant && !string.IsNullOrEmpty(Model.TenantUsername))
+            {
+                <div class="text-muted small"><i class="bi bi-at me-1"></i>@Model.TenantUsername</div>
+            }
+            else if (!isTenant)
+            {
+                <div class="text-muted small"><i class="bi bi-at me-1"></i>@Model.Username</div>
+            }
+        </div>
     </div>
-        <div class="row mb-4">
-            <div class="col-md-3 text-center">
-                @if (!string.IsNullOrEmpty(Model.Avatar))
+
+    @* Tabs *@
+    <ul class="nav nav-tabs mb-4" id="profileTabs">
+        <li class="nav-item">
+            <button class="nav-link @(!showPwTab ? "active" : "")" data-bs-toggle="tab" data-bs-target="#tabInfo">
+                <i class="bi bi-person me-1"></i>Thông tin cá nhân
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link @(showPwTab ? "active" : "")" data-bs-toggle="tab" data-bs-target="#tabPassword">
+                <i class="bi bi-shield-lock me-1"></i>Đổi mật khẩu
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+
+        @* ── Tab 1: Thông tin ── *@
+        <div class="tab-pane fade @(!showPwTab ? "show active" : "")" id="tabInfo">
+        <div class="card shadow-sm">
+        <div class="card-body p-4">
+        <form asp-controller="Account" asp-action="Info" method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="UserType" />
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+            @* Ảnh đại diện *@
+            <div class="row mb-3">
+                <label class="col-sm-3 col-form-label fw-semibold">Ảnh đại diện</label>
+                <div class="col-sm-9">
+                    <input type="file" name="avatarFile" class="form-control"
+                           accept="image/*" onchange="previewAvatar(this)" />
+                    <div class="form-text">JPG, PNG, WebP — tối đa 5MB</div>
+                </div>
+            </div>
+
+            @* Họ tên *@
+            <div class="row mb-3">
+                <label asp-for="FullName" class="col-sm-3 col-form-label fw-semibold"></label>
+                <div class="col-sm-9">
+                    <input asp-for="FullName" class="form-control" />
+                    <span asp-validation-for="FullName" class="text-danger small"></span>
+                </div>
+            </div>
+
+            @* SĐT *@
+            <div class="row mb-3">
+                <label asp-for="Phone" class="col-sm-3 col-form-label fw-semibold"></label>
+                <div class="col-sm-9">
+                    <input asp-for="Phone" class="form-control" />
+                </div>
+            </div>
+
+            @* Email *@
+            <div class="row mb-3">
+                <label asp-for="Email" class="col-sm-3 col-form-label fw-semibold"></label>
+                <div class="col-sm-9">
+                    <input asp-for="Email" class="form-control" />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+            </div>
+
+            @* Chỉ hiện với Tenant *@
+            @if (isTenant)
+            {
+                <div class="row mb-3">
+                    <label asp-for="DateOfBirth" class="col-sm-3 col-form-label fw-semibold"></label>
+                    <div class="col-sm-5">
+                        <input asp-for="DateOfBirth" type="date" class="form-control" />
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <label asp-for="Gender" class="col-sm-3 col-form-label fw-semibold"></label>
+                    <div class="col-sm-4">
+                        <select asp-for="Gender" class="form-select">
+                            <option value="">-- Chọn --</option>
+                            <option value="Nam">Nam</option>
+                            <option value="Nữ">Nữ</option>
+                            <option value="Khác">Khác</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <label asp-for="PermanentAddress" class="col-sm-3 col-form-label fw-semibold"></label>
+                    <div class="col-sm-9">
+                        <textarea asp-for="PermanentAddress" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+                <hr />
+                <div class="row mb-2">
+                    <label class="col-sm-3 col-form-label fw-semibold text-muted">CCCD/CMND</label>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control font-monospace" value="@Model.IdentityNumber" readonly />
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.TenantUsername))
                 {
-                    <img src="@Model.Avatar" alt="Avatar" class="rounded-circle border mb-3" width="150" height="150" style="object-fit: cover;" />
-                }
-                else
-                {
-                    <div class="bg-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 150px; height: 150px;">
-                        <i class="fas fa-user text-white" style="font-size: 60px;"></i>
+                    <div class="row mb-2">
+                        <label class="col-sm-3 col-form-label fw-semibold text-muted">Tên đăng nhập</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control" value="@Model.TenantUsername" readonly />
+                        </div>
                     </div>
                 }
+            }
+            else
+            {
+                <hr />
+                <div class="row mb-2">
+                    <label class="col-sm-3 col-form-label fw-semibold text-muted">Tên đăng nhập</label>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control" value="@Model.Username" readonly />
+                    </div>
+                </div>
+            }
 
-                <h5 class="fw-bold">@Model.FullName</h5>
-                            <div class="mt-3">
-                                <a asp-controller="Account" asp-action="ChangePassword" class="btn btn-warning btn-sm">Đổi mật khẩu</a>
-                            </div>
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save me-1"></i>Lưu thay đổi
+                </button>
             </div>
-
-            <div class="col-md-9">
-                <table class="table table-bordered">
-                    <tbody>
-                        <tr>
-                            <th style="width:200px;">Họ và tên</th>
-                            <td>@Model.FullName</td>
-                        </tr>
-                        <tr>
-                            <th>Email</th>
-                            <td>@Model.Email</td>
-                        </tr>
-                        <tr>
-                            <th>Số điện thoại</th>
-                            <td>@(string.IsNullOrEmpty(Model.Phone) ? "Chưa cập nhật" : Model.Phone)</td>
-                        </tr>
-                        <tr>
-                            <th>Ngày sinh</th>
-                            <td>@(Model.DateOfBirth.HasValue ? Model.DateOfBirth.Value.ToString("dd/MM/yyyy") : "Chưa cập nhật")</td>
-                        </tr>
-                        <tr>
-                            <th>Ngày tạo tài khoản</th>
-                            <td>@(Model.CreatedDate.HasValue ? Model.CreatedDate.Value.ToString("dd/MM/yyyy HH:mm") : "N/A")</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+        </form>
+        </div>
+        </div>
         </div>
 
-        <div class="text-end mt-4">
-            <a href="@Url.Action("Settings", "Account")" class="btn btn-primary">
-                <i class="fas fa-edit"></i> Chỉnh sửa thông tin
-            </a>
-            <a href="@Url.Action("Index", "Home")" class="btn btn-secondary">
-                <i class="fas fa-home"></i> Về trang chủ
-            </a>
+        @* ── Tab 2: Đổi mật khẩu ── *@
+        <div class="tab-pane fade @(showPwTab ? "show active" : "")" id="tabPassword">
+        <div class="card shadow-sm">
+        <div class="card-body p-4">
+        <form asp-controller="Account" asp-action="ChangePassword" method="post">
+            @Html.AntiForgeryToken()
+
+            <div class="row mb-3">
+                <label asp-for="CurrentPassword" class="col-sm-4 col-form-label fw-semibold"></label>
+                <div class="col-sm-6">
+                    <input asp-for="CurrentPassword" type="password" class="form-control" autocomplete="current-password" />
+                    <span asp-validation-for="CurrentPassword" class="text-danger small"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <label asp-for="NewPassword" class="col-sm-4 col-form-label fw-semibold"></label>
+                <div class="col-sm-6">
+                    <input asp-for="NewPassword" type="password" class="form-control" autocomplete="new-password" />
+                    <span asp-validation-for="NewPassword" class="text-danger small"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <label asp-for="ConfirmPassword" class="col-sm-4 col-form-label fw-semibold"></label>
+                <div class="col-sm-6">
+                    <input asp-for="ConfirmPassword" type="password" class="form-control" autocomplete="new-password" />
+                    <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-warning">
+                    <i class="bi bi-shield-lock me-1"></i>Đổi mật khẩu
+                </button>
+            </div>
+        </form>
         </div>
+        </div>
+        </div>
+
     </div>
-</main>
+</div>
+
+@section Scripts {
+<partial name="_ValidationScriptsPartial" />
+<script>
+function previewAvatar(input) {
+    if (!input.files || !input.files[0]) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        const el = document.getElementById('avatarPreview');
+        if (el.tagName === 'IMG') {
+            el.src = e.target.result;
+        } else {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.className = 'rounded-circle border shadow-sm';
+            img.style.cssText = 'width:90px;height:90px;object-fit:cover;';
+            img.id = 'avatarPreview';
+            el.replaceWith(img);
+        }
+    };
+    reader.readAsDataURL(input.files[0]);
+}
+</script>
+}

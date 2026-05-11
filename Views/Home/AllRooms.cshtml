@@ -1,0 +1,291 @@
+@model HomeIndexViewModel
+
+@{
+    ViewData["Title"] = "Tất Cả Phòng Trọ - Phòng Trọ Mới";
+    int page = ViewBag.Page ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+    int totalItems = ViewBag.TotalItems ?? 0;
+}
+
+<section class="all-rooms-section py-5" style="background: white; min-height: calc(100vh - 120px);">
+    <div class="container">
+        <!-- Section Header -->
+        <div class="mb-5">
+            <h1 class="display-5 fw-bold text-dark mb-2" style="color: #1E8449;">
+                Tất Cả Phòng Trọ
+            </h1>
+            <p class="fs-5 text-muted">
+                Tìm thấy <strong>@totalItems</strong> phòng trọ phù hợp với nhu cầu của bạn
+            </p>
+        </div>
+
+        <div class="row g-4 mb-5">
+            <!-- Sidebar Filter -->
+            <div class="col-lg-3">
+                <div class="card border-0 shadow-sm sticky-top" style="top: 80px;">
+                    <div class="card-header" style="background: #27AE60; color: white;">
+                        <h6 class="mb-0 fw-bold">
+                            <i class="bi bi-funnel me-2"></i>Bộ Lọc
+                        </h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <form method="get" action="/Home/AllRooms">
+                            <!-- Area Filter -->
+                            <div class="p-3 border-bottom">
+                                <label class="form-label fw-bold small" style="color: #1E8449;">Khu Vực</label>
+                                <input type="text" name="area" class="form-control form-control-sm"
+                                       placeholder="Nhập khu vực..."
+                                       value="@(string.IsNullOrEmpty(Model.Area) ? "" : Model.Area)"
+                                       style="border-color: #D5F4E6;" />
+                            </div>
+
+                            <!-- Price Range Filter -->
+                            <div class="p-3 border-bottom">
+                                <label class="form-label fw-bold small" style="color: #1E8449;">Khoảng Giá</label>
+                                <select name="priceRange" class="form-select form-select-sm" style="border-color: #D5F4E6;">
+                                    <option value="">Tất cả giá</option>
+                                    @if (Model.PriceRange == "under2m") { <option value="under2m" selected>Dưới 2 triệu</option> } else { <option value="under2m">Dưới 2 triệu</option> }
+                                    @if (Model.PriceRange == "2to3m") { <option value="2to3m" selected>2 - 3 triệu</option> } else { <option value="2to3m">2 - 3 triệu</option> }
+                                    @if (Model.PriceRange == "3to5m") { <option value="3to5m" selected>3 - 5 triệu</option> } else { <option value="3to5m">3 - 5 triệu</option> }
+                                    @if (Model.PriceRange == "over5m") { <option value="over5m" selected>Trên 5 triệu</option> } else { <option value="over5m">Trên 5 triệu</option> }
+                                </select>
+                            </div>
+
+                            <!-- Area Range Filter -->
+                            <div class="p-3 border-bottom">
+                                <label class="form-label fw-bold small" style="color: #1E8449;">Diện Tích</label>
+                                <select name="areaRange" class="form-select form-select-sm" style="border-color: #D5F4E6;">
+                                    <option value="">Tất cả diện tích</option>
+                                    @if (Model.AreaRange == "under15") { <option value="under15" selected>Dưới 15 m²</option> } else { <option value="under15">Dưới 15 m²</option> }
+                                    @if (Model.AreaRange == "15to25") { <option value="15to25" selected>15 - 25 m²</option> } else { <option value="15to25">15 - 25 m²</option> }
+                                    @if (Model.AreaRange == "25to35") { <option value="25to35" selected>25 - 35 m²</option> } else { <option value="25to35">25 - 35 m²</option> }
+                                    @if (Model.AreaRange == "over35") { <option value="over35" selected>Trên 35 m²</option> } else { <option value="over35">Trên 35 m²</option> }
+                                </select>
+                            </div>
+
+                            <!-- Room Type Filter -->
+                            <div class="p-3 border-bottom">
+                                <label class="form-label fw-bold small" style="color: #1E8449;">Loại Phòng</label>
+                                <select name="roomTypeId" class="form-select form-select-sm" style="border-color: #D5F4E6;">
+                                    <option value="">Tất cả loại phòng</option>
+                                    @foreach (var type in Model.RoomTypes)
+                                    {
+                                        if (Model.RoomTypeId == type.RoomTypeId)
+                                        {
+                                            <option value="@type.RoomTypeId" selected>@type.RoomTypeName</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@type.RoomTypeId">@type.RoomTypeName</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <!-- Floor Range Filter -->
+                            <div class="p-3 border-bottom">
+                                <label class="form-label fw-bold small" style="color: #1E8449;">Số Tầng</label>
+                                <select name="floorRange" class="form-select form-select-sm" style="border-color: #D5F4E6;">
+                                    <option value="">Tất cả tầng</option>
+                                    @if (Model.FloorRange == "floor1") { <option value="floor1" selected>Tầng 1</option> } else { <option value="floor1">Tầng 1</option> }
+                                    @if (Model.FloorRange == "floor2") { <option value="floor2" selected>Tầng 2</option> } else { <option value="floor2">Tầng 2</option> }
+                                    @if (Model.FloorRange == "floor3plus") { <option value="floor3plus" selected>Từ tầng 3 trở lên</option> } else { <option value="floor3plus">Từ tầng 3 trở lên</option> }
+                                </select>
+                            </div>
+
+                            <!-- Buttons -->
+                            <div class="p-3">
+                                <button type="submit" class="btn w-100 btn-sm fw-bold mb-2"
+                                        style="background: #27AE60; color: white; border: none;">
+                                    <i class="bi bi-search me-1"></i>Tìm Kiếm
+                                </button>
+                                <a href="/Home/AllRooms" class="btn btn-outline-secondary w-100 btn-sm fw-bold">
+                                    <i class="bi bi-arrow-counterclockwise me-1"></i>Xóa Bộ Lọc
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rooms Grid -->
+            <div class="col-lg-9">
+                @if (Model.AvailableRooms.Any())
+                {
+                    <div class="row g-4">
+                        @foreach (var room in Model.AvailableRooms)
+                        {
+                            <div class="col-md-6">
+                                <div class="featured-room-card h-100" style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.08); transition: all 0.3s ease;">
+                                    <!-- Image -->
+                                    <div style="position: relative; height: 240px; overflow: hidden; background: #e0e0e0;">
+                                        @if (!string.IsNullOrEmpty(room.ThumbnailImage))
+                                        {
+                                            <img src="@room.ThumbnailImage" alt="@room.RoomName"
+                                                 class="w-100 h-100" style="object-fit: cover; transition: transform 0.3s ease;" />
+                                        }
+                                        else
+                                        {
+                                            <div class="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
+                                                <i class="bi bi-image" style="font-size: 3rem; color: #ccc;"></i>
+                                            </div>
+                                        }
+                                        <div style="position: absolute; top: 12px; right: 12px;">
+                                            <span class="badge" style="background: #27AE60; color: white;">
+                                                <i class="bi bi-check-circle-fill me-1"></i>Có sẵn
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Content -->
+                                    <div class="p-4">
+                                        <h5 class="fw-bold mb-2 text-truncate" style="color: #1E8449;">
+                                            @room.RoomName
+                                        </h5>
+
+                                        <!-- Price -->
+                                        <div class="mb-3">
+                                            <p class="fs-4 fw-bold mb-0" style="color: #27AE60;">
+                                                @room.RoomPrice.ToString("C0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))
+                                                <span class="fs-6 fw-normal text-muted">/tháng</span>
+                                            </p>
+                                        </div>
+
+                                        <!-- Stats Row -->
+                                        <div class="row g-2 mb-4 small">
+                                            @if (room.MaxOccupants > 0)
+                                            {
+                                                <div class="col-6">
+                                                    <span class="text-muted">
+                                                        <i class="bi bi-door-open" style="color: #27AE60;"></i> @room.MaxOccupants phòng
+                                                    </span>
+                                                </div>
+                                            }
+                                            @if (room.Area > 0)
+                                            {
+                                                <div class="col-6">
+                                                    <span class="text-muted">
+                                                        <i class="bi bi-rulers" style="color: #27AE60;"></i> @room.Area m²
+                                                    </span>
+                                                </div>
+                                            }
+                                            @if (room.Floor > 0)
+                                            {
+                                                <div class="col-6">
+                                                    <span class="text-muted">
+                                                        <i class="bi bi-building" style="color: #27AE60;"></i> Tầng @room.Floor
+                                                    </span>
+                                                </div>
+                                            }
+                                            <div class="col-6">
+                                                <span class="text-muted">
+                                                    <i class="bi bi-star-fill" style="color: #FFD700;"></i> 4.8 (48)
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Description -->
+                                        @if (!string.IsNullOrEmpty(room.Description))
+                                        {
+                                            <p class="text-muted small mb-4" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                                @room.Description
+                                            </p>
+                                        }
+
+                                        <!-- View Details Button -->
+                                        <a href="/Home/Details/@room.RoomId" class="btn btn-sm fw-bold w-100"
+                                           style="background: #27AE60; color: white; border: none; padding: 0.6rem;">
+                                            <i class="bi bi-arrow-right me-1"></i>Xem Chi Tiết
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Pagination -->
+                    @if (totalPages > 1)
+                    {
+                        <nav class="d-flex justify-content-center mt-5">
+                            <ul class="pagination">
+                                <!-- Previous -->
+                                @if (page > 1)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="/Home/AllRooms?page=@(page - 1)&area=@(Model.Area ?? "")&priceRange=@(Model.PriceRange ?? "")&roomTypeId=@(Model.RoomTypeId.HasValue ? Model.RoomTypeId.Value.ToString() : "")&areaRange=@(Model.AreaRange ?? "")&floorRange=@(Model.FloorRange ?? "")">
+                                            <i class="bi bi-chevron-left"></i> Trước
+                                        </a>
+                                    </li>
+                                }
+
+                                <!-- Page Numbers -->
+                                @for (int p = 1; p <= totalPages; p++)
+                                {
+                                    @if (p == page)
+                                    {
+                                        <li class="page-item active">
+                                            <span class="page-link">@p</span>
+                                        </li>
+                                    }
+                                    else
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" href="/Home/AllRooms?page=@p&area=@(Model.Area ?? "")&priceRange=@(Model.PriceRange ?? "")&roomTypeId=@(Model.RoomTypeId.HasValue ? Model.RoomTypeId.Value.ToString() : "")&areaRange=@(Model.AreaRange ?? "")&floorRange=@(Model.FloorRange ?? "")">@p</a>
+                                        </li>
+                                    }
+                                }
+
+                                <!-- Next -->
+                                @if (page < totalPages)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="/Home/AllRooms?page=@(page + 1)&area=@(Model.Area ?? "")&priceRange=@(Model.PriceRange ?? "")&roomTypeId=@(Model.RoomTypeId.HasValue ? Model.RoomTypeId.Value.ToString() : "")&areaRange=@(Model.AreaRange ?? "")&floorRange=@(Model.FloorRange ?? "")">
+                                            Sau <i class="bi bi-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </nav>
+                    }
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+                        <p class="fs-5 text-muted mt-3">
+                            Không tìm thấy phòng trọ phù hợp với bộ lọc của bạn.
+                        </p>
+                        <a href="/Home/AllRooms" class="btn btn-outline-success mt-3">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>Xóa Bộ Lọc
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <style>
+        .featured-room-card {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .featured-room-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 16px 40px rgba(39, 174, 96, 0.2) !important;
+        }
+
+        .featured-room-card:hover img {
+            transform: scale(1.05);
+        }
+
+        @@media (max-width: 768px) {
+            .sticky-top {
+                position: static !important;
+                margin-bottom: 2rem;
+            }
+        }
+    </style>
+}

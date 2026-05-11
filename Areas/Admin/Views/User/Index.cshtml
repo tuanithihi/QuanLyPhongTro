@@ -1,104 +1,217 @@
-@using PagedList.Core.Mvc
-@model PagedList.Core.IPagedList<QuanLyThuVien.Models.tblUser>
-
+@model IEnumerable<QuanLyPhongTro.Models.tblUser>
 @{
+    ViewData["Title"] = "Danh sách người dùng";
     Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+    int currentPage = ViewBag.Page;
+    int totalItems  = ViewBag.TotalItems;
+    int totalPages  = ViewBag.TotalPages;
+    string search   = ViewBag.Search   ?? "";
+    string isActive = ViewBag.IsActive ?? "";
 }
 
 <main id="main" class="main">
-    <div class="pagetitle">
-        <h2>Danh sách người dùng</h2>
-        <p>
-            <a class="btn btn-primary" asp-area="Admin" asp-controller="User" asp-action="Create">
-                <i class="bi bi-person-plus-fill me-1"></i> Thêm người dùng
-            </a>
-        </p>
+<div class="pagetitle">
+    <h1>Người dùng</h1>
+    <nav><ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item active">Danh sách người dùng</li>
+    </ol></nav>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="bi bi-check-circle me-1"></i> @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="bi bi-exclamation-triangle me-1"></i> @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<section class="section">
+<div class="card">
+<div class="card-body">
+
+    <div class="d-flex justify-content-between align-items-center mt-3 mb-3">
+        <span class="text-muted small">Tổng: <strong>@totalItems</strong> tài khoản</span>
+        <div class="text-muted small">
+            <i class="bi bi-info-circle me-1"></i>
+            Người dùng tự đăng ký qua website
+        </div>
     </div>
 
-    <section class="section dashboard">
-        <div class="card recent-sales overflow-auto">
-            <div class="card-body mt-3">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light text-center">
-                        <tr>
-                            <th>#</th>
-                            <th>Ảnh</th>
-                            <th>Tên đăng nhập</th>
-                            <th>Họ tên</th>
-                            <th>Email</th>
-                            <th>Quyền</th>
-                            <th>Trạng thái</th>
-                            <th>Ngày tạo</th>
-                            <th>Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (Model != null && Model.Count > 0)
-                        {
-                            int stt = (Model.PageNumber - 1) * Model.PageSize + 1;
-                            foreach (var user in Model)
+    <form method="get" asp-area="Admin" asp-controller="User" asp-action="Index" class="row g-2 mb-3">
+        <div class="col-md-5">
+            <input type="text" name="search" value="@search" class="form-control"
+                   placeholder="Tìm theo tên đăng nhập, email, họ tên, SĐT..." />
+        </div>
+        @{
+            var activeList = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(new[] {
+                new { Value = "true",  Text = "Đang kích hoạt" },
+                new { Value = "false", Text = "Đã khóa" }
+            }, "Value", "Text", isActive);
+        }
+        <div class="col-md-3">
+            <select name="isActive" class="form-select" asp-items="@activeList">
+                <option value="">-- Trạng thái --</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-outline-primary w-100">
+                <i class="bi bi-search me-1"></i> Tìm
+            </button>
+        </div>
+        @if (!string.IsNullOrEmpty(search) || !string.IsNullOrEmpty(isActive))
+        {
+            <div class="col-md-2">
+                <a asp-area="Admin" asp-controller="User" asp-action="Index" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-x-lg me-1"></i> Xóa lọc
+                </a>
+            </div>
+        }
+    </form>
+
+    <div class="table-responsive">
+    <table class="table table-hover table-sm align-middle">
+        <thead class="table-light">
+            <tr>
+                <th style="width:44px;">#</th>
+                <th>Tài khoản</th>
+                <th>Họ và tên</th>
+                <th>Email</th>
+                <th>Số điện thoại</th>
+                <th>Ngày đăng ký</th>
+                <th class="text-center">Trạng thái</th>
+                <th class="text-center" style="width:100px;">Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Any())
+            {
+                <tr><td colspan="8" class="text-center text-muted py-4">Không có dữ liệu.</td></tr>
+            }
+            @{ int stt = (currentPage - 1) * (int)ViewBag.PageSize + 1; }
+            @foreach (var u in Model)
+            {
+                <tr>
+                    <td class="text-muted">@(stt++)</td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            @if (!string.IsNullOrEmpty(u.Avatar))
                             {
-                                <tr>
-                                    <td class="text-center">@stt</td>
-                                    <td class="text-center">
-                                        @if (!string.IsNullOrEmpty(user.Avatar))
-                                        {
-                                            <img src="@user.Avatar" alt="Avatar" class="rounded-circle border" width="45" height="45" />
-                                        }
-                                        else
-                                        {
-                                            <img src="/uploads/avatars/default.png" alt="No Avatar" class="rounded-circle border" width="45" height="45" />
-                                        }
-                                    </td>
-                                    <td class="text-center">@user.UserName</td>
-                                    <td class="text-center">@user.FullName</td>
-                                    <td class="text-center">@user.Email</td>
-                                    <td class="text-center">
-                                        <span class="badge @(user.Role == "admin" ? "bg-danger" : "bg-secondary")">@user.Role</span>
-                                    </td>
-                                    <td class="text-center">
-                                        @if (user.IsActive == true)
-                                        {
-                                            <span class="badge bg-success">Hoạt động</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-danger">Khóa</span>
-                                        }
-                                    </td>
-                                    <td>@user.CreatedDate?.ToString("dd/MM/yyyy")</td>
-                                    <td class="text-center">
-                                        <a asp-area="Admin" asp-controller="User" asp-action="Details" asp-route-id="@user.UserID"
-                                           class="btn btn-sm btn-info"><i class="bi bi-eye"></i></a>
-                                        <a asp-area="Admin" asp-controller="User" asp-action="Edit" asp-route-id="@user.UserID"
-                                           class="btn btn-sm btn-primary"><i class="bi bi-pencil"></i></a>
-                                        <a asp-area="Admin" asp-controller="User" asp-action="Delete" asp-route-id="@user.UserID"
-                                           class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></a>
-                                    </td>
-                                </tr>
-                                stt++;
+                                <img src="@u.Avatar" class="rounded-circle"
+                                     style="width:32px;height:32px;object-fit:cover;" />
                             }
+                            else
+                            {
+                                <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white"
+                                     style="width:32px;height:32px;font-size:.75rem;flex-shrink:0;">
+                                    @((u.FullName ?? u.Username).Length > 0 ? (u.FullName ?? u.Username)[0].ToString().ToUpper() : "?")
+                                </div>
+                            }
+                            <span class="fw-semibold font-monospace small">@u.Username</span>
+                        </div>
+                    </td>
+                    <td>@(u.FullName ?? "—")</td>
+                    <td class="small">@u.Email</td>
+                    <td>@(u.Phone ?? "—")</td>
+                    <td class="small text-muted">@u.CreatedAt.ToString("dd/MM/yyyy")</td>
+                    <td class="text-center">
+                        @if (u.IsActive)
+                        {
+                            <span class="badge bg-success">Hoạt động</span>
                         }
                         else
                         {
-                            <tr>
-                                <td colspan="9" class="text-center text-muted">Không có người dùng nào.</td>
-                            </tr>
+                            <span class="badge bg-secondary">Đã khóa</span>
                         }
-                    </tbody>
-                </table>
+                    </td>
+                    <td class="text-center">
+                        <form asp-area="Admin" asp-controller="User" asp-action="ToggleActive"
+                              asp-route-id="@u.UserId" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit"
+                                    class="btn btn-sm @(u.IsActive ? "btn-outline-warning" : "btn-outline-success") px-2"
+                                    title="@(u.IsActive ? "Khóa" : "Kích hoạt")">
+                                <i class="bi @(u.IsActive ? "bi-lock" : "bi-unlock")"></i>
+                            </button>
+                        </form>
+                        <button type="button" class="btn btn-sm btn-outline-danger px-2" title="Xóa"
+                                data-id="@u.UserId" data-name="@u.Username"
+                                onclick="confirmDelete(this.dataset.id, this.dataset.name)">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    </div>
 
-                <!-- PHÂN TRANG -->
-                <ul class="pagination justify-content-end mb-0">
-                    <pager class="pager-container"
-                           list="@Model"
-                           options="@PagedListRenderOptions.Bootstrap4PageNumbersOnly"
-                           asp-area="Admin"
-                           asp-controller="User"
-                           asp-action="Index">
-                    </pager>
-                </ul>
+    @if (totalPages > 1)
+    {
+        <nav class="d-flex justify-content-center mt-3">
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                    <a class="page-link" asp-area="Admin" asp-controller="User" asp-action="Index"
+                       asp-route-search="@search" asp-route-isActive="@isActive"
+                       asp-route-page="@(currentPage - 1)">‹</a>
+                </li>
+                @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                {
+                    <li class="page-item @(i == currentPage ? "active" : "")">
+                        <a class="page-link" asp-area="Admin" asp-controller="User" asp-action="Index"
+                           asp-route-search="@search" asp-route-isActive="@isActive"
+                           asp-route-page="@i">@i</a>
+                    </li>
+                }
+                <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                    <a class="page-link" asp-area="Admin" asp-controller="User" asp-action="Index"
+                       asp-route-search="@search" asp-route-isActive="@isActive"
+                       asp-route-page="@(currentPage + 1)">›</a>
+                </li>
+            </ul>
+        </nav>
+    }
+
+</div>
+</div>
+</section>
+</main>
+
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger"><i class="bi bi-trash me-2"></i>Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body small">
+                Xóa tài khoản <strong id="deleteName"></strong>?<br/>
+                Thao tác này không thể hoàn tác.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                <form id="deleteForm" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                </form>
             </div>
         </div>
-    </section>
-</main>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function confirmDelete(id, name) {
+    document.getElementById('deleteName').textContent = name;
+    document.getElementById('deleteForm').action = '/Admin/User/Delete/' + id;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+</script>
+}

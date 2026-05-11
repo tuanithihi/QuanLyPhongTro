@@ -1,19 +1,16 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using QuanLyThuVien.Utilities;
-using QuanLyThuVien.Attributes;
-using QuanLyThuVien.Models;
 using Microsoft.EntityFrameworkCore;
+using QuanLyPhongTro.Areas.Admin.Attributes;
+using QuanLyPhongTro.Areas.Admin.Data;
+using QuanLyPhongTro.Areas.Admin.Models;
+using QuanLyPhongTro.Models;
 
-namespace QuanLyThuVien.Areas.Admin.Controllers
+namespace QuanLyPhongTro.Areas.Admin.Controllers
 {
     [Area("Admin")]
     [AdminOnly]
     public class HomeController : Controller
-    {    
+    {
         private readonly DataContext _context;
 
         public HomeController(DataContext context)
@@ -21,36 +18,64 @@ namespace QuanLyThuVien.Areas.Admin.Controllers
             _context = context;
         }
 
-        public IActionResult Index()
+        // GET: /Admin
+        public async Task<IActionResult> Index()
         {
-            // Thống kê tổng quan
-            ViewBag.TotalBooks = _context.Books.Count(b => b.IsActive == true);
-            ViewBag.TotalAuthors = _context.Authors.Count(a => a.IsActive == true);
-            ViewBag.TotalUsers = _context.Users.Count();
-            ViewBag.TotalBorrows = _context.Borrows.Count();
+            var now = DateTime.Now;
 
-            // Sách được mượn nhiều nhất
-            var topBorrowedBooks = (from bd in _context.BorrowDetails
-                                   join b in _context.Books on bd.BookID equals b.BookID
-                                   where b.IsActive == true
-                                   group bd by new { b.BookID, b.Title } into g
-                                   orderby g.Count() descending
-                                   select new
-                                   {
-                                       BookName = g.Key.Title,
-                                       BorrowCount = g.Count()
-                                   }).Take(5).ToList();
+            var vm = new DashboardViewModel
+            {
+                // ── Phòng ────────────────────────────────────────────
+                TotalRooms       = await _context.Rooms.CountAsync(),
+                AvailableRooms   = await _context.Rooms.CountAsync(r => r.Status == RoomStatus.Available),
+                OccupiedRooms    = await _context.Rooms.CountAsync(r => r.Status == RoomStatus.Occupied),
+                MaintenanceRooms = await _context.Rooms.CountAsync(r => r.Status == RoomStatus.Maintenance),
 
-            ViewBag.TopBorrowedBooks = topBorrowedBooks;
+                // ── Hợp đồng ─────────────────────────────────────────
+                ActiveContracts = await _context.Contracts
+                    .CountAsync(c => c.Status == ContractStatus.Active),
 
-            return View();
-        }
+                ExpiringContractsIn30Days = await _context.Contracts
+                    .CountAsync(c => c.Status == ContractStatus.Active
+                                  && c.EndDate.HasValue
+                                  && c.EndDate <= DateTime.Now.AddDays(30)),
 
-        public IActionResult Logout()
-        {
-            Functions.ClearSession();
-            TempData["SuccessMessage"] = "Đăng xuất thành công!";
-            return RedirectToAction("Index", "Home", new { area = "" });
+                // ── Người thuê ────────────────────────────────────────
+                TotalTenants = await _context.Tenants.CountAsync(t => t.IsActive),
+
+                // ── Tài chính tháng hiện tại ──────────────────────────
+                TotalRevenueThisMonth = await _context.Invoices
+                    .Where(i => i.Status == InvoiceStatus.Paid
+                             && i.BillingMonth == now.Month
+                             && i.BillingYear  == now.Year)
+                    .SumAsync(i => (decimal?)i.TotalAmount) ?? 0,
+
+                PaidInvoicesThisMonth = await _context.Invoices
+                    .CountAsync(i => i.Status == InvoiceStatus.Paid
+                                  && i.BillingMonth == now.Month
+                                  && i.BillingYear  == now.Year),
+
+                UnpaidInvoicesThisMonth = await _context.Invoices
+                    .CountAsync(i => i.Status == InvoiceStatus.Unpaid
+                                  && i.BillingMonth == now.Month
+                                  && i.BillingYear  == now.Year),
+
+                OverdueInvoicesThisMonth = await _context.Invoices
+                    .CountAsync(i => i.Status == InvoiceStatus.Overdue
+                                  && i.BillingMonth == now.Month
+                                  && i.BillingYear  == now.Year),
+
+                // ── Yêu cầu chờ xử lý ────────────────────────────────
+                PendingBookingRequests = await _context.BookingRequests
+                    .CountAsync(b => b.Status == BookingRequestStatus.Pending),
+
+                // ── Chat có tin nhắn khách chưa đọc ─────────────────────
+                OpenChatSessions = await _context.ChatSessions
+                    .CountAsync(s => s.Messages.Any(m => m.SenderType == ChatSenderType.Guest
+                                                      && !m.IsReadByAdmin)),
+            };
+
+            return View(vm);
         }
     }
 }

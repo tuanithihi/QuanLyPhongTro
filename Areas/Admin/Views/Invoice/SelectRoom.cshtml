@@ -1,0 +1,107 @@
+@model IEnumerable<QuanLyPhongTro.Models.tblContract>
+@using QuanLyPhongTro.Models
+@{
+    ViewData["Title"] = "Chọn phòng để lập hóa đơn";
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<main id="main" class="main">
+<div class="pagetitle">
+    <h1>Lập hóa đơn mới</h1>
+    <nav><ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Invoice" asp-action="Index">Hóa đơn</a></li>
+        <li class="breadcrumb-item active">Chọn phòng</li>
+    </ol></nav>
+</div>
+
+<section class="section">
+<div class="card">
+<div class="card-header d-flex justify-content-between align-items-center">
+    <span class="fw-semibold"><i class="bi bi-door-open me-2"></i>Chọn phòng cần lập hóa đơn</span>
+    <span class="badge bg-primary">@Model.Count() hợp đồng đang hiệu lực</span>
+</div>
+<div class="card-body p-0">
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+            Không có hợp đồng nào đang hiệu lực.
+            <div class="mt-2">
+                <a asp-area="Admin" asp-controller="Contract" asp-action="Index" class="btn btn-sm btn-outline-primary">
+                    Xem danh sách hợp đồng
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="ps-3" style="width:44px;">#</th>
+                    <th>Phòng</th>
+                    <th>Người thuê</th>
+                    <th class="text-end">Tiền thuê/tháng</th>
+                    <th class="text-center">Ngày thanh toán</th>
+                    <th class="text-center">Hóa đơn gần nhất</th>
+                    <th class="text-center pe-3"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @{ int stt = 0; }
+                @foreach (var c in Model)
+                {
+                    stt++;
+                    var lastInv = c.Invoices.OrderByDescending(i => i.BillingYear)
+                                             .ThenByDescending(i => i.BillingMonth)
+                                             .FirstOrDefault();
+                    <tr>
+                        <td class="ps-3 text-muted small">@stt</td>
+                        <td>
+                            <div class="fw-semibold">@c.Room?.RoomCode</div>
+                            <div class="text-muted small">@c.Room?.RoomName</div>
+                        </td>
+                        <td>
+                            <div>@c.Tenant?.FullName</div>
+                            @if (!string.IsNullOrEmpty(c.Tenant?.Phone))
+                            {
+                                <div class="text-muted small"><i class="bi bi-telephone me-1"></i>@c.Tenant.Phone</div>
+                            }
+                        </td>
+                        <td class="text-end fw-semibold">@c.MonthlyRent.ToString("N0") ₫</td>
+                        <td class="text-center small">
+                            Ngày <strong>@c.PaymentDayOfMonth</strong> hàng tháng
+                        </td>
+                        <td class="text-center small">
+                            @if (lastInv != null)
+                            {
+                                <span class="badge
+                                    @(lastInv.Status == InvoiceStatus.Paid ? "bg-success" :
+                                      lastInv.Status == InvoiceStatus.Overdue ? "bg-danger" : "bg-warning text-dark")">
+                                    @lastInv.BillingMonth/@lastInv.BillingYear
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Chưa có</span>
+                            }
+                        </td>
+                        <td class="text-center pe-3">
+                            <a asp-area="Admin" asp-controller="Invoice" asp-action="Create"
+                               asp-route-contractId="@c.ContractId"
+                               class="btn btn-primary btn-sm">
+                                <i class="bi bi-file-earmark-plus me-1"></i>Lập hóa đơn
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        </div>
+    }
+</div>
+</div>
+</section>
+</main>

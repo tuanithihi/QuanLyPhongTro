@@ -1,0 +1,227 @@
+@{
+    ViewData["Title"] = "Hộp thư Chat";
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+    var sessions = (dynamic)ViewBag.Sessions;
+}
+
+<main id="main" class="main">
+<div class="pagetitle">
+    <h1>Hộp thư Chat</h1>
+    <nav><ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item active">Chat</li>
+    </ol></nav>
+</div>
+
+<section class="section">
+<div class="card border-0 shadow-sm" style="min-height:600px;">
+<div class="row g-0" style="height:640px;">
+
+    @* ══ LEFT — Session list ══ *@
+    <div class="col-md-4 border-end d-flex flex-column" style="height:640px;">
+        <div class="p-3 border-bottom">
+            <h6 class="fw-bold mb-0">
+                <i class="bi bi-chat-dots me-2 text-primary"></i>Hội thoại
+            </h6>
+        </div>
+        <div class="overflow-auto flex-fill" id="sessionList">
+            @if (sessions == null || ((System.Collections.ICollection)sessions).Count == 0)
+            {
+                <div class="text-center text-muted p-4 small">
+                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>Chưa có hội thoại nào.
+                </div>
+            }
+            else
+            {
+                foreach (var s in sessions)
+                {
+                    <a href="#" class="session-item d-flex align-items-center gap-3 px-3 py-2 text-decoration-none border-bottom"
+                       data-sid="@s.SessionId" onclick="openSession(@s.SessionId, event)">
+                        @{ var _name = ((string)s.GuestName) ?? "?"; }
+                        <div class="avatar-circle flex-shrink-0">
+                            @(_name.Length > 0 ? _name[0].ToString().ToUpper() : "?")
+                        </div>
+                        <div class="flex-fill overflow-hidden">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-semibold text-dark text-truncate" style="max-width:130px;">@s.GuestName</span>
+                                <span class="text-muted" style="font-size:.7rem;">@((DateTime)s.LastMsgAt).ToString("dd/MM HH:mm")</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-1 mt-1">
+                                <span class="text-muted text-truncate" style="font-size:.75rem;max-width:100px;">@s.GuestPhone</span>
+                                @if (s.TenantId != null)
+                                {
+                                    <span class="badge bg-success ms-1" style="font-size:.6rem;">
+                                        <i class="bi bi-house-fill"></i> Người thuê
+                                    </span>
+                                }
+                                else if (s.UserId != null)
+                                {
+                                    <span class="badge bg-primary ms-1" style="font-size:.6rem;">
+                                        <i class="bi bi-person-fill"></i> Tài khoản
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary ms-1" style="font-size:.6rem;">Ẩn danh</span>
+                                }
+                            </div>
+                        </div>
+                        @if ((int)s.UnreadCount > 0)
+                        {
+                            <span class="badge bg-danger rounded-pill">@s.UnreadCount</span>
+                        }
+                    </a>
+                }
+            }
+        </div>
+    </div>
+
+    @* ══ RIGHT — Message pane ══ *@
+    <div class="col-md-8 d-flex flex-column" style="height:640px;">
+
+        @* Placeholder khi chưa chọn hội thoại *@
+        <div id="chatPlaceholder" class="flex-fill d-flex flex-column align-items-center justify-content-center text-muted">
+            <i class="bi bi-chat-square-dots fs-1 mb-3 opacity-25"></i>
+            <p class="mb-0">Chọn một hội thoại để xem tin nhắn</p>
+        </div>
+
+        @* Pane hiển thị khi đã chọn *@
+        <div id="chatPane" class="d-none flex-column flex-fill" style="height:640px;">
+            <div class="px-3 py-2 border-bottom d-flex align-items-center gap-2">
+                <div class="avatar-circle">?</div>
+                <div>
+                    <div class="fw-semibold mb-0" id="chatGuestName">—</div>
+                    <div class="text-muted small" id="chatGuestPhone">—</div>
+                </div>
+            </div>
+
+            <div id="msgArea" class="flex-fill overflow-auto p-3" style="background:#f8fafc;"></div>
+
+            <div class="p-3 border-top bg-white">
+                <div class="d-flex gap-2">
+                    <textarea id="replyInput" class="form-control form-control-sm rounded-3"
+                              rows="2" placeholder="Nhập phản hồi..." style="resize:none;"></textarea>
+                    <button class="btn btn-primary px-3 rounded-3 align-self-end" onclick="sendReply()">
+                        <i class="bi bi-send"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+</div>
+</section>
+</main>
+
+@section Scripts {
+<style>
+    .avatar-circle {
+        width:38px; height:38px; border-radius:50%;
+        background: linear-gradient(135deg,#667eea,#764ba2);
+        color:#fff; font-weight:700; font-size:.9rem;
+        display:flex; align-items:center; justify-content:center;
+        flex-shrink:0; text-transform:uppercase;
+    }
+    .session-item { transition:background .15s; cursor:pointer; }
+    .session-item:hover, .session-item.active { background:#f0f4ff; }
+    .msg-bubble { max-width:72%; padding:.5rem .85rem; border-radius:1rem; font-size:.9rem; line-height:1.5; }
+    .msg-guest { background:#e9ecef; border-bottom-left-radius:.2rem; color:#333; }
+    .msg-admin { background:#0d6efd; border-bottom-right-radius:.2rem; color:#fff; }
+    .msg-system { background:#fff3cd; border:1px solid #ffeeba; color:#856404; font-size:.8rem; text-align:center; border-radius:.5rem; padding:.35rem .75rem; }
+    .msg-time { font-size:.7rem; opacity:.65; margin-top:.2rem; }
+</style>
+<script>
+    let currentSid = 0;
+    let lastMsgId  = 0;
+    let pollTimer  = null;
+
+    function openSession(sid, e) {
+        if (e) e.preventDefault();
+        currentSid = sid;
+        lastMsgId  = 0;
+
+        document.querySelectorAll('.session-item').forEach(el => el.classList.remove('active'));
+        const item = document.querySelector(`.session-item[data-sid="${sid}"]`);
+        if (item) item.classList.add('active');
+
+        document.getElementById('chatPlaceholder').classList.add('d-none');
+        document.getElementById('chatPane').classList.remove('d-none');
+        document.getElementById('chatPane').classList.add('d-flex');
+        document.getElementById('msgArea').innerHTML = '';
+
+        fetchMessages(true);
+        clearInterval(pollTimer);
+        pollTimer = setInterval(() => fetchMessages(false), 4000);
+    }
+
+    async function fetchMessages(scrollBottom) {
+        if (!currentSid) return;
+        try {
+            const res  = await fetch(`/Admin/Chat/Messages?sessionId=${currentSid}&after=${lastMsgId}`);
+            const data = await res.json();
+
+            if (data.guestName) {
+                document.getElementById('chatGuestName').textContent  = data.guestName;
+                document.getElementById('chatGuestPhone').textContent = data.guestPhone;
+            }
+
+            if (data.messages && data.messages.length > 0) {
+                const area = document.getElementById('msgArea');
+                data.messages.forEach(m => appendMsg(area, m));
+                lastMsgId = data.messages[data.messages.length - 1].id;
+                area.scrollTop = area.scrollHeight;
+
+                // Remove unread badge for this session
+                const badge = document.querySelector(`.session-item[data-sid="${currentSid}"] .badge`);
+                if (badge) badge.remove();
+            }
+        } catch {}
+    }
+
+    function appendMsg(area, m) {
+        const wrap = document.createElement('div');
+        if (m.isSystem) {
+            wrap.className = 'd-flex justify-content-center my-2';
+            wrap.innerHTML = `<div class="msg-system">${escHtml(m.content)}</div>`;
+        } else if (m.senderType === 0) { // Guest
+            wrap.className = 'd-flex flex-column align-items-start mb-3';
+            wrap.innerHTML = `
+                <div class="msg-bubble msg-guest">${escHtml(m.content)}</div>
+                <div class="msg-time ps-1">${m.createdAt}</div>`;
+        } else { // Admin
+            wrap.className = 'd-flex flex-column align-items-end mb-3';
+            wrap.innerHTML = `
+                <div class="msg-bubble msg-admin">${escHtml(m.content)}</div>
+                <div class="msg-time pe-1">${m.createdAt}</div>`;
+        }
+        area.appendChild(wrap);
+    }
+
+    async function sendReply() {
+        const input = document.getElementById('replyInput');
+        const text  = input.value.trim();
+        if (!text || !currentSid) return;
+        input.value = '';
+        input.focus();
+
+        try {
+            await fetch('/Admin/Chat/Reply', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ sessionId: currentSid, content: text })
+            });
+            fetchMessages(true);
+        } catch {}
+    }
+
+    // Enter to send (Shift+Enter = newline)
+    document.getElementById('replyInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(); }
+    });
+
+    function escHtml(str) {
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+</script>
+}

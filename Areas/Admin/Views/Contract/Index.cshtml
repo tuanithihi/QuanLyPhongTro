@@ -1,0 +1,209 @@
+@model IEnumerable<QuanLyPhongTro.Models.tblContract>
+@using QuanLyPhongTro.Models
+@{
+    ViewData["Title"] = "Danh sách hợp đồng";
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+    int currentPage = ViewBag.Page;
+    int totalItems  = ViewBag.TotalItems;
+    int totalPages  = ViewBag.TotalPages;
+    string search   = ViewBag.Search ?? "";
+    string status   = ViewBag.Status ?? "";
+}
+
+<main id="main" class="main">
+<div class="pagetitle">
+    <h1>Hợp đồng</h1>
+    <nav><ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item active">Danh sách hợp đồng</li>
+    </ol></nav>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="bi bi-check-circle me-1"></i> @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="bi bi-exclamation-triangle me-1"></i> @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<section class="section">
+<div class="card">
+<div class="card-body">
+
+    <div class="d-flex justify-content-between align-items-center mt-3 mb-3">
+        <a asp-area="Admin" asp-controller="Contract" asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-file-earmark-plus me-1"></i> Thêm hợp đồng
+        </a>
+        <span class="text-muted small">Tổng: <strong>@totalItems</strong> hợp đồng</span>
+    </div>
+
+    <form method="get" asp-area="Admin" asp-controller="Contract" asp-action="Index" class="row g-2 mb-3">
+        <div class="col-md-5">
+            <input type="text" name="search" value="@search" class="form-control"
+                   placeholder="Mã HĐ, mã phòng, tên người thuê..." />
+        </div>
+        <div class="col-md-3">
+            <select name="status" class="form-select" asp-items="@((SelectList)ViewBag.StatusList)">
+                <option value="">-- Trạng thái --</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-outline-primary w-100">
+                <i class="bi bi-search me-1"></i> Tìm
+            </button>
+        </div>
+        @if (!string.IsNullOrEmpty(search) || !string.IsNullOrEmpty(status))
+        {
+            <div class="col-md-2">
+                <a asp-area="Admin" asp-controller="Contract" asp-action="Index" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-x-lg me-1"></i> Xóa lọc
+                </a>
+            </div>
+        }
+    </form>
+
+    <div class="table-responsive">
+    <table class="table table-hover table-sm align-middle">
+        <thead class="table-light">
+            <tr>
+                <th style="width:44px;">#</th>
+                <th>Mã HĐ</th>
+                <th>Phòng</th>
+                <th>Người thuê</th>
+                <th>Ngày bắt đầu</th>
+                <th>Ngày kết thúc</th>
+                <th class="text-end">Tiền thuê/tháng</th>
+                <th class="text-center">Trạng thái</th>
+                <th class="text-center" style="width:100px;">Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Any())
+            {
+                <tr><td colspan="9" class="text-center text-muted py-4">Không có dữ liệu.</td></tr>
+            }
+            @{ int stt = (currentPage - 1) * (int)ViewBag.PageSize + 1; }
+            @foreach (var c in Model)
+            {
+                <tr class="cursor-pointer" onclick="window.location='/Admin/Contract/Details/@c.ContractId'">
+                    <td class="text-muted">@(stt++)</td>
+                    <td class="font-monospace fw-semibold">@c.ContractCode</td>
+                    <td onclick="event.stopPropagation()">
+                        @if (c.Room != null)
+                        {
+                            <a asp-area="Admin" asp-controller="Room" asp-action="Detail" asp-route-id="@c.RoomId"
+                               class="text-decoration-none fw-semibold">@c.Room.RoomCode</a>
+                            <span class="text-muted small d-block">@c.Room.RoomName</span>
+                        }
+                    </td>
+                    <td>@c.Tenant?.FullName</td>
+                    <td>@c.StartDate.ToString("dd/MM/yyyy")</td>
+                    <td>@(c.EndDate.HasValue ? c.EndDate.Value.ToString("dd/MM/yyyy") : "—")</td>
+                    <td class="text-end">@c.MonthlyRent.ToString("N0") đ</td>
+                    <td class="text-center">
+                        @switch (c.Status)
+                        {
+                            case ContractStatus.Active:
+                                <span class="badge bg-success">Đang hiệu lực</span>
+                                break;
+                            case ContractStatus.Expired:
+                                <span class="badge bg-secondary">Hết hạn</span>
+                                break;
+                            case ContractStatus.Terminated:
+                                <span class="badge bg-danger">Đã chấm dứt</span>
+                                break;
+                        }
+                    </td>
+                    <td class="text-center" onclick="event.stopPropagation()">
+                        <a asp-area="Admin" asp-controller="Contract" asp-action="Details"
+                           asp-route-id="@c.ContractId" class="btn btn-sm btn-outline-info px-2" title="Chi tiết">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <a asp-area="Admin" asp-controller="Contract" asp-action="Edit"
+                           asp-route-id="@c.ContractId" class="btn btn-sm btn-outline-primary px-2" title="Sửa">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <button type="button" class="btn btn-sm btn-outline-danger px-2" title="Xóa"
+                                data-id="@c.ContractId" data-name="@c.ContractCode"
+                                onclick="event.stopPropagation(); confirmDelete(this.dataset.id, this.dataset.name)">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    </div>
+
+    @if (totalPages > 1)
+    {
+        <nav class="d-flex justify-content-center mt-3">
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                    <a class="page-link" asp-area="Admin" asp-controller="Contract" asp-action="Index"
+                       asp-route-search="@search" asp-route-status="@status"
+                       asp-route-page="@(currentPage - 1)">‹</a>
+                </li>
+                @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                {
+                    <li class="page-item @(i == currentPage ? "active" : "")">
+                        <a class="page-link" asp-area="Admin" asp-controller="Contract" asp-action="Index"
+                           asp-route-search="@search" asp-route-status="@status"
+                           asp-route-page="@i">@i</a>
+                    </li>
+                }
+                <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                    <a class="page-link" asp-area="Admin" asp-controller="Contract" asp-action="Index"
+                       asp-route-search="@search" asp-route-status="@status"
+                       asp-route-page="@(currentPage + 1)">›</a>
+                </li>
+            </ul>
+        </nav>
+    }
+
+</div>
+</div>
+</section>
+</main>
+
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger"><i class="bi bi-trash me-2"></i>Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body small">
+                Xóa hợp đồng <strong id="deleteName"></strong>?<br/>
+                Thao tác này không thể hoàn tác.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                <form id="deleteForm" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>.cursor-pointer { cursor: pointer; }</style>
+
+@section Scripts {
+<script>
+function confirmDelete(id, name) {
+    document.getElementById('deleteName').textContent = name;
+    document.getElementById('deleteForm').action = '/Admin/Contract/Delete/' + id;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+</script>
+}

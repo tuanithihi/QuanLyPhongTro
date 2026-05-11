@@ -1,0 +1,210 @@
+@model IEnumerable<QuanLyPhongTro.Models.tblRoom>
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    ViewData["Title"] = "Danh sách phòng";
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+    int currentPage = ViewBag.Page;
+    int pageSize    = ViewBag.PageSize;
+    int totalItems  = ViewBag.TotalItems;
+    int totalPages  = ViewBag.TotalPages;
+    string searchQ  = ViewBag.SearchTerm ?? string.Empty;
+    string rtId     = ViewBag.RoomTypeId?.ToString() ?? string.Empty;
+    string st       = ViewBag.Status?.ToString() ?? string.Empty;
+}
+
+<main id="main" class="main">
+
+    <div class="pagetitle">
+        <h1>Quản lý phòng</h1>
+        <nav>
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+                <li class="breadcrumb-item active">Danh sách phòng</li>
+            </ol>
+        </nav>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="bi bi-check-circle me-1"></i> @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            <i class="bi bi-exclamation-triangle me-1"></i> @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <section class="section">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+
+                        <!-- Toolbar -->
+                        <div class="d-flex justify-content-between align-items-center mt-3 mb-3">
+                            <a asp-area="Admin" asp-controller="Room" asp-action="Create" class="btn btn-primary">
+                                <i class="bi bi-plus-lg me-1"></i> Thêm phòng mới
+                            </a>
+                            <span class="text-muted small">Tổng: <strong>@totalItems</strong> phòng</span>
+                        </div>
+
+                        <!-- Bộ lọc -->
+                        <form method="get" asp-area="Admin" asp-controller="Room" asp-action="Index" class="row g-2 mb-3">
+                            <div class="col-md-4">
+                                <input type="text" name="searchTerm" value="@searchQ"
+                                       class="form-control" placeholder="Tìm theo mã hoặc tên phòng...">
+                            </div>
+                            <div class="col-md-3">
+                                <select name="roomTypeId" class="form-select"
+                                        asp-items="@((SelectList)ViewBag.RoomTypeList)">
+                                    <option value="">-- Loại phòng --</option>
+                                </select>
+                            </div>
+                            @{
+                                var statusList = new SelectList(new[] {
+                                    new { Value = "0", Text = "Phòng trống" },
+                                    new { Value = "1", Text = "Đang thuê"   },
+                                    new { Value = "2", Text = "Bảo trì"     }
+                                }, "Value", "Text", st);
+                            }
+                            <div class="col-md-3">
+                                <select name="status" class="form-select" asp-items="@statusList">
+                                    <option value="">-- Trạng thái --</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-outline-primary w-100">
+                                    <i class="bi bi-search me-1"></i> Lọc
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Bảng -->
+                        <table class="table table-hover table-bordered align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width:50px">STT</th>
+                                    <th>Ảnh</th>
+                                    <th>Mã phòng</th>
+                                    <th>Tên phòng</th>
+                                    <th>Loại</th>
+                                    <th>Tầng</th>
+                                    <th>Giá thuê</th>
+                                    <th>Trạng thái</th>
+                                    <th style="width:130px">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{int stt = (currentPage - 1) * pageSize + 1;}
+                                @foreach (var room in Model)
+                                {
+                                    <tr>
+                                        <td>@(stt++)</td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(room.ThumbnailImage))
+                                            {
+                                                <img src="@room.ThumbnailImage" alt="thumb"
+                                                     style="width:48px;height:48px;object-fit:cover;border-radius:4px;">
+                                            }
+                                            else
+                                            {
+                                                <div class="bg-light d-flex align-items-center justify-content-center"
+                                                     style="width:48px;height:48px;border-radius:4px;">
+                                                    <i class="bi bi-image text-muted"></i>
+                                                </div>
+                                            }
+                                        </td>
+                                        <td><code>@room.RoomCode</code></td>
+                                        <td>@room.RoomName</td>
+                                        <td>@room.RoomType?.RoomTypeName</td>
+                                        <td>Tầng @room.Floor</td>
+                                        <td class="text-end fw-semibold">@room.RoomPrice.ToString("N0") đ</td>
+                                        <td>
+                                            @switch (room.Status)
+                                            {
+                                                case QuanLyPhongTro.Models.RoomStatus.Available:
+                                                    <span class="badge bg-success">Trống</span>
+                                                    break;
+                                                case QuanLyPhongTro.Models.RoomStatus.Occupied:
+                                                    <span class="badge bg-primary">Đang thuê</span>
+                                                    break;
+                                                case QuanLyPhongTro.Models.RoomStatus.Maintenance:
+                                                    <span class="badge bg-warning text-dark">Bảo trì</span>
+                                                    break;
+                                            }
+                                        </td>
+                                        <td>
+                                            <a asp-area="Admin" asp-controller="Room" asp-action="Detail"
+                                               asp-route-id="@room.RoomId"
+                                               class="btn btn-sm btn-outline-info" title="Chi tiết">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a asp-area="Admin" asp-controller="Room" asp-action="Edit"
+                                               asp-route-id="@room.RoomId"
+                                               class="btn btn-sm btn-outline-primary" title="Sửa">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <form asp-area="Admin" asp-controller="Room" asp-action="Delete"
+                                                  asp-route-id="@room.RoomId"
+                                                  method="post" class="d-inline"
+                                                  onsubmit="return confirm('Xóa phòng «@room.RoomName»?')">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                                @if (!Model.Any())
+                                {
+                                    <tr><td colspan="9" class="text-center text-muted py-4">Không có dữ liệu</td></tr>
+                                }
+                            </tbody>
+                        </table>
+
+                        <!-- Phân trang (dùng href thay asp-route-page để tránh xung đột Razor directive) -->
+                        @if (totalPages > 1)
+                        {
+                            <nav>
+                                <ul class="pagination justify-content-center">
+                                    <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                                        <a class="page-link"
+                                           href="?page=@(currentPage-1)&searchTerm=@searchQ&roomTypeId=@rtId&status=@st">
+                                            &laquo;
+                                        </a>
+                                    </li>
+                                    @for (int i = 1; i <= totalPages; i++)
+                                    {
+                                        <li class="page-item @(i == currentPage ? "active" : "")">
+                                            <a class="page-link"
+                                               href="?page=@(i)&searchTerm=@searchQ&roomTypeId=@rtId&status=@st">
+                                                @i
+                                            </a>
+                                        </li>
+                                    }
+                                    <li class="page-item @(currentPage >= totalPages ? "disabled" : "")">
+                                        <a class="page-link"
+                                           href="?page=@(currentPage+1)&searchTerm=@searchQ&roomTypeId=@rtId&status=@st">
+                                            &raquo;
+                                        </a>
+                                    </li>
+                                </ul>
+                            </nav>
+                            <p class="text-center text-muted small">
+                                Trang @(currentPage) / @totalPages &mdash; Tổng @totalItems phòng
+                            </p>
+                        }
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</main>

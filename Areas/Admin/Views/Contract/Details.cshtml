@@ -1,0 +1,251 @@
+@model QuanLyPhongTro.Models.tblContract
+@using QuanLyPhongTro.Models
+@{
+    ViewData["Title"] = "Chi tiết hợp đồng";
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<main id="main" class="main">
+<div class="pagetitle">
+    <h1>Hợp đồng</h1>
+    <nav><ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Contract" asp-action="Index">Danh sách</a></li>
+        <li class="breadcrumb-item active">@Model.ContractCode</li>
+    </ol></nav>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="bi bi-check-circle me-1"></i> @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="bi bi-exclamation-triangle me-1"></i> @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<section class="section">
+<div class="row g-3">
+
+    @* ── Cột trái: chi tiết hợp đồng ── *@
+    <div class="col-xl-8">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center py-3">
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-file-earmark-text me-2"></i>Thông tin hợp đồng</h6>
+                <div class="d-flex gap-2">
+                    <a asp-area="Admin" asp-controller="Contract" asp-action="Edit"
+                       asp-route-id="@Model.ContractId" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-pencil me-1"></i>Sửa
+                    </a>
+                    <button type="button" class="btn btn-sm btn-outline-danger"
+                            data-id="@Model.ContractId" data-name="@Model.ContractCode"
+                            onclick="confirmDelete(this.dataset.id, this.dataset.name)">
+                        <i class="bi bi-trash me-1"></i>Xóa
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless table-sm">
+                    <tr>
+                        <td class="text-muted fw-semibold" style="width:40%">Mã hợp đồng</td>
+                        <td class="font-monospace fw-bold">@Model.ContractCode</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-semibold">Trạng thái</td>
+                        <td>
+                            @switch (Model.Status)
+                            {
+                                case ContractStatus.Active:
+                                    <span class="badge bg-success">Đang hiệu lực</span>
+                                    break;
+                                case ContractStatus.Expired:
+                                    <span class="badge bg-secondary">Hết hạn</span>
+                                    break;
+                                case ContractStatus.Terminated:
+                                    <span class="badge bg-danger">Đã chấm dứt</span>
+                                    break;
+                            }
+                        </td>
+                    </tr>
+                    <tr><td colspan="2"><hr class="my-1"/></td></tr>
+                    <tr>
+                        <td class="text-muted fw-semibold">Phòng</td>
+                        <td>
+                            @if (Model.Room != null)
+                            {
+                                <a asp-area="Admin" asp-controller="Room" asp-action="Detail"
+                                   asp-route-id="@Model.RoomId" class="fw-semibold text-decoration-none">
+                                    @Model.Room.RoomCode — @Model.Room.RoomName
+                                </a>
+                                <span class="text-muted small ms-2">(@Model.Room.RoomType?.RoomTypeName)</span>
+                            }
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-semibold">Người thuê</td>
+                        <td>
+                            @if (Model.Tenant != null)
+                            {
+                                <a asp-area="Admin" asp-controller="Tenant" asp-action="Details"
+                                   asp-route-id="@Model.TenantId" class="fw-semibold text-decoration-none">
+                                    @Model.Tenant.FullName
+                                </a>
+                                <span class="text-muted small ms-2">(CCCD: @Model.Tenant.IdentityNumber)</span>
+                            }
+                        </td>
+                    </tr>
+                    <tr><td colspan="2"><hr class="my-1"/></td></tr>
+                    <tr>
+                        <td class="text-muted fw-semibold">Ngày bắt đầu</td>
+                        <td>@Model.StartDate.ToString("dd/MM/yyyy")</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-semibold">Ngày kết thúc</td>
+                        <td>@(Model.EndDate.HasValue ? Model.EndDate.Value.ToString("dd/MM/yyyy") : "—")</td>
+                    </tr>
+                    @if (Model.ActualEndDate.HasValue)
+                    {
+                        <tr>
+                            <td class="text-muted fw-semibold">Ngày chấm dứt TT</td>
+                            <td class="text-danger">@Model.ActualEndDate.Value.ToString("dd/MM/yyyy")</td>
+                        </tr>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.TerminationReason))
+                    {
+                        <tr>
+                            <td class="text-muted fw-semibold">Lý do chấm dứt</td>
+                            <td>@Model.TerminationReason</td>
+                        </tr>
+                    }
+                    <tr><td colspan="2"><hr class="my-1"/></td></tr>
+                    <tr>
+                        <td class="text-muted fw-semibold">Chỉ số điện ban đầu</td>
+                        <td>@Model.InitialElectricIndex kWh</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted fw-semibold">Chỉ số nước ban đầu</td>
+                        <td>@Model.InitialWaterIndex m³</td>
+                    </tr>
+                    @if (!string.IsNullOrEmpty(Model.Notes))
+                    {
+                        <tr><td colspan="2"><hr class="my-1"/></td></tr>
+                        <tr>
+                            <td class="text-muted fw-semibold">Ghi chú</td>
+                            <td>@Model.Notes</td>
+                        </tr>
+                    }
+                </table>
+
+                @if (!string.IsNullOrEmpty(Model.Terms))
+                {
+                    <div class="mt-2">
+                        <div class="fw-semibold text-muted mb-1">Điều khoản hợp đồng</div>
+                        <div class="bg-light rounded p-3 small" style="white-space:pre-wrap;">@Model.Terms</div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    @* ── Cột phải: tóm tắt tài chính + actions ── *@
+    <div class="col-xl-4">
+
+        @* Tóm tắt tài chính *@
+        <div class="card mb-3">
+            <div class="card-header py-3">
+                <h6 class="mb-0 fw-semibold">Tài chính</h6>
+            </div>
+            <div class="card-body pt-2 pb-2">
+                <table class="table table-borderless table-sm mb-0">
+                    <tr>
+                        <td class="text-muted small fw-semibold">Tiền thuê/tháng</td>
+                        <td class="text-end fw-bold text-primary fs-6">@Model.MonthlyRent.ToString("N0") đ</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small fw-semibold">Đặt cọc</td>
+                        <td class="text-end">@Model.Deposit.ToString("N0") đ</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small fw-semibold">Ngày thanh toán</td>
+                        <td class="text-end">Ngày @Model.PaymentDayOfMonth hàng tháng</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        @* Thao tác nhanh *@
+        <div class="card">
+            <div class="card-header py-3">
+                <h6 class="mb-0 fw-semibold">Thao tác</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a asp-area="Admin" asp-controller="Contract" asp-action="Edit"
+                       asp-route-id="@Model.ContractId" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil me-1"></i>Chỉnh sửa hợp đồng
+                    </a>
+                    @if (Model.Status == ContractStatus.Active)
+                    {
+                        <a asp-area="Admin" asp-controller="Invoice" asp-action="Generate"
+                           asp-route-contractId="@Model.ContractId"
+                           class="btn btn-success">
+                            <i class="bi bi-receipt me-1"></i>Lập hóa đơn tháng này
+                        </a>
+                    }
+                    <a asp-area="Admin" asp-controller="Invoice" asp-action="Index"
+                       asp-route-contractId="@Model.ContractId"
+                       class="btn btn-outline-secondary">
+                        <i class="bi bi-journals me-1"></i>Xem hóa đơn
+                    </a>
+                    <button type="button" class="btn btn-outline-danger"
+                            data-id="@Model.ContractId" data-name="@Model.ContractCode"
+                            onclick="confirmDelete(this.dataset.id, this.dataset.name)">
+                        <i class="bi bi-trash me-1"></i>Xóa hợp đồng
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+</section>
+</main>
+
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger"><i class="bi bi-trash me-2"></i>Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body small">
+                Xóa hợp đồng <strong id="deleteName"></strong>?<br/>
+                Thao tác này không thể hoàn tác.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                <form id="deleteForm" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function confirmDelete(id, name) {
+    document.getElementById('deleteName').textContent = name;
+    document.getElementById('deleteForm').action = '/Admin/Contract/Delete/' + id;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+</script>
+}

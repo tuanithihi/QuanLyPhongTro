@@ -1,0 +1,240 @@
+@model QuanLyPhongTro.Models.tblTenant
+@{
+    ViewData["Title"] = "Thêm người thuê";
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<main id="main" class="main">
+<div class="pagetitle">
+    <h1>Thêm người thuê</h1>
+    <nav><ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Tenant" asp-action="Index">Người thuê</a></li>
+        <li class="breadcrumb-item active">Thêm mới</li>
+    </ol></nav>
+</div>
+
+<section class="section">
+<form asp-area="Admin" asp-controller="Tenant" asp-action="Create" method="post" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="linkedUserId" id="linkedUserId" />
+    <div class="row">
+
+        @* ── Cột trái ── *@
+        <div class="col-lg-8">
+
+            @* Card chọn từ tài khoản website *@
+            <div class="card mb-3 border-primary">
+                <div class="card-header fw-semibold bg-primary-subtle text-primary">
+                    <i class="bi bi-person-lines-fill me-2"></i>Chọn nhanh từ tài khoản website
+                    <span class="fw-normal text-muted small ms-1">(tuỳ chọn — bỏ qua nếu muốn tạo hoàn toàn mới)</span>
+                </div>
+                <div class="card-body pt-3">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Tài khoản người dùng</label>
+                            <select id="userSelect" class="form-select"
+                                    asp-items="@((Microsoft.AspNetCore.Mvc.Rendering.SelectList)ViewBag.UserList)">
+                                <option value="">-- Không chọn --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="button" id="btnClearUser" class="btn btn-outline-secondary d-none w-100">
+                                <i class="bi bi-x-lg me-1"></i>Bỏ chọn
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-text mt-1">
+                        Chỉ hiển thị tài khoản chưa được liên kết với người thuê nào.
+                    </div>
+                    <div id="linkedUserInfo" class="d-none mt-2 p-2 bg-light rounded small">
+                        <i class="bi bi-check-circle-fill text-success me-1"></i>
+                        Đã điền thông tin từ tài khoản <strong id="linkedUserName"></strong>.
+                        Mật khẩu đăng nhập sẽ được giữ nguyên từ tài khoản website.
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header fw-semibold"><i class="bi bi-person me-2"></i>Thông tin cơ bản</div>
+                <div class="card-body pt-3">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-3"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="FullName" class="form-label fw-semibold"></label>
+                            <input asp-for="FullName" class="form-control" placeholder="Nguyễn Văn A" />
+                            <span asp-validation-for="FullName" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="IdentityNumber" class="form-label fw-semibold"></label>
+                            <input asp-for="IdentityNumber" class="form-control font-monospace" placeholder="012345678901" />
+                            <span asp-validation-for="IdentityNumber" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Phone" class="form-label fw-semibold"></label>
+                            <input asp-for="Phone" class="form-control" placeholder="0901234567" />
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Email" class="form-label fw-semibold"></label>
+                            <input asp-for="Email" class="form-control" placeholder="example@email.com" />
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="DateOfBirth" class="form-label fw-semibold"></label>
+                            <input asp-for="DateOfBirth" type="date" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="Gender" class="form-label fw-semibold"></label>
+                            <select asp-for="Gender" class="form-select">
+                                <option value="">-- Chọn --</option>
+                                <option value="Nam">Nam</option>
+                                <option value="Nữ">Nữ</option>
+                                <option value="Khác">Khác</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="IsActive" class="form-label fw-semibold d-block">Trạng thái</label>
+                            <div class="form-check form-switch mt-1">
+                                <input asp-for="IsActive" class="form-check-input" type="checkbox" checked />
+                                <label asp-for="IsActive" class="form-check-label">Kích hoạt</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="PermanentAddress" class="form-label fw-semibold"></label>
+                            <textarea asp-for="PermanentAddress" class="form-control" rows="2"
+                                      placeholder="Địa chỉ thường trú..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header fw-semibold"><i class="bi bi-key me-2"></i>Tài khoản đăng nhập <span class="text-muted fw-normal small">(tuỳ chọn)</span></div>
+                <div class="card-body pt-3">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="Username" class="form-label fw-semibold"></label>
+                            <input asp-for="Username" class="form-control" placeholder="username" autocomplete="off" />
+                            <span asp-validation-for="Username" class="text-danger small"></span>
+                            <div class="form-text">Để trống nếu không cho phép đăng nhập.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Mật khẩu</label>
+                            <input type="password" name="password" class="form-control" placeholder="••••••••" autocomplete="new-password" />
+                            <div class="form-text">Bắt buộc nếu có tên đăng nhập.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        @* ── Cột phải: Ảnh ── *@
+        <div class="col-lg-4">
+
+            <div class="card mb-3">
+                <div class="card-header fw-semibold"><i class="bi bi-image me-2"></i>Ảnh đại diện</div>
+                <div class="card-body text-center pt-3">
+                    <img id="prevAvatar" src="/assets/img/no-avatar.png" class="rounded-circle mb-2"
+                         style="width:90px;height:90px;object-fit:cover;"
+                         onerror="this.src='/assets/img/no-avatar.png'" />
+                    <input type="file" name="avatarFile" class="form-control form-control-sm"
+                           accept="image/*" onchange="previewImg(this,'prevAvatar')" />
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header fw-semibold"><i class="bi bi-card-image me-2"></i>Ảnh CCCD/CMND</div>
+                <div class="card-body pt-3">
+                    <label class="form-label small">Mặt trước</label>
+                    <img id="prevFront" class="img-fluid rounded mb-1 d-none" style="max-height:120px;" />
+                    <input type="file" name="frontFile" class="form-control form-control-sm mb-3"
+                           accept="image/*" onchange="previewImg(this,'prevFront')" />
+
+                    <label class="form-label small">Mặt sau</label>
+                    <img id="prevBack" class="img-fluid rounded mb-1 d-none" style="max-height:120px;" />
+                    <input type="file" name="backFile" class="form-control form-control-sm"
+                           accept="image/*" onchange="previewImg(this,'prevBack')" />
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mb-4">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-floppy me-1"></i>Lưu</button>
+        <a asp-area="Admin" asp-controller="Tenant" asp-action="Index" class="btn btn-outline-secondary">Hủy</a>
+    </div>
+</form>
+</section>
+</main>
+
+@section Scripts {
+<script>
+function previewImg(input, imgId) {
+    const img = document.getElementById(imgId);
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => { img.src = e.target.result; img.classList.remove('d-none'); };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// Chọn từ tài khoản website
+const userSelect   = document.getElementById('userSelect');
+const linkedUserId = document.getElementById('linkedUserId');
+const btnClear     = document.getElementById('btnClearUser');
+const infoBox      = document.getElementById('linkedUserInfo');
+const infoName     = document.getElementById('linkedUserName');
+
+userSelect.addEventListener('change', async function () {
+    const uid = this.value;
+    if (!uid) { clearLinked(); return; }
+
+    try {
+        const res  = await fetch('/Admin/Tenant/GetUserInfo?userId=' + uid);
+        if (!res.ok) { clearLinked(); return; }
+        const data = await res.json();
+
+        // Điền thông tin
+        setVal('FullName', data.fullName);
+        setVal('Phone',    data.phone);
+        setVal('Email',    data.email);
+        setVal('Username', data.username);
+
+        // Hiện avatar preview nếu có
+        if (data.avatar) {
+            const av = document.getElementById('prevAvatar');
+            av.src = data.avatar;
+        }
+
+        // Ẩn trường mật khẩu (dùng mật khẩu từ tài khoản)
+        document.querySelector('[name="password"]').closest('.col-md-6').style.opacity = '0.4';
+        document.querySelector('[name="password"]').disabled = true;
+
+        linkedUserId.value = uid;
+        infoName.textContent = data.username;
+        infoBox.classList.remove('d-none');
+        btnClear.classList.remove('d-none');
+    } catch { clearLinked(); }
+});
+
+btnClear.addEventListener('click', function () {
+    userSelect.value = '';
+    clearLinked();
+});
+
+function clearLinked() {
+    linkedUserId.value = '';
+    infoBox.classList.add('d-none');
+    btnClear.classList.add('d-none');
+    document.querySelector('[name="password"]').closest('.col-md-6').style.opacity = '';
+    document.querySelector('[name="password"]').disabled = false;
+}
+
+function setVal(name, val) {
+    const el = document.querySelector('[name="' + name + '"]');
+    if (el && !el.value) el.value = val || '';
+}
+</script>
+}

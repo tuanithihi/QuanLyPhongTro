@@ -1,0 +1,186 @@
+@model QuanLyPhongTro.Models.tblTenant
+@{
+    ViewData["Title"] = "Chi tiết người thuê";
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<main id="main" class="main">
+<div class="pagetitle">
+    <h1>Chi tiết người thuê</h1>
+    <nav><ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Tenant" asp-action="Index">Người thuê</a></li>
+        <li class="breadcrumb-item active">@Model.FullName</li>
+    </ol></nav>
+</div>
+
+<section class="section">
+<div class="row">
+
+    @* ── Cột trái: Thông tin ── *@
+    <div class="col-lg-4">
+        <div class="card mb-3">
+            <div class="card-body text-center pt-4">
+                @if (!string.IsNullOrEmpty(Model.Avatar))
+                {
+                    <img src="@Model.Avatar" class="rounded-circle mb-3"
+                         style="width:100px;height:100px;object-fit:cover;"
+                         onerror="this.src='/assets/img/no-avatar.png'" />
+                }
+                else
+                {
+                    <div class="rounded-circle bg-primary d-inline-flex align-items-center justify-content-center text-white mb-3"
+                         style="width:100px;height:100px;font-size:2rem;">
+                        @(Model.FullName.Length > 0 ? Model.FullName[0].ToString().ToUpper() : "?")
+                    </div>
+                }
+                <h5 class="fw-bold mb-1">@Model.FullName</h5>
+                @if (Model.IsActive)
+                {
+                    <span class="badge bg-success mb-2">Đang kích hoạt</span>
+                }
+                else
+                {
+                    <span class="badge bg-secondary mb-2">Đã khóa</span>
+                }
+                @if (!string.IsNullOrEmpty(Model.Username))
+                {
+                    <div class="small text-muted"><i class="bi bi-person-badge me-1"></i>@Model.Username</div>
+                }
+            </div>
+        </div>
+
+        @* Ảnh CCCD *@
+        @if (!string.IsNullOrEmpty(Model.IdentityFrontImage) || !string.IsNullOrEmpty(Model.IdentityBackImage))
+        {
+            <div class="card mb-3">
+                <div class="card-header fw-semibold small"><i class="bi bi-card-image me-1"></i>CCCD / CMND</div>
+                <div class="card-body pt-2">
+                    @if (!string.IsNullOrEmpty(Model.IdentityFrontImage))
+                    {
+                        <p class="mb-1 small text-muted">Mặt trước</p>
+                        <a href="@Model.IdentityFrontImage" target="_blank">
+                            <img src="@Model.IdentityFrontImage" class="img-fluid rounded mb-2" />
+                        </a>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.IdentityBackImage))
+                    {
+                        <p class="mb-1 small text-muted">Mặt sau</p>
+                        <a href="@Model.IdentityBackImage" target="_blank">
+                            <img src="@Model.IdentityBackImage" class="img-fluid rounded" />
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+
+        <div class="d-flex gap-2 mb-3">
+            <a asp-area="Admin" asp-controller="Tenant" asp-action="Edit"
+               asp-route-id="@Model.TenantId" class="btn btn-primary btn-sm flex-fill">
+                <i class="bi bi-pencil me-1"></i>Sửa
+            </a>
+            <a asp-area="Admin" asp-controller="Tenant" asp-action="Index" class="btn btn-outline-secondary btn-sm flex-fill">
+                <i class="bi bi-arrow-left me-1"></i>Quay lại
+            </a>
+        </div>
+    </div>
+
+    @* ── Cột phải: Thông tin chi tiết + Hợp đồng ── *@
+    <div class="col-lg-8">
+
+        <div class="card mb-3">
+            <div class="card-header fw-semibold"><i class="bi bi-info-circle me-2"></i>Thông tin cá nhân</div>
+            <div class="card-body pt-3">
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <label class="form-label small text-muted mb-1">Số CCCD/CMND</label>
+                        <div class="fw-semibold font-monospace">@Model.IdentityNumber</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small text-muted mb-1">Giới tính</label>
+                        <div>@(Model.Gender ?? "—")</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small text-muted mb-1">Ngày sinh</label>
+                        <div>@(Model.DateOfBirth?.ToString("dd/MM/yyyy") ?? "—")</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small text-muted mb-1">Số điện thoại</label>
+                        <div>@(Model.Phone ?? "—")</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small text-muted mb-1">Email</label>
+                        <div>@(Model.Email ?? "—")</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small text-muted mb-1">Ngày tạo</label>
+                        <div>@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small text-muted mb-1">Địa chỉ thường trú</label>
+                        <div>@(Model.PermanentAddress ?? "—")</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-file-earmark-text me-2"></i>Lịch sử hợp đồng</span>
+                <span class="badge bg-primary rounded-pill">@Model.Contracts.Count</span>
+            </div>
+            <div class="card-body p-0">
+                @if (!Model.Contracts.Any())
+                {
+                    <div class="text-center text-muted py-4 small">Chưa có hợp đồng nào.</div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Mã HĐ</th>
+                                <th>Phòng</th>
+                                <th>Từ ngày</th>
+                                <th>Đến ngày</th>
+                                <th>Tiền thuê</th>
+                                <th>Tr.thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var c in Model.Contracts.OrderByDescending(c => c.StartDate))
+                        {
+                            <tr>
+                                <td class="font-monospace small">@c.ContractCode</td>
+                                <td>@(c.Room?.RoomName ?? "—")</td>
+                                <td class="small">@c.StartDate.ToString("dd/MM/yyyy")</td>
+                                <td class="small">@(c.EndDate?.ToString("dd/MM/yyyy") ?? "Không xác định")</td>
+                                <td class="small">@c.MonthlyRent.ToString("N0") đ</td>
+                                <td>
+                                    @switch (c.Status)
+                                    {
+                                        case QuanLyPhongTro.Models.ContractStatus.Active:
+                                            <span class="badge bg-success">Hiệu lực</span>
+                                            break;
+                                        case QuanLyPhongTro.Models.ContractStatus.Expired:
+                                            <span class="badge bg-secondary">Hết hạn</span>
+                                            break;
+                                        case QuanLyPhongTro.Models.ContractStatus.Terminated:
+                                            <span class="badge bg-danger">Chấm dứt</span>
+                                            break;
+                                    }
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                    </div>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>
+</section>
+</main>

@@ -7,28 +7,28 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     
     <!-- SEO Meta Tags -->
-    <title>@(ViewData["Title"] ?? "LibraHub - Hệ thống quản lý thư viện số")</title>
-    <meta name="description" content="@(ViewData["Description"] ?? "LibraHub - Trung tâm thư viện số hiện đại, nơi kết nối tri thức. Quản lý sách, tài liệu và tài nguyên học tập một cách hiệu quả.")">
-    <meta name="keywords" content="@(ViewData["Keywords"] ?? "thư viện số, quản lý sách, LibraHub, thư viện điện tử, tài liệu số")">
+    <title>@(ViewData["Title"] ?? "Phòng Trọ Mới - Nền tảng tìm phòng trọ an toàn")</title>
+    <meta name="description" content="@(ViewData["Description"] ?? "Phòng Trọ Mới - Nền tảng tìm phòng trọ uy tín, minh bạch, phù hợp cho gia đình và người đi làm.")">
+    <meta name="keywords" content="@(ViewData["Keywords"] ?? "phòng trọ mới, tìm phòng trọ, thuê phòng, phòng trọ gia đình, phòng trọ an toàn")">
     <meta name="author" content="Group 12">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="@(Context.Request.Scheme)://@(Context.Request.Host)@(Context.Request.Path)">
-    <meta property="og:title" content="@(ViewData["Title"] ?? "LibraHub - Hệ thống quản lý thư viện số")">
-    <meta property="og:description" content="@(ViewData["Description"] ?? "Trung tâm thư viện số hiện đại, nơi kết nối tri thức")">
+    <meta property="og:title" content="@(ViewData["Title"] ?? "Phòng Trọ Mới - Nền tảng tìm phòng trọ an toàn")">
+    <meta property="og:description" content="@(ViewData["Description"] ?? "Phòng Trọ Mới - Tìm phòng trọ nhanh, minh bạch và dễ dàng")">
     <meta property="og:image" content="@(Context.Request.Scheme)://@(Context.Request.Host)/assets/img/logo.webp">
     
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="@(Context.Request.Scheme)://@(Context.Request.Host)@(Context.Request.Path)">
-    <meta property="twitter:title" content="@(ViewData["Title"] ?? "LibraHub - Hệ thống quản lý thư viện số")">
-    <meta property="twitter:description" content="@(ViewData["Description"] ?? "Trung tâm thư viện số hiện đại, nơi kết nối tri thức")">
+    <meta property="twitter:title" content="@(ViewData["Title"] ?? "Phòng Trọ Mới - Nền tảng tìm phòng trọ an toàn")">
+    <meta property="twitter:description" content="@(ViewData["Description"] ?? "Phòng Trọ Mới - Tìm phòng trọ nhanh, minh bạch và dễ dàng")">
     <meta property="twitter:image" content="@(Context.Request.Scheme)://@(Context.Request.Host)/assets/img/logo.webp">
 
     <!-- Favicons -->
-    <link href="~/assets/img/school.png" rel="icon">
-    <link href="~/assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+    <link href="~/assets/img/logo.png" rel="icon">
+    <link href="~/assets/img/logo.png" rel="apple-touch-icon">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -47,13 +47,20 @@
     <!-- Chatbot CSS -->
     <link href="~/css/chatbot.css" rel="stylesheet">
 
+    <style>
+        .btn-auth-modal { background: linear-gradient(135deg,#27AE60,#2ECC71); border: none; color: #fff; }
+        .btn-auth-modal:hover { background: linear-gradient(135deg,#1E8449,#27AE60); color: #fff; }
+        #authTabList .nav-link { font-size: .9rem; }
+        #authTabList .nav-link.active { background: linear-gradient(135deg,#27AE60,#2ECC71); color: #fff; }
+    </style>
+
     <!-- Structured Data for SEO -->
     <script type="application/ld+json">
     {
       "@@context": "https://schema.org",
       "@@type": "Library",
-      "name": "LibraHub",
-      "description": "Trung tâm thư viện số hiện đại, nơi kết nối tri thức",
+      "name": "Phòng Trọ Mới",
+      "description": "Nền tảng tìm phòng trọ uy tín, minh bạch và hỗ trợ khách thuê hiệu quả",
       "url": "@(Context.Request.Scheme)://@(Context.Request.Host)",
       "logo": "@(Context.Request.Scheme)://@(Context.Request.Host)/assets/img/logo.webp",
       "address": {
@@ -66,11 +73,32 @@
     </script>
   </head>
 
-  <body class="index-page">
+  <body class="index-page" style="display:flex;flex-direction:column;min-height:100vh;">
 
    @await Component.InvokeAsync("MenuView")
 
-    <main id="main">
+    @* Toast thông báo toàn cục — hiện TempData từ bất kỳ action nào *@
+    @if (TempData["Success"] != null || TempData["Error"] != null)
+    {
+        <div style="position:fixed;top:80px;right:20px;z-index:9999;min-width:280px;max-width:380px;">
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+                    <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+                    <i class="bi bi-exclamation-triangle me-2"></i>@TempData["Error"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+        </div>
+    }
+
+    <main id="main" style="flex:1;">
       @RenderBody()
     </main>
 
@@ -80,12 +108,12 @@
         <div class="row gy-4">
           <div class="col-lg-5 col-md-12 footer-about">
             <a asp-controller="Home" asp-action="Index" class="logo d-flex align-items-center">
-              <img src="~/assets/img/learning_16566016.png" alt="LibraHub Logo" class="me-2" style="height: 40px;">
-              <span class="sitename">LibraHub</span>
+              <img src="~/assets/img/logo.png" alt="Phòng Trọ Mới Logo" class="me-2" style="height: 40px;">
+              <span class="sitename">Phòng Trọ Mới</span>
             </a>
-            <p>Trung tâm thư viện số hiện đại, nơi kết nối tri thức. Chúng tôi cung cấp hệ thống quản lý thư viện số toàn diện, giúp bạn dễ dàng tìm kiếm, mượn và quản lý tài liệu học tập một cách hiệu quả.</p>
+            <p>Nền tảng quản lý phòng trọ hiện đại, giúp chủ nhà quản lý phòng và người thuê đặt lịch xem phòng dễ dàng. Cung cấp hệ thống quản lý hợp đồng, hóa đơn, dịch vụ và giao tiếp trực tiếp giữa chủ và khách thuê một cách hiệu quả.</p>
             <div class="social-links d-flex mt-4">
-              <a href="https://www.facebook.com/ngonguyentienquang" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+              <a href="#" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
                 <i class="bi bi-facebook"></i>
               </a>
               <a href="#" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
@@ -104,21 +132,21 @@
             <h4>Liên kết hữu ích</h4>
             <ul>
               <li><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
-              <li><a href="#about">Về chúng tôi</a></li>
-              <li><a href="#courses">Sách & Tài liệu</a></li>
+              <li><a asp-controller="Blog" asp-action="Index">Tin tức</a></li>
+              <li><a asp-controller="Contact" asp-action="Index">Liên hệ</a></li>
               <li><a asp-controller="Home" asp-action="Privacy">Chính sách bảo mật</a></li>
-              <li><a href="#contact">Liên hệ</a></li>
+              <li><a asp-area="Admin" asp-controller="Account" asp-action="Login">Đăng nhập</a></li>
             </ul>
           </div>
 
           <div class="col-lg-2 col-6 footer-links">
             <h4>Dịch vụ</h4>
             <ul>
-              <li><a href="#courses">Mượn sách</a></li>
-              <li><a href="#categories">Danh mục sách</a></li>
-              <li><a href="#instructors">Tác giả</a></li>
-              <li><a href="#publishers">Nhà xuất bản</a></li>
-              <li><a asp-area="Admin" asp-controller="Login" asp-action="Index">Quản trị</a></li>
+              <li><a asp-controller="Home" asp-action="Index">Tìm phòng trọ</a></li>
+              <li><a asp-controller="Account" asp-action="Info">Hóa đơn & Thanh toán</a></li>
+              <li><a href="#faq">Câu hỏi thường gặp</a></li>
+              <li><a href="#support">Hỗ trợ kỹ thuật</a></li>
+              <li><a asp-area="Admin" asp-controller="Home" asp-action="Index">Quản trị</a></li>
             </ul>
           </div>
 
@@ -137,8 +165,8 @@
             </p>
             <p>
               <i class="bi bi-envelope-fill me-2"></i>
-              <strong>Email:</strong> 
-              <a href="mailto:nntienquang1704@gmail.com">nntienquang1704@gmail.com</a>
+              <strong>Email:</strong>
+              <a href="mailto:hoductuan4@gmail.com">hoductuan4@gmail.com</a>
             </p>
           </div>
 
@@ -153,14 +181,8 @@
           <div class="credits">
             <p class="mb-1">Designed by:</p>
             <div class="d-flex justify-content-center gap-3 flex-wrap">
-              <a href="https://www.facebook.com/ngonguyentienquang" target="_blank" rel="noopener noreferrer">
-                Ngô Nguyễn Tiến Quang
-              </a>
               <a href="#" target="_blank" rel="noopener noreferrer">
                 Hồ Đức Tuấn
-              </a>
-              <a href="https://www.facebook.com/share/16UXp6WdrM/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer">
-                Nguyễn Văn Phúc
               </a>
             </div>
           </div>
@@ -187,10 +209,439 @@
     <!-- Main JS File -->
     <script src="~/assets/js/main.js"></script>
 
-    <!-- Chatbot Widget -->
-    @await Html.PartialAsync("_Chatbot")
-
     @await RenderSectionAsync("Scripts", required: false)
+
+    <!-- ── Auth Modal ─────────────────────────────────────────────── -->
+    <div class="modal fade" id="authModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width:440px;">
+            <div class="modal-content" style="border-radius:16px;border:none;box-shadow:0 20px 60px rgba(0,0,0,.25);">
+
+                <div class="modal-header border-0 pb-1 px-4 pt-4">
+                    <ul class="nav nav-pills gap-1 me-auto" id="authTabList">
+                        <li class="nav-item">
+                            <button class="nav-link active px-3 py-1" data-auth-tab="login">
+                                <i class="bi bi-box-arrow-in-right me-1"></i>Đăng nhập
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link px-3 py-1" data-auth-tab="register">
+                                <i class="bi bi-person-plus me-1"></i>Đăng ký
+                            </button>
+                        </li>
+                    </ul>
+                    <button type="button" class="btn-close ms-2" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+
+                <div class="modal-body px-4 pb-4 pt-2">
+                    <div id="authAlert" class="d-none alert py-2 small mb-3"></div>
+
+                    <!-- ── Login Form ── -->
+                    <div id="loginPane">
+                        <p class="text-muted small mb-3">
+                            <i class="bi bi-info-circle me-1"></i>Hệ thống tự nhận dạng loại tài khoản của bạn.
+                        </p>
+                        <form id="loginForm" novalidate>
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="returnUrl" id="loginReturnUrl" value="" />
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Tên đăng nhập / Email</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                    <input type="text" name="UsernameOrEmail" class="form-control"
+                                           placeholder="Nhập tên đăng nhập hoặc email"
+                                           autocomplete="username" required />
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Mật khẩu</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                    <input type="password" name="Password" class="form-control"
+                                           placeholder="Nhập mật khẩu"
+                                           autocomplete="current-password" required />
+                                    <button type="button" class="btn btn-outline-secondary" onclick="authTogglePwd(this)">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="submit" id="loginSubmitBtn" class="btn btn-auth-modal btn-lg">
+                                    <i class="bi bi-box-arrow-in-right me-1"></i>Đăng nhập
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- ── Register Form ── -->
+                    <div id="registerPane" class="d-none">
+                        <p class="text-muted small mb-3">Đăng ký để xem phòng, gửi yêu cầu thuê</p>
+                        <form id="registerForm" novalidate>
+                            @Html.AntiForgeryToken()
+
+                            <div class="row g-2">
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Tên đăng nhập <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                        <input type="text" name="Username" class="form-control"
+                                               placeholder="Ví dụ: nguyen_van_a" autocomplete="username" required />
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                        <input type="email" name="Email" class="form-control"
+                                               placeholder="email@example.com" autocomplete="email" required />
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Họ và tên</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-person-badge"></i></span>
+                                        <input type="text" name="FullName" class="form-control" placeholder="Họ và tên đầy đủ" />
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Số điện thoại</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                                        <input type="tel" name="Phone" class="form-control" placeholder="0xxx xxx xxx" />
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Mật khẩu <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                        <input type="password" name="Password" class="form-control"
+                                               placeholder="Tối thiểu 6 ký tự" autocomplete="new-password" required />
+                                        <button type="button" class="btn btn-outline-secondary" onclick="authTogglePwd(this)">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold">Xác nhận mật khẩu <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                                        <input type="password" name="ConfirmPassword" class="form-control"
+                                               placeholder="Nhập lại mật khẩu" autocomplete="new-password" required />
+                                        <button type="button" class="btn btn-outline-secondary" onclick="authTogglePwd(this)">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="d-grid mt-1">
+                                        <button type="submit" id="registerSubmitBtn" class="btn btn-auth-modal btn-lg">
+                                            <i class="bi bi-person-plus me-1"></i>Đăng ký
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ── Helpers ──────────────────────────────────────────────────────
+        function authTogglePwd(btn) {
+            var input = btn.previousElementSibling;
+            var icon  = btn.querySelector('i');
+            input.type = (input.type === 'password') ? 'text' : 'password';
+            icon.className = (input.type === 'text') ? 'bi bi-eye-slash' : 'bi bi-eye';
+        }
+
+        function authShowAlert(type, msg) {
+            var el = document.getElementById('authAlert');
+            el.className = 'alert alert-' + type + ' py-2 small mb-3';
+            el.textContent = msg;
+        }
+
+        function authClearAlert() {
+            var el = document.getElementById('authAlert');
+            el.className = 'd-none alert py-2 small mb-3';
+            el.textContent = '';
+        }
+
+        function authSwitchTab(tab) {
+            document.querySelectorAll('[data-auth-tab]').forEach(function(btn) {
+                btn.classList.toggle('active', btn.dataset.authTab === tab);
+            });
+            document.getElementById('loginPane').classList.toggle('d-none', tab !== 'login');
+            document.getElementById('registerPane').classList.toggle('d-none', tab !== 'register');
+            authClearAlert();
+        }
+
+        // ── Tab switching ─────────────────────────────────────────────────
+        document.querySelectorAll('[data-auth-tab]').forEach(function(btn) {
+            btn.addEventListener('click', function() { authSwitchTab(this.dataset.authTab); });
+        });
+
+        // Mở đúng tab khi modal show
+        document.getElementById('authModal').addEventListener('show.bs.modal', function(e) {
+            var tab = e.relatedTarget && e.relatedTarget.dataset.openTab;
+            authSwitchTab(tab === 'register' ? 'register' : 'login');
+            document.getElementById('loginForm').reset();
+            document.getElementById('registerForm').reset();
+        });
+
+        // ── Login submit ──────────────────────────────────────────────────
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            authClearAlert();
+            var btn = document.getElementById('loginSubmitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang xử lý…';
+
+            try {
+                var res  = await fetch('/Account/LoginModal', { method: 'POST', body: new FormData(this) });
+                var data = await res.json();
+                if (data.success) {
+                    window.location.href = data.redirectUrl;
+                } else {
+                    authShowAlert('danger', data.message);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-box-arrow-in-right me-1"></i>Đăng nhập';
+                }
+            } catch {
+                authShowAlert('danger', 'Có lỗi xảy ra, vui lòng thử lại.');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-box-arrow-in-right me-1"></i>Đăng nhập';
+            }
+        });
+
+        // ── Register submit ───────────────────────────────────────────────
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            authClearAlert();
+            var btn = document.getElementById('registerSubmitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang xử lý…';
+
+            try {
+                var res  = await fetch('/Account/RegisterModal', { method: 'POST', body: new FormData(this) });
+                var data = await res.json();
+                if (data.success) {
+                    authShowAlert('success', data.message);
+                    setTimeout(function() { authSwitchTab('login'); }, 1500);
+                } else {
+                    authShowAlert('danger', data.message);
+                }
+            } catch {
+                authShowAlert('danger', 'Có lỗi xảy ra, vui lòng thử lại.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-person-plus me-1"></i>Đăng ký';
+            }
+        });
+    </script>
+
+  <!-- ══════════════ FLOATING CHAT WIDGET ══════════════ -->
+  <div id="chatWidget">
+    <button id="chatToggleBtn" onclick="chatToggle()" title="Nhắn tin với chúng tôi">
+      <i class="bi bi-chat-dots-fill" id="chatToggleIcon"></i>
+      <span id="chatUnreadDot" class="d-none"></span>
+    </button>
+    <div id="chatPanel" class="d-none">
+      <div id="chatHeader">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-headset fs-5"></i>
+          <div>
+            <div class="fw-semibold" style="font-size:.9rem;">Liên hệ &amp; Hỗ trợ</div>
+            <div style="font-size:.72rem;opacity:.85;">Phản hồi trong thời gian sớm nhất</div>
+          </div>
+        </div>
+        <button onclick="chatToggle()" style="background:none;border:none;color:#fff;font-size:1.1rem;line-height:1;cursor:pointer;">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      <div id="chatIntro">
+        <p class="text-muted small mb-3 px-3 pt-3">Để nhắn tin, vui lòng cho chúng tôi biết thông tin của bạn.</p>
+        <div id="chatIntroAlert" class="d-none alert alert-danger py-2 small mx-3 mb-2"></div>
+        <div class="px-3 pb-3">
+          <div class="mb-2">
+            <input type="text" id="introName" class="form-control form-control-sm" placeholder="Họ và tên *" />
+          </div>
+          <div class="mb-3">
+            <input type="tel" id="introPhone" class="form-control form-control-sm" placeholder="Số điện thoại *" />
+          </div>
+          <button class="btn btn-primary w-100 btn-sm fw-semibold" onclick="chatStart()">
+            <i class="bi bi-arrow-right-circle me-1"></i>Bắt đầu nhắn tin
+          </button>
+        </div>
+      </div>
+      <div id="chatWindow" class="d-none flex-column" style="height:380px;">
+        <div id="chatMsgArea" class="flex-fill overflow-auto p-3" style="background:#f8fafc;font-size:.88rem;"></div>
+        <div class="p-2 border-top d-flex gap-2 bg-white">
+          <input type="text" id="chatInput" class="form-control form-control-sm rounded-pill"
+                 placeholder="Nhắn tin…" autocomplete="off"
+                 onkeydown="if(event.key==='Enter')chatSend()" />
+          <button class="btn btn-primary btn-sm rounded-circle px-2" onclick="chatSend()"
+                  style="width:34px;height:34px;flex-shrink:0;">
+            <i class="bi bi-send"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    #chatWidget { position:fixed; bottom:90px; right:24px; z-index:9999; font-family:inherit; }
+    #chatToggleBtn {
+      width:56px;height:56px;border-radius:50%;border:none;
+      background:linear-gradient(135deg,#27AE60,#2ECC71);
+      color:#fff;font-size:1.5rem;cursor:pointer;
+      box-shadow:0 4px 16px rgba(39,174,96,.45);
+      display:flex;align-items:center;justify-content:center;
+      position:relative;transition:transform .2s;
+    }
+    #chatToggleBtn:hover { transform:scale(1.08); }
+    #chatUnreadDot {
+      position:absolute;top:6px;right:6px;
+      width:12px;height:12px;border-radius:50%;
+      background:#dc3545;border:2px solid #fff;
+    }
+    #chatPanel {
+      position:absolute;bottom:68px;right:0;
+      width:320px;border-radius:16px;overflow:hidden;
+      box-shadow:0 8px 32px rgba(0,0,0,.18);
+      background:#fff;
+    }
+    #chatHeader {
+      background:linear-gradient(135deg,#27AE60,#2ECC71);
+      color:#fff;padding:.75rem 1rem;
+      display:flex;align-items:center;justify-content:space-between;
+    }
+    .chat-bubble { max-width:78%;padding:.45rem .75rem;border-radius:.9rem;line-height:1.5;word-break:break-word; }
+    .chat-guest  { background:#e9ecef;color:#333;border-bottom-left-radius:.2rem; }
+    .chat-admin  { background:#27AE60;color:#fff;border-bottom-right-radius:.2rem; }
+    .chat-system { background:#fff3cd;color:#856404;font-size:.78rem;border-radius:.5rem;padding:.3rem .65rem;text-align:center; }
+    .chat-time   { font-size:.68rem;opacity:.6;margin-top:.15rem; }
+  </style>
+
+  @{
+    bool _chatLoggedIn = !string.IsNullOrEmpty(Context.Session.GetString("TenantUser"))
+                      || !string.IsNullOrEmpty(Context.Session.GetString("NormalUser"));
+  }
+  <script>
+    (function(){
+      const COOKIE    = 'chat_session';
+      const _autoStart = @(_chatLoggedIn ? "true" : "false");
+      let _sk='', _lastId=0, _timer=null;
+
+      function getCookie(n){ const m=document.cookie.match('(^|;)\\s*'+n+'\\s*=\\s*([^;]+)'); return m?m.pop():''; }
+
+      document.addEventListener('DOMContentLoaded', function(){
+        _sk = getCookie(COOKIE);
+        if(_sk) showWindow();
+      });
+
+      window.chatToggle = async function(){
+        const p=document.getElementById('chatPanel');
+        const opening=p.classList.contains('d-none');
+        p.classList.toggle('d-none',!opening);
+        document.getElementById('chatToggleIcon').className = opening?'bi bi-x-lg':'bi bi-chat-dots-fill';
+        if(opening){
+          document.getElementById('chatUnreadDot').classList.add('d-none');
+          if(_sk){ if(!_timer) startPoll(); fetchMsgs(); }
+          else if(_autoStart){ await _autoCreateSession(); }
+        }
+        // Không gọi stopPoll() khi đóng — poll tiếp tục chạy ngầm để phát hiện tin mới
+      };
+
+      async function _autoCreateSession(){
+        // Người thuê / người dùng đã đăng nhập — tự tạo/tiếp nối phiên, không cần nhập tên/SĐT
+        try{
+          document.getElementById('chatIntro').classList.add('d-none');
+          const r=await fetch('/Chat/Start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({guestName:'',guestPhone:''})});
+          const d=await r.json();
+          if(d.success){ _sk=d.sessionKey; showWindow(); }
+          else { document.getElementById('chatIntro').classList.remove('d-none'); }
+        }catch{ document.getElementById('chatIntro').classList.remove('d-none'); }
+      }
+
+      window.chatStart = async function(){
+        const name=document.getElementById('introName').value.trim();
+        const phone=document.getElementById('introPhone').value.trim();
+        const al=document.getElementById('chatIntroAlert');
+        if(!name||!phone){ al.className='alert alert-danger py-2 small mx-3 mb-2'; al.textContent='Vui lòng nhập họ tên và số điện thoại.'; return; }
+        al.className='d-none';
+        try{
+          const r=await fetch('/Chat/Start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({guestName:name,guestPhone:phone})});
+          const d=await r.json();
+          if(d.success){ _sk=d.sessionKey; showWindow(); }
+          else{ al.className='alert alert-danger py-2 small mx-3 mb-2'; al.textContent=d.message||'Có lỗi xảy ra.'; }
+        }catch{ al.className='alert alert-danger py-2 small mx-3 mb-2'; al.textContent='Có lỗi xảy ra, vui lòng thử lại.'; }
+      };
+
+      function showWindow(){
+        document.getElementById('chatIntro').classList.add('d-none');
+        const w=document.getElementById('chatWindow');
+        w.classList.remove('d-none'); w.style.display='flex';
+        fetchMsgs(); startPoll();
+      }
+
+      window.chatSend = async function(){
+        const inp=document.getElementById('chatInput');
+        const txt=inp.value.trim();
+        if(!txt||!_sk) return;
+        inp.value='';
+        appendBubble({content:txt,senderType:0,createdAt:new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}),isSystem:false});
+        scrollBot();
+        try{ await fetch('/Chat/Send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionKey:_sk,content:txt})}); }catch{}
+      };
+
+      async function fetchMsgs(){
+        if(!_sk) return;
+        try{
+          const r=await fetch('/Chat/Poll?sessionKey='+encodeURIComponent(_sk)+'&after='+_lastId);
+          const d=await r.json();
+          if(d.messages&&d.messages.length){
+            d.messages.forEach(m=>appendBubble(m));
+            _lastId=d.messages[d.messages.length-1].id;
+            scrollBot();
+            // Hiện dot nếu panel đang đóng và có tin từ admin/hệ thống
+            const panelOpen = !document.getElementById('chatPanel').classList.contains('d-none');
+            if(panelOpen){
+              document.getElementById('chatUnreadDot').classList.add('d-none');
+            } else if(d.messages.some(m => m.senderType !== 0)){
+              document.getElementById('chatUnreadDot').classList.remove('d-none');
+            }
+          }
+        }catch{}
+      }
+
+      function appendBubble(m){
+        const a=document.getElementById('chatMsgArea');
+        if(!a) return;
+        const w=document.createElement('div');
+        if(m.isSystem){
+          w.className='d-flex justify-content-center my-2';
+          w.innerHTML='<div class="chat-system">'+esc(m.content)+'</div>';
+        } else if(m.senderType===0){
+          w.className='d-flex flex-column align-items-end mb-2';
+          w.innerHTML='<div class="chat-bubble chat-guest">'+esc(m.content)+'</div><div class="chat-time pe-1">'+m.createdAt+'</div>';
+        } else {
+          w.className='d-flex flex-column align-items-start mb-2';
+          w.innerHTML='<div class="chat-bubble chat-admin">'+esc(m.content)+'</div><div class="chat-time ps-1">'+m.createdAt+'</div>';
+        }
+        a.appendChild(w);
+      }
+
+      function scrollBot(){ const a=document.getElementById('chatMsgArea'); if(a) a.scrollTop=a.scrollHeight; }
+      function startPoll(){ stopPoll(); _timer=setInterval(fetchMsgs,4000); }
+      function stopPoll(){ if(_timer){clearInterval(_timer);_timer=null;} }
+      function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    })();
+  </script>
 
   </body>
 

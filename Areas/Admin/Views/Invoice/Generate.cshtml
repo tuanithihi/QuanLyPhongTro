@@ -1,0 +1,459 @@
+@using QuanLyPhongTro.Models
+@using System.Globalization
+@{
+    ViewData["Title"] = "Lập hóa đơn";
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+
+    tblContract contract  = ViewBag.Contract;
+    tblRoom      room     = contract.Room!;
+    tblTenant    tenant   = contract.Tenant!;
+    var          services = (List<tblService>)ViewBag.Services;
+    string       from     = ViewBag.From ?? "";
+
+    // Điện/nước luôn hiển thị — giá mặc định lấy từ tblService nếu có
+    decimal elecUnitPrice  = ViewBag.ElecUnitPrice  ?? 0m;
+    decimal waterUnitPrice = ViewBag.WaterUnitPrice ?? 0m;
+
+    // Dịch vụ cố định (trừ điện/nước)
+    var fixedSvcs = services
+        .Where(s => s.ServiceType != ServiceType.Electric && s.ServiceType != ServiceType.Water)
+        .ToList();
+
+    double   elecStart   = ViewBag.ElectricStart;
+    double   waterStart  = ViewBag.WaterStart;
+    int      billMonth   = ViewBag.BillingMonth;
+    int      billYear    = ViewBag.BillingYear;
+    DateTime dueDate     = ViewBag.DueDate;
+    string   invoiceCode = ViewBag.InvoiceCode;
+
+    decimal fixedTotal = fixedSvcs.Sum(s => s.UnitPrice);
+    var ic = CultureInfo.InvariantCulture;
+}
+
+<main id="main" class="main">
+<div class="pagetitle">
+    <h1>Lập hóa đơn</h1>
+    <nav><ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Invoice" asp-action="Index">Hóa đơn</a></li>
+        @if (from == "select")
+        {
+            <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Invoice" asp-action="SelectRoom">Chọn phòng</a></li>
+        }
+        else
+        {
+            <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Invoice" asp-action="DueThisMonth">Cần lập tháng này</a></li>
+        }
+        <li class="breadcrumb-item active">@room.RoomCode</li>
+    </ol></nav>
+</div>
+
+<form method="post" asp-area="Admin" asp-controller="Invoice" asp-action="Generate"
+      asp-route-contractId="@contract.ContractId">
+@Html.AntiForgeryToken()
+
+<!-- Trường hidden cho model binding -->
+<input name="ContractId"         value="@contract.ContractId"                type="hidden" />
+<input name="RoomId"             value="@contract.RoomId"                     type="hidden" />
+<input name="InvoiceCode"        value="@invoiceCode"                         type="hidden" />
+<input name="Status"             value="0"                                    type="hidden" />
+<input name="RoomRentAmount"     value="@contract.MonthlyRent.ToString(ic)"   type="hidden" />
+<!-- Chỉ số đầu kỳ — cập nhật khi đổi kỳ thanh toán -->
+<input name="ElectricIndexStart" id="elecStartHidden"  value="@elecStart.ToString(ic)"  type="hidden" />
+<input name="WaterIndexStart"    id="waterStartHidden"  value="@waterStart.ToString(ic)" type="hidden" />
+
+<section class="section">
+<div class="row g-3">
+
+<!-- ════════ CỘT TRÁI ════════ -->
+<div class="col-lg-8">
+
+    <!-- Thông tin kỳ thanh toán -->
+    <div class="card mb-3">
+    <div class="card-header py-3">
+        <h5 class="mb-0"><i class="bi bi-house me-2"></i>@room.RoomCode — @tenant.FullName</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-5">
+                <label class="form-label fw-semibold">Kỳ thanh toán <span class="text-danger">*</span></label>
+                <div class="input-group">
+                    <span class="input-group-text">Tháng</span>
+                    <select name="BillingMonth" id="billingMonth" class="form-select" onchange="onPeriodChange()">
+                        @for (int m = 1; m <= 12; m++)
+                        {
+                            if (m == billMonth) { <option value="@m" selected>@m</option> }
+                            else                { <option value="@m">@m</option> }
+                        }
+                    </select>
+                    <span class="input-group-text">Năm</span>
+                    <input type="number" name="BillingYear" id="billingYear" value="@billYear"
+                           class="form-control" style="max-width:90px;" min="2020" max="2100"
+                           onchange="onPeriodChange()" />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Hạn thanh toán</label>
+                <input type="date" name="DueDate" id="dueDate"
+                       value="@dueDate.ToString("yyyy-MM-dd")" class="form-control" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Số hóa đơn</label>
+                <input type="text" value="@invoiceCode" class="form-control font-monospace" readonly />
+            </div>
+        </div>
+        <div class="mt-2 d-flex gap-3 small text-muted flex-wrap">
+            <span><i class="bi bi-person me-1"></i>@tenant.FullName</span>
+            @if (!string.IsNullOrEmpty(tenant.Phone))
+            { <span><i class="bi bi-telephone me-1"></i>@tenant.Phone</span> }
+            <span><i class="bi bi-cash me-1"></i>Tiền thuê: <strong>@contract.MonthlyRent.ToString("N0") đ/th</strong></span>
+            <span>Ngày TT: <strong>@contract.PaymentDayOfMonth</strong></span>
+        </div>
+        <div id="periodWarning" class="alert alert-warning small mt-2 d-none py-2">
+            <i class="bi bi-hourglass-split me-1"></i>Đang tải lại chỉ số đầu kỳ...
+        </div>
+    </div>
+    </div>
+
+    <!-- Điện (LUÔN HIỂN THỊ) -->
+    <div class="card mb-3">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Điện</h5>
+        <span class="text-muted small">Đơn vị: kWh</span>
+    </div>
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Đầu kỳ (kWh)</label>
+                <input type="number" id="elecStartDisplay" value="@elecStart"
+                       class="form-control bg-light" readonly />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Cuối kỳ (kWh) <span class="text-danger">*</span></label>
+                <input type="number" name="ElectricIndexEnd" id="elecEnd"
+                       class="form-control"
+                       placeholder="Nhập chỉ số..." step="0.01"
+                       min="@elecStart.ToString(ic)" oninput="recalc()" required />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Đơn giá (đ/kWh) <span class="text-danger">*</span></label>
+                <input name="elecUnitPrice" id="elecPriceInput" type="number"
+                       value="@elecUnitPrice.ToString(ic)"
+                       class="form-control"
+                       placeholder="Đ/kWh" step="100" min="0"
+                       oninput="recalc()" required />
+            </div>
+            <div class="col-md-3">
+                <div class="bg-light rounded p-2 text-center">
+                    <div class="text-muted small">Tiêu thụ · Thành tiền</div>
+                    <div class="fw-semibold"><span id="elecQtyDisplay">0</span> kWh</div>
+                    <div class="fw-bold fs-6"><span id="elecAmountDisplay">0 đ</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Nước (LUÔN HIỂN THỊ) -->
+    <div class="card mb-3">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Nước</h5>
+        <span class="text-muted small">Đơn vị: m³</span>
+    </div>
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Đầu kỳ (m³)</label>
+                <input type="number" id="waterStartDisplay" value="@waterStart"
+                       class="form-control bg-light" readonly />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Cuối kỳ (m³) <span class="text-danger">*</span></label>
+                <input type="number" name="WaterIndexEnd" id="waterEnd"
+                       class="form-control"
+                       placeholder="Nhập chỉ số..." step="0.01"
+                       min="@waterStart.ToString(ic)" oninput="recalc()" required />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Đơn giá (đ/m³) <span class="text-danger">*</span></label>
+                <input name="waterUnitPrice" id="waterPriceInput" type="number"
+                       value="@waterUnitPrice.ToString(ic)"
+                       class="form-control"
+                       placeholder="Đ/m³" step="100" min="0"
+                       oninput="recalc()" required />
+            </div>
+            <div class="col-md-3">
+                <div class="bg-light rounded p-2 text-center">
+                    <div class="text-muted small">Tiêu thụ · Thành tiền</div>
+                    <div class="fw-semibold"><span id="waterQtyDisplay">0</span> m³</div>
+                    <div class="fw-bold fs-6"><span id="waterAmountDisplay">0 đ</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Dịch vụ cố định (không gồm điện/nước) -->
+    @if (fixedSvcs.Any())
+    {
+    <div class="card mb-3">
+    <div class="card-header py-3">
+        <h5 class="mb-0"><i class="bi bi-grid me-2"></i>Dịch vụ cố định</h5>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Dịch vụ</th>
+                    <th class="text-end">Đơn giá / tháng</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in fixedSvcs)
+                {
+                    <input name="serviceIds"   value="@s.ServiceId"              type="hidden" />
+                    <input name="quantities"   value="1"                         type="hidden" />
+                    <input name="unitPrices"   value="@s.UnitPrice.ToString(ic)" type="hidden" />
+                    <input name="descriptions" value="@s.ServiceName"            type="hidden" />
+                    <tr>
+                        <td><i class="bi bi-check-circle-fill text-success me-2"></i>@s.ServiceName</td>
+                        <td class="text-end fw-semibold">@s.UnitPrice.ToString("N0") đ</td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot class="table-light">
+                <tr>
+                    <td class="fw-semibold">Tổng dịch vụ cố định</td>
+                    <td class="text-end fw-bold">@fixedTotal.ToString("N0") đ</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    </div>
+    }
+
+    <!-- Phát sinh -->
+    <div class="card mb-3">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Chi phí phát sinh</h5>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addMisc()">
+            <i class="bi bi-plus me-1"></i>Thêm khoản
+        </button>
+    </div>
+    <div class="card-body">
+        <div id="miscContainer"></div>
+        <div id="miscPlaceholder" class="text-center text-muted small py-2">
+            <i class="bi bi-info-circle me-1"></i>Nhấn "Thêm khoản" để thêm chi phí phát sinh (sửa chữa, phạt, v.v.)
+        </div>
+        <div class="text-end mt-2 small text-muted d-none" id="miscTotalRow">
+            Tổng phát sinh: <strong class="text-danger" id="miscTotalDisplay">0 đ</strong>
+        </div>
+    </div>
+    </div>
+
+</div>
+
+<!-- ════════ CỘT PHẢI — TỔNG KẾT ════════ -->
+<div class="col-lg-4">
+<div class="card sticky-top" style="top:80px;">
+<div class="card-header py-3">
+    <h5 class="mb-0"><i class="bi bi-calculator me-2"></i>Tổng kết hóa đơn</h5>
+</div>
+<div class="card-body">
+    <table class="table table-borderless table-sm mb-3">
+        <tr>
+            <td class="text-muted">Tiền phòng</td>
+            <td class="text-end fw-semibold">@contract.MonthlyRent.ToString("N0") đ</td>
+        </tr>
+        <tr>
+            <td class="text-muted">Điện</td>
+            <td class="text-end" id="elecAmountRow">0 đ</td>
+        </tr>
+        <tr>
+            <td class="text-muted">Nước</td>
+            <td class="text-end" id="waterAmountRow">0 đ</td>
+        </tr>
+        @if (fixedSvcs.Any())
+        {
+        <tr>
+            <td class="text-muted">Dịch vụ cố định</td>
+            <td class="text-end">@fixedTotal.ToString("N0") đ</td>
+        </tr>
+        }
+        <tr id="miscSummaryRow" class="d-none">
+            <td class="text-muted text-danger">Phát sinh</td>
+            <td class="text-end text-danger" id="miscAmountRow">0 đ</td>
+        </tr>
+        <tr>
+            <td class="text-muted">Chiết khấu</td>
+            <td class="text-end">
+                <div class="input-group input-group-sm justify-content-end">
+                    <input type="number" name="Discount" id="discountInput"
+                           value="0" min="0" class="form-control text-end"
+                           style="max-width:110px;" oninput="recalc()" />
+                    <span class="input-group-text">đ</span>
+                </div>
+            </td>
+        </tr>
+    </table>
+    <hr />
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <span class="fw-bold fs-5">TỔNG CỘNG</span>
+        <span class="fw-bold fs-4 text-primary" id="grandTotal">@contract.MonthlyRent.ToString("N0") đ</span>
+    </div>
+    <div class="mb-3">
+        <label class="form-label small text-muted">Ghi chú</label>
+        <textarea name="Notes" class="form-control" rows="2" placeholder="Ghi chú thêm..."></textarea>
+    </div>
+    <div class="d-grid">
+        <button type="submit" class="btn btn-primary btn-lg">
+            <i class="bi bi-send me-2"></i>Gửi hóa đơn cho người thuê
+        </button>
+    </div>
+    <div class="text-center mt-2">
+        @if (from == "select")
+        {
+            <a asp-area="Admin" asp-controller="Invoice" asp-action="SelectRoom"
+               class="small text-muted">← Quay lại chọn phòng</a>
+        }
+        else
+        {
+            <a asp-area="Admin" asp-controller="Invoice" asp-action="DueThisMonth"
+               class="small text-muted">← Quay lại danh sách</a>
+        }
+    </div>
+</div>
+</div>
+</div>
+
+</div>
+</section>
+</form>
+</main>
+
+@section Scripts {
+<script>
+let ELEC_START  = @elecStart.ToString(ic);
+let WATER_START = @waterStart.ToString(ic);
+const FIXED_TOTAL = @fixedTotal.ToString(ic);
+const ROOM_RENT   = @contract.MonthlyRent.ToString(ic);
+const CONTRACT_ID = @contract.ContractId;
+const PAY_DAY     = @contract.PaymentDayOfMonth;
+
+function fmt(n) { return Math.round(n).toLocaleString('vi-VN') + ' đ'; }
+function getVal(id) { const el = document.getElementById(id); return el ? (parseFloat(el.value) || 0) : 0; }
+function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
+function setVal(id, v)  { const el = document.getElementById(id); if (el) el.value = v; }
+
+function recalc() {
+    const eEnd   = getVal('elecEnd');
+    const wEnd   = getVal('waterEnd');
+    const ePrice = getVal('elecPriceInput');
+    const wPrice = getVal('waterPriceInput');
+    const discount = getVal('discountInput');
+
+    const eQty  = Math.max(0, eEnd - ELEC_START);
+    const wQty  = Math.max(0, wEnd - WATER_START);
+    const eAmt  = eQty * ePrice;
+    const wAmt  = wQty * wPrice;
+
+    let miscTotal = 0;
+    document.querySelectorAll('.misc-amount-input').forEach(el => {
+        miscTotal += parseFloat(el.value) || 0;
+    });
+
+    const total = ROOM_RENT + eAmt + wAmt + FIXED_TOTAL + miscTotal - discount;
+
+    setText('elecQtyDisplay',     eQty.toFixed(2));
+    setText('elecAmountDisplay',  fmt(eAmt));
+    setText('elecAmountRow',      fmt(eAmt));
+    setText('waterQtyDisplay',    wQty.toFixed(2));
+    setText('waterAmountDisplay', fmt(wAmt));
+    setText('waterAmountRow',     fmt(wAmt));
+    setText('grandTotal',         fmt(Math.max(0, total)));
+    setText('miscTotalDisplay',   fmt(miscTotal));
+    setText('miscAmountRow',      fmt(miscTotal));
+
+    const msr = document.getElementById('miscSummaryRow');
+    if (msr) msr.classList.toggle('d-none', miscTotal <= 0);
+}
+
+// ── Phát sinh ────────────────────────────────────────────────────
+function addMisc() {
+    const container   = document.getElementById('miscContainer');
+    const placeholder = document.getElementById('miscPlaceholder');
+    const totalRow    = document.getElementById('miscTotalRow');
+    if (placeholder) placeholder.classList.add('d-none');
+    if (totalRow)    totalRow.classList.remove('d-none');
+
+    const row = document.createElement('div');
+    row.className = 'row g-2 mb-2 misc-row';
+    row.innerHTML = `
+        <div class="col-6">
+            <input name="miscDescriptions" class="form-control form-control-sm"
+                   placeholder="Mô tả khoản phát sinh..." />
+        </div>
+        <div class="col-5">
+            <div class="input-group input-group-sm">
+                <input name="miscAmounts" type="number" class="form-control misc-amount-input text-end"
+                       placeholder="Số tiền" min="0" step="1000" oninput="recalc()" />
+                <span class="input-group-text">đ</span>
+            </div>
+        </div>
+        <div class="col-1">
+            <button type="button" class="btn btn-sm btn-outline-danger w-100"
+                    onclick="removeMisc(this)" title="Xóa">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>`;
+    container.appendChild(row);
+}
+
+function removeMisc(btn) {
+    btn.closest('.misc-row').remove();
+    const remaining = document.querySelectorAll('.misc-row').length;
+    if (remaining === 0) {
+        document.getElementById('miscPlaceholder')?.classList.remove('d-none');
+        document.getElementById('miscTotalRow')?.classList.add('d-none');
+    }
+    recalc();
+}
+
+// ── Đổi kỳ → reload chỉ số đầu kỳ ──────────────────────────────
+function onPeriodChange() {
+    const month = parseInt(document.getElementById('billingMonth').value);
+    const year  = parseInt(document.getElementById('billingYear').value);
+    if (!month || !year || year < 2020) return;
+
+    const maxDay = new Date(year, month, 0).getDate();
+    const dueDay = Math.min(PAY_DAY, maxDay);
+    document.getElementById('dueDate').value =
+        `${year}-${String(month).padStart(2,'0')}-${String(dueDay).padStart(2,'0')}`;
+
+    const warn = document.getElementById('periodWarning');
+    if (warn) warn.classList.remove('d-none');
+
+    fetch(`/Admin/Invoice/GetPreviousIndex?contractId=${CONTRACT_ID}&month=${month}&year=${year}`)
+        .then(r => r.json())
+        .then(data => {
+            if (warn) warn.classList.add('d-none');
+            if (!data.ok) return;
+            // Cập nhật biến JS
+            ELEC_START  = data.electricStart;
+            WATER_START = data.waterStart;
+            // Cập nhật hidden inputs cho model binding
+            setVal('elecStartHidden',   data.electricStart);
+            setVal('waterStartHidden',  data.waterStart);
+            // Cập nhật hiển thị
+            setVal('elecStartDisplay',  data.electricStart);
+            setVal('waterStartDisplay', data.waterStart);
+            setVal('elecEnd',  '');
+            setVal('waterEnd', '');
+            recalc();
+        })
+        .catch(() => { if (warn) warn.classList.add('d-none'); });
+}
+
+recalc();
+</script>
+}

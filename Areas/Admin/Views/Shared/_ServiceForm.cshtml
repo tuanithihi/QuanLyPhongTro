@@ -1,0 +1,83 @@
+@model QuanLyPhongTro.Models.tblService
+@using QuanLyPhongTro.Models
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger small mb-3"></div>
+
+<div class="row g-3 mb-3">
+
+    @* ── Tên dịch vụ ── *@
+    <div class="col-lg-8">
+        <label asp-for="ServiceName" class="form-label fw-semibold"></label>
+        <input asp-for="ServiceName" class="form-control" placeholder="Ví dụ: Tiền điện, Tiền nước, Wifi..." />
+        <span asp-validation-for="ServiceName" class="text-danger small"></span>
+    </div>
+
+    @* ── Loại dịch vụ ── *@
+    <div class="col-lg-4">
+        <label asp-for="ServiceType" class="form-label fw-semibold"></label>
+        <select asp-for="ServiceType" id="serviceTypeSelect" class="form-select">
+            <option value="@((int)ServiceType.Electric)">Điện</option>
+            <option value="@((int)ServiceType.Water)">Nước</option>
+            <option value="@((int)ServiceType.Garbage)">Rác</option>
+            <option value="@((int)ServiceType.Wifi)">Wifi</option>
+            <option value="@((int)ServiceType.Parking)">Gửi xe</option>
+            <option value="@((int)ServiceType.Other)">Khác</option>
+        </select>
+    </div>
+
+</div>
+
+<div class="row g-3 mb-3">
+
+    @* ── Cách tính phí ── *@
+    <div class="col-lg-4">
+        <label class="form-label fw-semibold d-block">Cách tính phí</label>
+        <div class="d-flex gap-4 mt-1">
+            <div class="form-check">
+                <input class="form-check-input" type="radio" asp-for="PricingMethod"
+                       id="pmPerUnit" value="@((int)PricingMethod.PerUnit)" />
+                <label class="form-check-label" for="pmPerUnit">Theo tiêu thụ</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" asp-for="PricingMethod"
+                       id="pmFixed" value="@((int)PricingMethod.FixedMonthly)" />
+                <label class="form-check-label" for="pmFixed">Cố định/tháng</label>
+            </div>
+        </div>
+    </div>
+
+    @* ── Đơn giá ── *@
+    <div class="col-lg-5">
+        <label asp-for="UnitPrice" class="form-label fw-semibold"></label>
+        <div class="input-group">
+            <input asp-for="UnitPrice" type="number" min="0" step="100"
+                   class="form-control" placeholder="0" />
+            <span class="input-group-text">đ</span>
+        </div>
+        <span asp-validation-for="UnitPrice" class="text-danger small"></span>
+    </div>
+
+    @* ── Đơn vị ── *@
+    <div class="col-lg-3">
+        <label asp-for="Unit" class="form-label fw-semibold">
+            Đơn vị <span class="text-muted fw-normal small">(tuỳ chọn)</span>
+        </label>
+        <input asp-for="Unit" id="unitInput" class="form-control" placeholder="kWh, m³, tháng..." />
+    </div>
+
+</div>
+
+@* ── Mô tả ── *@
+<div class="mb-3">
+    <label asp-for="Description" class="form-label fw-semibold">
+        Mô tả <span class="text-muted fw-normal small">(tuỳ chọn)</span>
+    </label>
+    <input asp-for="Description" class="form-control"
+           placeholder="Ví dụ: 3.500 đ/kWh, tính theo chỉ số đồng hồ" />
+</div>
+
+@* ── Kích hoạt ── *@
+<div class="mb-4 form-check form-switch">
+    <input asp-for="IsActive" class="form-check-input" type="checkbox" role="switch" />
+    <label asp-for="IsActive" class="form-check-label fw-semibold">Kích hoạt dịch vụ</label>
+</div>

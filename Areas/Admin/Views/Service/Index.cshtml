@@ -1,0 +1,162 @@
+@model List<QuanLyPhongTro.Models.tblService>
+@using QuanLyPhongTro.Models
+@{
+    ViewData["Title"] = "Dịch vụ";
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+
+    string TypeLabel(ServiceType t) => t switch {
+        ServiceType.Electric => "Điện",
+        ServiceType.Water    => "Nước",
+        ServiceType.Garbage  => "Rác",
+        ServiceType.Wifi     => "Wifi",
+        ServiceType.Parking  => "Gửi xe",
+        _                    => "Khác"
+    };
+}
+
+<main id="main" class="main">
+
+    <div class="pagetitle">
+        <h1>Dịch vụ</h1>
+        <nav>
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+                <li class="breadcrumb-item active">Dịch vụ</li>
+            </ol>
+        </nav>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="bi bi-check-circle me-1"></i> @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            <i class="bi bi-exclamation-triangle me-1"></i> @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <section class="section">
+        <div class="card">
+            <div class="card-body pt-3">
+
+                <div class="d-flex justify-content-between align-items-center my-3">
+                    <p class="text-muted mb-0">
+                        Tổng cộng <strong>@Model.Count</strong> dịch vụ
+                        (<strong class="text-success">@Model.Count(s => s.IsActive)</strong> đang hoạt động)
+                    </p>
+                    <a asp-area="Admin" asp-controller="Service" asp-action="Create"
+                       class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-circle me-1"></i> Thêm dịch vụ mới
+                    </a>
+                </div>
+
+                @if (!Model.Any())
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-gear fs-1 d-block mb-2"></i>
+                        Chưa có dịch vụ nào. <a asp-area="Admin" asp-controller="Service" asp-action="Create">Thêm ngay</a>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Tên dịch vụ</th>
+                                    <th>Loại</th>
+                                    <th>Cách tính</th>
+                                    <th class="text-end">Đơn giá</th>
+                                    <th>Đơn vị</th>
+                                    <th class="text-center">Trạng thái</th>
+                                    <th class="text-center">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{ int idx = 0; }
+                                @foreach (var svc in Model)
+                                {
+                                    idx++;
+                                    <tr class="@(svc.IsActive ? "" : "table-secondary text-muted")">
+                                        <td class="small text-muted">@idx</td>
+                                        <td>
+                                            <span class="fw-semibold">@svc.ServiceName</span>
+                                            @if (!string.IsNullOrEmpty(svc.Description))
+                                            {
+                                                <div class="text-muted small">@svc.Description</div>
+                                            }
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary-subtle text-secondary rounded-pill">
+                                                @TypeLabel(svc.ServiceType)
+                                            </span>
+                                        </td>
+                                        <td class="small">
+                                            @if (svc.PricingMethod == PricingMethod.PerUnit)
+                                            {
+                                                <span class="badge bg-info-subtle text-info rounded-pill">Theo tiêu thụ</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-success-subtle text-success rounded-pill">Cố định/tháng</span>
+                                            }
+                                        </td>
+                                        <td class="text-end fw-semibold text-primary">
+                                            @svc.UnitPrice.ToString("N0") đ
+                                        </td>
+                                        <td class="small text-muted">@(svc.Unit ?? "—")</td>
+                                        <td class="text-center">
+                                            @if (svc.IsActive)
+                                            {
+                                                <span class="badge bg-success">Hoạt động</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">Tắt</span>
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="btn-group btn-group-sm">
+                                                <a asp-area="Admin" asp-controller="Service" asp-action="Edit"
+                                                   asp-route-id="@svc.ServiceId"
+                                                   class="btn btn-outline-primary" title="Sửa">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <form asp-area="Admin" asp-controller="Service" asp-action="ToggleActive"
+                                                      asp-route-id="@svc.ServiceId" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit"
+                                                            class="btn @(svc.IsActive ? "btn-outline-warning" : "btn-outline-success")"
+                                                            title="@(svc.IsActive ? "Tắt dịch vụ" : "Kích hoạt")">
+                                                        <i class="bi @(svc.IsActive ? "bi-toggle-on" : "bi-toggle-off")"></i>
+                                                    </button>
+                                                </form>
+                                                <form asp-area="Admin" asp-controller="Service" asp-action="Delete"
+                                                      asp-route-id="@svc.ServiceId" method="post" class="d-inline"
+                                                      onsubmit="return confirm('Xóa dịch vụ \'@svc.ServiceName\'?')">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-outline-danger" title="Xóa">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+
+            </div>
+        </div>
+    </section>
+
+</main>

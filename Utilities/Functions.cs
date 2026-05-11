@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace QuanLyThuVien.Utilities
+namespace QuanLyPhongTro.Utilities
 {
     public class Functions
     {

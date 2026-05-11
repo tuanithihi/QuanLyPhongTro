@@ -1,286 +1,974 @@
-﻿@using QuanLyThuVien.Models
-<main class="main">
+@model HomeIndexViewModel
 
-  <!-- Library Showcase Slider -->
-  <section id="library-showcase" class="library-showcase-slider">
-    <div id="libraryCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="2000">
-      <div class="carousel-indicators">
-        <button type="button" data-bs-target="#libraryCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-        <button type="button" data-bs-target="#libraryCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
-        <button type="button" data-bs-target="#libraryCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
-      </div>
-      
-      <div class="carousel-inner">
-        <div class="carousel-item active">
-          <div class="carousel-overlay"></div>
-          <img src="~/images/slide1.jpg" class="d-block w-100" alt="Thư viện hiện đại">
-          <div class="carousel-caption">
-            <h2 class="animate__animated animate__fadeInDown">Không Gian Đọc Sách Hiện Đại</h2>
-            <p class="animate__animated animate__fadeInUp">Trải nghiệm không gian đọc sách yên tĩnh, thoải mái với đầy đủ tiện nghi</p>
-          </div>
-        </div>
-        
-        <div class="carousel-item">
-          <div class="carousel-overlay"></div>
-          <img src="~/images/slide2.jpg" class="d-block w-100" alt="Bộ sưu tập sách phong phú">
-          <div class="carousel-caption">
-            <h2 class="animate__animated animate__fadeInDown">Bộ Sưu Tập Sách Phong Phú</h2>
-            <p class="animate__animated animate__fadeInUp">Hàng nghìn đầu sách từ văn học, khoa học đến nghệ thuật và công nghệ</p>
-          </div>
-        </div>
-        
-        <div class="carousel-item">
-          <div class="carousel-overlay"></div>
-          <img src="~/images/slide3.jpg" class="d-block w-100" alt="Dịch vụ thư viện chuyên nghiệp">
-          <div class="carousel-caption">
-            <h2 class="animate__animated animate__fadeInDown">Dịch Vụ Chuyên Nghiệp</h2>
-            <p class="animate__animated animate__fadeInUp">Đội ngũ thủ thư tận tâm, hỗ trợ bạn tìm kiếm và mượn sách nhanh chóng</p>
-          </div>
-        </div>
-      </div>
-      
-      <button class="carousel-control-prev" type="button" data-bs-target="#libraryCarousel" data-bs-slide="prev">
-        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-        <span class="visually-hidden">Previous</span>
-      </button>
-      <button class="carousel-control-next" type="button" data-bs-target="#libraryCarousel" data-bs-slide="next">
-        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-        <span class="visually-hidden">Next</span>
-      </button>
-    </div>
-  </section>
+@{
+    ViewData["Title"] = "Tìm Kiếm Phòng Trọ Lý Tưởng - Phòng Trọ Mới";
+    ViewData["Description"] = "Nền tảng tìm kiếm phòng trọ uy tín với hơn " + Model.AvailableRooms.Count + " phòng xác thực. Tìm phòng cho gia đình bạn dễ dàng.";
+}
 
-  <!-- Courses Hero Section -->
-  <section id="courses-hero" class="courses-hero section light-background">
 
-    <div class="hero-content">
-      <div class="container">
-        <div class="row align-items-center">
-
-          <div class="col-lg-6" data-aos="fade-up" data-aos-delay="100">
-            <div class="hero-text">
-              <h1>Thư viện số LibraHub - Nơi kết nối tri thức</h1>
-              <p>Khám phá hàng nghìn đầu sách chất lượng cao từ nhiều lĩnh vực khác nhau. Đọc sách mọi lúc mọi nơi, mở
-                rộng kiến thức và phát triển bản thân từ bất cứ đâu.</p>
-
-              <div class="hero-stats">
-                <div class="stat-item">
-                  <span class="number purecounter" data-purecounter-start="0"
-                    data-purecounter-end="@(ViewBag.TotalBooks ?? 0)" data-purecounter-duration="2"></span>
-                  <span class="label">Tổng Sách</span>
+<!-- ════════════════════════════════════════════════════════════════════════════════════
+     HERO SECTION - Split Layout (Search + Hero Image)
+     ════════════════════════════════════════════════════════════════════════════════════ -->
+<section class="hero-section py-5" style="background: linear-gradient(135deg, #f8fafc 0%, #e8f8f5 100%);">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <!-- Left Column: Search Section -->
+            <div class="col-lg-6 d-flex flex-column justify-content-center">
+                <div class="mb-4">
+                    <h1 class="display-4 fw-bold text-dark mb-3" style="color: #1E8449;">
+                        Tìm Kiếm Phòng Trọ Lý Tưởng Cho Gia Đình Bạn
+                    </h1>
+                    <p class="fs-5 text-muted mb-4">
+                        Hơn <span class="fw-bold" style="color: #27AE60;">@Model.AvailableRooms.Count phòng trọ</span> được xác thực, an toàn và phù hợp gia đình
+                    </p>
                 </div>
-                <div class="stat-item">
-                  <span class="number purecounter" data-purecounter-start="0"
-                    data-purecounter-end="@(ViewBag.TotalAuthors ?? 0)" data-purecounter-duration="2"></span>
-                  <span class="label">Tác giả</span>
-                </div>
-                <div class="stat-item">
-                  <span class="number purecounter" data-purecounter-start="0"
-                    data-purecounter-end="@(ViewBag.TotalCategories ?? 0)" data-purecounter-duration="2"></span>
-                  <span class="label">Danh Mục</span>
-                </div>
-              </div>
 
-              <div class="hero-buttons">
-                <a asp-controller="Book" asp-action="Index" class="btn btn-primary">
-                  <i class="bi bi-book me-2"></i>Xem Sách
-                </a>
-                <a asp-controller="Contact" asp-action="Index" class="btn btn-outline">
-                  <i class="bi bi-info-circle me-2"></i>Tìm Hiểu Thêm
-                </a>
-              </div>
+                <!-- Search Form -->
+                <form method="get" action="/Home/Index" class="search-form">
+                    <div class="mb-3">
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text" style="background: white; border-color: #D5F4E6;">
+                                <i class="bi bi-geo-alt" style="color: #27AE60;"></i>
+                            </span>
+                            <input type="text" id="areaInput" name="area" class="form-control form-control-lg"
+                                   placeholder="Nhập khu vực, thành phố..."
+                                   value="@(string.IsNullOrEmpty(Model.Area) ? "" : Model.Area)"
+                                   style="border-color: #D5F4E6; font-size: 1rem;" />
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mt-2">
+                            <button type="button" id="useMyLocationBtn" class="btn btn-sm btn-outline-success fw-semibold">
+                                <i class="bi bi-crosshair me-1"></i>Dùng vị trí của tôi
+                            </button>
+                            <button type="button" id="ownerLocationBtn" class="btn btn-sm btn-light fw-semibold" style="border:1px solid #D5F4E6;color:#1E8449;">
+                                <i class="bi bi-house-door me-1"></i>Chủ trọ: Vinh, Nghệ An
+                            </button>
+                        </div>
+                    </div>
 
-              <div class="hero-features">
-                <div class="feature">
-                  <i class="bi bi-book-half"></i>
-                  <span>Sách Đa Dạng</span>
-                </div>
-                <div class="feature">
-                  <i class="bi bi-gift"></i>
-                  <span>Mượn Miễn Phí</span>
-                </div>
-                <div class="feature">
-                  <i class="bi bi-headset"></i>
-                  <span>Dịch Vụ Chuyên Nghiệp</span>
-                </div>
-              </div>
+                    <div class="row g-3">
+                        <!-- Price Range -->
+                        <div class="col-md-6 col-lg-3">
+                            <select name="priceRange" class="form-select form-select-lg"
+                                    style="border-color: #D5F4E6; font-size: 1rem;">
+                                <option value="">Khoảng giá (Tất cả)</option>
+                                <option value="under2m">Dưới 2 triệu</option>
+                                <option value="2to3m">2 - 3 triệu</option>
+                                <option value="3to5m">3 - 5 triệu</option>
+                                <option value="over5m">Trên 5 triệu</option>
+                            </select>
+                        </div>
+
+                        <!-- Area Range -->
+                        <div class="col-md-6 col-lg-3">
+                            <select name="areaRange" class="form-select form-select-lg"
+                                    style="border-color: #D5F4E6; font-size: 1rem;">
+                                <option value="">Diện tích (Tất cả)</option>
+                                <option value="under15">Dưới 15 m²</option>
+                                <option value="15to25">15 - 25 m²</option>
+                                <option value="25to35">25 - 35 m²</option>
+                                <option value="over35">Trên 35 m²</option>
+                            </select>
+                        </div>
+
+                        <!-- Room Type -->
+                        <div class="col-md-6 col-lg-3">
+                            <select name="roomTypeId" class="form-select form-select-lg"
+                                    style="border-color: #D5F4E6; font-size: 1rem;">
+                                <option value="">Loại phòng (Tất cả)</option>
+                                @foreach (var type in Model.RoomTypes)
+                                {
+                                    <option value="@type.RoomTypeId">
+                                        @type.RoomTypeName
+                                    </option>
+                                }
+                            </select>
+                        </div>
+
+                        <!-- Floor Range -->
+                        <div class="col-md-6 col-lg-3">
+                            <select name="floorRange" class="form-select form-select-lg"
+                                    style="border-color: #D5F4E6; font-size: 1rem;">
+                                <option value="">Số tầng (Tất cả)</option>
+                                <option value="floor1">Tầng 1</option>
+                                <option value="floor2">Tầng 2</option>
+                                <option value="floor3plus">Từ tầng 3 trở lên</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-lg fw-bold"
+                                style="background: #27AE60; color: white; border: none; padding: 0.75rem 2rem;">
+                            <i class="bi bi-search me-2"></i>Tìm Kiếm
+                        </button>
+                    </div>
+                </form>
             </div>
-          </div>
 
-          <div class="col-lg-6" data-aos="fade-up" data-aos-delay="200">
-            <div class="hero-image">
-              <div class="main-image">
-                <img src="~/assets/img/education/courses-13.webp" alt="Thư viện số LibraHub" class="img-fluid">
-              </div>
-
-              <div class="floating-cards">
-                @if (ViewBag.TopCategories != null && ViewBag.TopCategoriesWithCount != null)
-                {
-                  var categories = (List<QuanLyThuVien.Models.tblCategory>)ViewBag.TopCategories;
-                  var categoryCounts = (Dictionary<int, int>)ViewBag.TopCategoriesWithCount;
-                  var delays = new[] { 300, 400, 500 };
-                  var icons = new[] { "bi-book", "bi-journal-text", "bi-stack" };
-
-                  @for (int i = 0; i < categories.Count && i < 3; i++)
-                  {
-                    var category = categories[i];
-                    var bookCount = categoryCounts.ContainsKey(category.CategoryID) ? categoryCounts[category.CategoryID] :
-                    0;
-
-                    <div class="course-card" data-aos="fade-up" data-aos-delay="@delays[i]">
-                      <div class="card-icon">
-                        <i class="bi @icons[i]"></i>
-                      </div>
-                      <div class="card-content">
-                        <h6>@(category.CategoryName ?? "Danh mục")</h6>
-                        <span>@bookCount Cuốn sách</span>
-                      </div>
-                    </div>
-                  }
-                }
-                else
-                {
-                  <!-- Fallback nếu không có dữ liệu -->
-                  <div class="course-card" data-aos="fade-up" data-aos-delay="300">
-                    <div class="card-icon">
-                      <i class="bi bi-book"></i>
-                    </div>
-                    <div class="card-content">
-                      <h6>Văn Học</h6>
-                      <span>Nhiều sách</span>
-                    </div>
-                  </div>
-                  <div class="course-card" data-aos="fade-up" data-aos-delay="400">
-                    <div class="card-icon">
-                      <i class="bi bi-journal-text"></i>
-                    </div>
-                    <div class="card-content">
-                      <h6>Khoa Học</h6>
-                      <span>Nhiều sách</span>
-                    </div>
-                  </div>
-                  <div class="course-card" data-aos="fade-up" data-aos-delay="500">
-                    <div class="card-icon">
-                      <i class="bi bi-stack"></i>
-                    </div>
-                    <div class="card-content">
-                      <h6>Lịch Sử</h6>
-                      <span>Nhiều sách</span>
-                    </div>
-                  </div>
-                }
-              </div>
+            <!-- Right Column: Hero Image -->
+            <div class="col-lg-6">
+                <div class="hero-image-container" style="border-radius: 12px; overflow: hidden; box-shadow: 0 10px 40px rgba(39, 174, 96, 0.15);">
+                    <img src="~/assets/img/home-top-banner.png"
+                         onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 500 400%27%3E%3Crect fill=%27%2327AE60%27 width=%27500%27 height=%27400%27/%3E%3Crect fill=%27%232ECC71%27 x=%2750%27 y=%27100%27 width=%27200%27 height=%27200%27 rx=%2710%27/%3E%3Crect fill=%27%23E8F8F5%27 x=%27100%27 y=%27130%27 width=%2740%27 height=%2750%27/%3E%3Crect fill=%27%23E8F8F5%27 x=%27180%27 y=%27130%27 width=%2740%27 height=%2750%27/%3E%3Crect fill=%27%23E8F8F5%27 x=%27100%27 y=%27210%27 width=%2740%27 height=%2750%27/%3E%3Crect fill=%27%23E8F8F5%27 x=%27180%27 y=%27210%27 width=%2740%27 height=%2750%27/%3E%3Crect fill=%27%234A90E2%27 x=%27300%27 y=%27200%27 width=%27120%27 height=%2780%27 rx=%275%27/%3E%3Ccircle fill=%27%23FFD700%27 cx=%27360%27 cy=%2770%27 r=%2720%27/%3E%3Cpath fill=%27%23F5F5F5%27 d=%27M250 350 L300 310 L350 350 Z%27/%3E%3C/svg%3E';"
+                         alt="Phòng Trọ Mới - Modern Family Room"
+                         class="img-fluid w-100 h-auto" style="display: block;" />
+                </div>
+                <p class="text-center text-muted small mt-3">
+                    <i class="bi bi-check-circle-fill" style="color: #27AE60;"></i> Phòng được kiểm chứng từng chi tiết
+                </p>
             </div>
-          </div>
-
         </div>
-      </div>
     </div>
+</section>
 
-    <div class="hero-background">
-      <div class="bg-shapes">
-        <div class="shape shape-1"></div>
-        <div class="shape shape-2"></div>
-        <div class="shape shape-3"></div>
-      </div>
+<!-- ════════════════════════════════════════════════════════════════════════════════════
+     WHY CHOOSE US SECTION
+     ════════════════════════════════════════════════════════════════════════════════════ -->
+<section class="features-section py-5" style="background: white;">
+    <div class="container">
+        <!-- Section Header -->
+        <div class="text-center mb-5">
+            <h2 class="display-6 fw-bold text-dark mb-3">Tại Sao Chọn Phòng Trọ Mới?</h2>
+            <p class="fs-5 text-muted" style="max-width: 600px; margin: 0 auto;">
+                Chúng tôi cam kết cung cấp nền tảng tìm phòng trọ an toàn, minh bạch và hỗ trợ 24/7
+            </p>
+        </div>
+
+        <!-- Features Cards -->
+        <div class="row g-4">
+            <!-- Feature 1: Verified -->
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card p-4" style="background: #E8F8F5; border-left: 4px solid #27AE60; border-radius: 8px; transition: all 0.3s ease;">
+                    <div class="mb-3">
+                        <i class="bi bi-shield-check" style="font-size: 2.5rem; color: #27AE60;"></i>
+                    </div>
+                    <h5 class="fw-bold mb-3" style="color: #1E8449;">Xác Thực 100%</h5>
+                    <p class="text-muted mb-0">
+                        Tất cả phòng trọ được kiểm chứng kỹ lưỡng, xác thực chủ nhà, ảnh thực tế và giấy tờ pháp lý.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Feature 2: Family-Friendly -->
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card p-4" style="background: #E8F8F5; border-left: 4px solid #27AE60; border-radius: 8px; transition: all 0.3s ease;">
+                    <div class="mb-3">
+                        <i class="bi bi-people" style="font-size: 2.5rem; color: #27AE60;"></i>
+                    </div>
+                    <h5 class="fw-bold mb-3" style="color: #1E8449;">Phù Hợp Gia Đình</h5>
+                    <p class="text-muted mb-0">
+                        Các phòng được lựa chọn kỹ càng để đảm bảo an toàn, thoải mái và phù hợp với nhu cầu gia đình.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Feature 3: 24/7 Support -->
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card p-4" style="background: #E8F8F5; border-left: 4px solid #27AE60; border-radius: 8px; transition: all 0.3s ease;">
+                    <div class="mb-3">
+                        <i class="bi bi-headset" style="font-size: 2.5rem; color: #27AE60;"></i>
+                    </div>
+                    <h5 class="fw-bold mb-3" style="color: #1E8449;">Hỗ Trợ 24/7</h5>
+                    <p class="text-muted mb-0">
+                        Đội hỗ trợ khách hàng luôn sẵn sàng giúp đỡ bạn qua chat, điện thoại hoặc email bất cứ lúc nào.
+                    </p>
+                </div>
+            </div>
+        </div>
     </div>
+</section>
 
-  </section><!-- /Courses Hero Section -->
+<!-- ════════════════════════════════════════════════════════════════════════════════════
+     FEATURED ROOMS SECTION
+     ════════════════════════════════════════════════════════════════════════════════════ -->
+<section class="featured-rooms-section py-5" style="background: #f8fafc;">
+    <div class="container">
+        <!-- Section Header -->
+        <div class="text-center mb-5">
+            <h2 class="display-6 fw-bold text-dark mb-2">Phòng Trọ Gia Đình Nổi Bật</h2>
+            <p class="fs-5 text-muted">Các phòng trọ được đánh giá cao nhất từ khách hàng</p>
+        </div>
 
-  <!-- Sách mới nhất -->
-  <section id="featured-courses" class="featured-courses section">
-    <div class="container section-title" data-aos="fade-up">
-      <h2>Sách Mới Nhất</h2>
-      <p>Cập nhật những thông tin mới nhất về sách</p>
+        <!-- Featured Rooms Grid -->
+        @if (Model.AvailableRooms.Any())
+        {
+            <div class="row g-4 mb-5">
+                @foreach (var room in Model.AvailableRooms.Take(3))
+                {
+                    <div class="col-lg-4 col-md-6">
+                        <div class="featured-room-card h-100" style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.08); transition: all 0.3s ease;">
+                            <!-- Image -->
+                            <div style="position: relative; height: 240px; overflow: hidden; background: #e0e0e0;">
+                                @if (!string.IsNullOrEmpty(room.ThumbnailImage))
+                                {
+                                    <img src="@room.ThumbnailImage" alt="@room.RoomName"
+                                         class="w-100 h-100" style="object-fit: cover; transition: transform 0.3s ease;" />
+                                }
+                                else
+                                {
+                                    <div class="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
+                                        <i class="bi bi-image" style="font-size: 3rem; color: #ccc;"></i>
+                                    </div>
+                                }
+                                <div style="position: absolute; top: 12px; right: 12px;">
+                                    <span class="badge" style="background: #27AE60; color: white;">
+                                        <i class="bi bi-check-circle-fill me-1"></i>Có sẵn
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Content -->
+                            <div class="p-4">
+                                <h5 class="fw-bold mb-2 text-truncate" style="color: #1E8449;">
+                                    @room.RoomName
+                                </h5>
+
+                                <!-- Price -->
+                                <div class="mb-3">
+                                    <p class="fs-4 fw-bold mb-0" style="color: #27AE60;">
+                                        @room.RoomPrice.ToString("C0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))
+                                        <span class="fs-6 fw-normal text-muted">/tháng</span>
+                                    </p>
+                                </div>
+
+                                <!-- Stats Row -->
+                                <div class="row g-2 mb-4 small">
+                                    @if (room.MaxOccupants > 0)
+                                    {
+                                        <div class="col-6">
+                                            <span class="text-muted">
+                                                <i class="bi bi-door-open" style="color: #27AE60;"></i> @room.MaxOccupants phòng
+                                            </span>
+                                        </div>
+                                    }
+                                    @if (room.Area > 0)
+                                    {
+                                        <div class="col-6">
+                                            <span class="text-muted">
+                                                <i class="bi bi-rulers" style="color: #27AE60;"></i> @room.Area m²
+                                            </span>
+                                        </div>
+                                    }
+                                    @if (room.Floor > 0)
+                                    {
+                                        <div class="col-6">
+                                            <span class="text-muted">
+                                                <i class="bi bi-building" style="color: #27AE60;"></i> Tầng @room.Floor
+                                            </span>
+                                        </div>
+                                    }
+                                    <div class="col-6">
+                                        <span class="text-muted">
+                                            <i class="bi bi-star-fill" style="color: #FFD700;"></i> 4.8 (48)
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Description -->
+                                @if (!string.IsNullOrEmpty(room.Description))
+                                {
+                                    <p class="text-muted small mb-4" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                        @room.Description
+                                    </p>
+                                }
+
+                                <!-- View Details Button -->
+                                <a href="/Home/Details/@room.RoomId" class="btn btn-sm fw-bold w-100"
+                                   style="background: #27AE60; color: white; border: none; padding: 0.6rem;">
+                                    <i class="bi bi-arrow-right me-1"></i>Xem Chi Tiết
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- View All Button -->
+            <div class="text-center">
+                <a href="/Home/AllRooms" class="btn btn-outline-success btn-lg fw-bold"
+                   style="border-color: #27AE60; color: #27AE60; padding: 0.75rem 2rem;">
+                    <i class="bi bi-collection me-2"></i>Xem Tất Cả @Model.AvailableRooms.Count Phòng Trọ
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <p class="fs-5 text-muted">
+                    <i class="bi bi-info-circle me-2"></i>Hiện tại chúng tôi không có phòng trọ phù hợp.
+                </p>
+            </div>
+        }
     </div>
+</section>
 
-    <div class="container" data-aos="fade-up" data-aos-delay="100">
-      @await Component.InvokeAsync("RecentBook")
+<!-- ════════════════════════════════════════════════════════════════════════════════════
+     REVIEWS SECTION - Customer Reviews & Rating
+     ════════════════════════════════════════════════════════════════════════════════════ -->
+<section class="reviews-section py-5" style="background: white;">
+    <div class="container">
+        <!-- Section Header -->
+        <div class="text-center mb-5">
+            <h2 class="display-6 fw-bold text-dark mb-3">ĐÁNH GIÁ CỦA KHÁCH HÀNG</h2>
+            <p class="fs-5 text-muted" style="max-width: 600px; margin: 0 auto;">
+                Chia sẻ trải nghiệm của bạn với Phòng Trọ Mới
+            </p>
+        </div>
+
+        <!-- Reviews Grid -->
+        <div class="row g-4 mb-5">
+            @if (Model.RecentReviews.Count > 0)
+            {
+                @foreach (var review in Model.RecentReviews)
+                {
+                    var shortName = "KH";
+                    if (!string.IsNullOrWhiteSpace(review.FullName))
+                    {
+                        var parts = review.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        var initials = "";
+                        for (var idx = 0; idx < parts.Length && idx < 2; idx++)
+                        {
+                            initials += char.ToUpperInvariant(parts[idx][0]);
+                        }
+                        if (!string.IsNullOrEmpty(initials))
+                        {
+                            shortName = initials;
+                        }
+                    }
+
+                    <div class="col-lg-4 col-md-6">
+                        <div class="review-card p-4" style="background: white; border: 1px solid #D5F4E6; border-radius: 12px; box-shadow: 0 4px 12px rgba(39, 174, 96, 0.08); transition: all 0.3s ease; height: 100%;">
+                            <div class="mb-3">
+                                @for (var i = 1; i <= 5; i++)
+                                {
+                                    <i class="bi bi-star-fill" style="color: @(i <= review.Rating ? "#FFD700" : "#E5E7EB");"></i>
+                                }
+                            </div>
+                            <h6 class="fw-bold mb-2" style="color: #1E8449;">@review.Title</h6>
+                            <p class="text-muted small mb-3" style="line-height: 1.6;">
+                                "@review.Content"
+                            </p>
+                            <div class="d-flex align-items-center gap-2">
+                                <div style="width: 40px; height: 40px; border-radius: 50%; background: #27AE60; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.9rem;">
+                                    @shortName
+                                </div>
+                                <div>
+                                    <p class="fw-bold mb-0 small">@review.FullName</p>
+                                    <p class="small text-muted mb-0">@review.CreatedAt.ToString("dd/MM/yyyy")</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="col-12">
+                    <div class="alert alert-light border text-center mb-0" style="border-color:#D5F4E6 !important;">
+                        Chưa có đánh giá nào. Hãy là người đầu tiên chia sẻ trải nghiệm của bạn.
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="row g-3 justify-content-center">
+            <div class="col-auto">
+                <button type="button" class="btn btn-lg fw-bold" style="background: #27AE60; color: white; border: none; padding: 0.75rem 2rem;" data-bs-toggle="modal" data-bs-target="#reviewModal">
+                    <i class="bi bi-plus-circle me-2"></i>Thêm Đánh Giá
+                </button>
+            </div>
+            <div class="col-auto">
+                <a href="/Home/AllReviews" class="btn btn-lg fw-bold" style="border: 2px solid #27AE60; color: #27AE60; background: transparent; padding: 0.65rem 2rem;">
+                    <i class="bi bi-list-ul me-2"></i>Tất Cả Đánh Giá
+                </a>
+            </div>
+        </div>
     </div>
+</section>
 
-    <div class="container text-center mt-4" data-aos="fade-up" data-aos-delay="500">
-      <a asp-controller="Book" asp-action="Index" class="btn btn-primary">
-        <i class="bi bi-book me-2"></i>Xem tất cả sách
-      </a>
+
+<!-- ════════════════════════════════════════════════════════════════════════════════════
+     REVIEW MODAL
+     ════════════════════════════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border: none; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.15);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #27AE60 0%, #2ECC71 100%); color: white; border: none; padding: 1.5rem;">
+                <h5 class="modal-title fw-bold" id="reviewModalLabel">
+                    <i class="bi bi-star me-2"></i>Chia Sẻ Đánh Giá Của Bạn
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="reviewForm" method="post" action="/Home/SubmitReview">
+                    @Html.AntiForgeryToken()
+                    <!-- Name -->
+                    <div class="mb-3">
+                        <label for="reviewName" class="form-label fw-bold" style="color: #1E8449;">Họ và Tên</label>
+                        <input type="text" class="form-control" id="reviewName" name="name" placeholder="Nhập tên của bạn..." style="border-color: #D5F4E6;" required />
+                    </div>
+
+                    <!-- Email -->
+                    <div class="mb-3">
+                        <label for="reviewEmail" class="form-label fw-bold" style="color: #1E8449;">Email</label>
+                        <input type="email" class="form-control" id="reviewEmail" name="email" placeholder="Nhập email của bạn..." style="border-color: #D5F4E6;" required />
+                    </div>
+
+                    <!-- Star Rating -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" style="color: #1E8449;">Xếp Hạng</label>
+                        <div id="starRating" class="d-flex gap-2" style="font-size: 1.8rem;">
+                            <i class="bi bi-star" data-rating="1" style="color: #D5F4E6; cursor: pointer; transition: all 0.2s ease;"></i>
+                            <i class="bi bi-star" data-rating="2" style="color: #D5F4E6; cursor: pointer; transition: all 0.2s ease;"></i>
+                            <i class="bi bi-star" data-rating="3" style="color: #D5F4E6; cursor: pointer; transition: all 0.2s ease;"></i>
+                            <i class="bi bi-star" data-rating="4" style="color: #D5F4E6; cursor: pointer; transition: all 0.2s ease;"></i>
+                            <i class="bi bi-star" data-rating="5" style="color: #D5F4E6; cursor: pointer; transition: all 0.2s ease;"></i>
+                        </div>
+                        <input type="hidden" id="selectedRating" name="rating" value="5" />
+                    </div>
+
+                    <!-- Review Title -->
+                    <div class="mb-3">
+                        <label for="reviewTitle" class="form-label fw-bold" style="color: #1E8449;">Tiêu Đề Đánh Giá</label>
+                        <input type="text" class="form-control" id="reviewTitle" name="title" placeholder="VD: Phòng thoải mái, giá hợp lý..." style="border-color: #D5F4E6;" required />
+                    </div>
+
+                    <!-- Review Content -->
+                    <div class="mb-3">
+                        <label for="reviewContent" class="form-label fw-bold" style="color: #1E8449;">Nội Dung Đánh Giá</label>
+                        <textarea class="form-control" id="reviewContent" name="content" rows="4" placeholder="Chia sẻ trải nghiệm của bạn..." style="border-color: #D5F4E6; resize: vertical;" required></textarea>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn fw-bold" style="background: #27AE60; color: white; border: none; padding: 0.75rem; font-size: 1rem;">
+                            <i class="bi bi-send me-2"></i>Gửi Đánh Giá
+                        </button>
+                        <button type="button" class="btn fw-bold" style="background: transparent; color: #27AE60; border: 1px solid #27AE60; padding: 0.75rem;" data-bs-dismiss="modal">
+                            Hủy
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-
-  </section><!-- Sách-->
-
-  <!-- Tác Giả Section -->
-  <section id="author" class="author section">
-    <div class="container section-title" data-aos="fade-up">
-      <h2>Tác giả mới</h2>
-      <p>Cập nhật những tác giả mới nhất</p>
-    </div>
-
-    <div class="container" data-aos="fade-up" data-aos-delay="100">
-      @await Component.InvokeAsync("Author")
-    </div>
-
-    <div class="container text-center mt-4" data-aos="fade-up" data-aos-delay="500">
-      <a asp-controller="Author" asp-action="Index" class="btn btn-primary">
-        <i class="bi bi-book me-2"></i>Xem tất cả tác giả
-      </a>
-    </div>
-
-  </section><!-- /Tác Giả Section -->
-
-  <!-- Sách mới nhất -->
-  <section id="category" class="category section">
-    <div class="container section-title" data-aos="fade-up">
-      <h2>Danh mục mới</h2>
-      <p>Cập nhật những danh mục mới nhất</p>
-    </div>
-
-    <div class="container" data-aos="fade-up" data-aos-delay="100">
-      @await Component.InvokeAsync("Category")
-    </div>
-
-    <div class="container text-center mt-4" data-aos="fade-up" data-aos-delay="500">
-      <a asp-controller="Category" asp-action="Index" class="btn btn-primary">
-        <i class="bi bi-book me-2"></i>Xem tất cả danh mục
-      </a>
-    </div>
-
-  </section><!-- Sách-->
+</div>
 
 
- <!-- Nhà Xuất Bản Section -->
-   <section id="publisher" class="publisher section">
-    <div class="container section-title" data-aos="fade-up">
-      <h2>Nhà xuất bản mới</h2>
-      <p>Cập nhật những nhà xuất bản mới nhất</p>
-    </div>
+@section Scripts {
+    <style>
+        /* ════════════════════════════════════════════════════════════════ */
+        /* PROFESSIONAL LANDING PAGE STYLING */
+        /* ════════════════════════════════════════════════════════════════ */
 
-    <div class="container" data-aos="fade-up" data-aos-delay="100">
-      @await Component.InvokeAsync("Publisher")
-    </div>
+        :root {
+            --primary-green: #27AE60;
+            --accent-green: #2ECC71;
+            --dark-green: #1E8449;
+            --light-green-bg: #E8F8F5;
+            --text-dark: #2C3E50;
+            --text-muted: #666;
+            --border-light: #D5F4E6;
+            --white: #fff;
+        }
 
-    <div class="container text-center mt-4" data-aos="fade-up" data-aos-delay="500">
-      <a asp-controller="Publisher" asp-action="Index" class="btn btn-primary">
-        <i class="bi bi-book me-2"></i>Xem tất cả nhà xuất bản
-      </a>
-    </div><!-- /Nhà Xuất Bản Section -->
+        /* ── HERO SECTION ─────────────────────────────────────────────────────── */
+        .hero-section {
+            position: relative;
+            overflow: hidden;
+        }
 
-  <!-- Recent Blog Posts Section -->
-  <section id="recent-blog-posts" class="recent-blog-posts section">
+        .hero-section h1 {
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+        }
 
-    <!-- Section Title -->
-    <div class="container section-title" data-aos="fade-up">
-      <h2>Tin Tức Mới Nhất</h2>
-      <p>Cập nhật những thông tin mới nhất về thư viện và sách</p>
-    </div><!-- End Section Title -->
+        .search-form .form-control,
+        .search-form .form-select {
+            background-color: white;
+            border: 1px solid #D5F4E6;
+            transition: all 0.3s ease;
+        }
 
-    <div class="container" data-aos="fade-up" data-aos-delay="100">
-      @await Component.InvokeAsync("Post")
-    </div>
+        .search-form .form-control:focus,
+        .search-form .form-select:focus {
+            border-color: #27AE60;
+            box-shadow: 0 0 0 0.2rem rgba(39, 174, 96, 0.15);
+            background-color: white;
+        }
 
-    <div class="container text-center mt-4" data-aos="fade-up" data-aos-delay="500">
-      <a asp-controller="Blog" asp-action="Index" class="btn btn-primary">
-        <i class="bi bi-newspaper me-2"></i>Xem tất cả tin tức
-      </a>
-    </div>
+        .hero-image-container img {
+            transition: transform 0.4s ease;
+        }
 
-  </section><!-- /Recent Blog Posts Section -->
+        .hero-section:hover .hero-image-container img {
+            transform: scale(1.02);
+        }
 
-</main>
+        /* ── FEATURES SECTION ─────────────────────────────────────────────────── */
+        .feature-card {
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 30px rgba(39, 174, 96, 0.15);
+            border-left: 4px solid #2ECC71 !important;
+        }
+
+        .feature-card i {
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .feature-card:hover i {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        /* ── FEATURED ROOMS ──────────────────────────────────────────────────── */
+        .featured-room-card {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .featured-room-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 16px 40px rgba(39, 174, 96, 0.2) !important;
+        }
+
+        .featured-room-card:hover img {
+            transform: scale(1.05);
+        }
+
+        .featured-room-card .badge {
+            animation: slideInDown 0.4s ease;
+        }
+
+        @@keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ── BUTTONS ─────────────────────────────────────────────────────────── */
+        .btn-lg,
+        .btn-sm {
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .btn-outline-success {
+            border-width: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-success:hover {
+            background: #27AE60;
+            border-color: #27AE60;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(39, 174, 96, 0.3);
+        }
+
+        /* ── FORM INPUTS ─────────────────────────────────────────────────────── */
+        .input-group .input-group-text {
+            background-color: white;
+            border-color: #D5F4E6;
+            transition: all 0.3s ease;
+        }
+
+        .input-group:focus-within .input-group-text {
+            border-color: #27AE60;
+            background-color: #f8fafc;
+        }
+
+        /* ── RESPONSIVE DESIGN ──────────────────────────────────────────────── */
+        @@media (max-width: 991px) {
+            .hero-section h1 {
+                font-size: 2rem;
+            }
+
+            .featured-rooms-section {
+                padding: 3rem 0;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .hero-section {
+                padding: 2rem 0;
+            }
+
+            .hero-section h1 {
+                font-size: 1.75rem;
+            }
+
+            .display-6 {
+                font-size: 1.5rem;
+            }
+
+            .feature-card {
+                text-align: center;
+            }
+
+            .feature-card i {
+                display: block;
+                margin: 0 auto 1rem;
+            }
+
+            .search-form .row {
+                flex-direction: column;
+            }
+        }
+
+        @@media (max-width: 576px) {
+            .hero-section h1 {
+                font-size: 1.5rem;
+                line-height: 1.1;
+            }
+
+            .fs-5 {
+                font-size: 0.95rem !important;
+            }
+
+            .display-6 {
+                font-size: 1.25rem;
+            }
+
+            .featured-room-card {
+                margin-bottom: 1.5rem;
+            }
+
+            .btn-lg {
+                padding: 0.6rem 1rem;
+                font-size: 0.95rem;
+            }
+
+            .hero-image-container {
+                display: none;
+            }
+        }
+
+        /* ── ANIMATIONS & TRANSITIONS ──────────────────────────────────────── */
+        * {
+            transition: color 0.2s ease, background-color 0.2s ease;
+        }
+
+        /* ── TEXT UTILITIES ──────────────────────────────────────────────────── */
+        .text-muted {
+            color: #666 !important;
+        }
+
+        .text-dark {
+            color: var(--text-dark) !important;
+        }
+
+        /* ── SPACING & LAYOUT ────────────────────────────────────────────────── */
+        section {
+            position: relative;
+        }
+
+        .container {
+            max-width: 1200px;
+        }
+
+        /* ── SMOOTH SCROLLING ────────────────────────────────────────────────── */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* ── CUSTOM SCROLLBAR ────────────────────────────────────────────────── */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #27AE60;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #1E8449;
+        }
+
+        /* ── ACCESSIBILITY ──────────────────────────────────────────────────── */
+        .btn:focus,
+        .form-control:focus,
+        .form-select:focus {
+            outline: 2px solid #27AE60;
+            outline-offset: 2px;
+        }
+
+        /* ── REVIEWS SECTION ─────────────────────────────────────────────────── */
+        .review-card {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .review-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 28px rgba(39, 174, 96, 0.15) !important;
+            border-color: #27AE60 !important;
+        }
+
+        .review-card .bi-star-fill {
+            transition: transform 0.2s ease;
+            display: inline-block;
+        }
+
+        .review-card:hover .bi-star-fill {
+            transform: scale(1.15);
+        }
+
+        /* ── MODAL STYLING ─────────────────────────────────────────────────── */
+        .modal-content {
+            border: 1px solid #D5F4E6;
+        }
+
+        .modal-body .form-control,
+        .modal-body .form-control:focus {
+            border-color: #D5F4E6;
+            transition: all 0.3s ease;
+        }
+
+        .modal-body .form-control:focus {
+            border-color: #27AE60;
+            box-shadow: 0 0 0 0.2rem rgba(39, 174, 96, 0.15);
+        }
+
+        #starRating i {
+            display: inline-block;
+        }
+
+        #starRating i:hover,
+        #starRating i.filled {
+            color: #FFD700 !important;
+            text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+            transform: scale(1.2);
+        }
+
+        /* ── BUTTON HOVER EFFECTS ────────────────────────────────────────────── */
+        .reviews-section .btn {
+            transition: all 0.3s ease;
+        }
+
+        .reviews-section .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(39, 174, 96, 0.3);
+        }
+
+        /* ── RESPONSIVE ──────────────────────────────────────────────────────── */
+        @@media (max-width: 768px) {
+            .review-card {
+                margin-bottom: 1rem;
+            }
+
+            .reviews-section .row {
+                flex-direction: column;
+            }
+
+            #starRating {
+                justify-content: space-around;
+            }
+        }
+
+        @@media (max-width: 576px) {
+            .review-card h6 {
+                font-size: 0.95rem;
+            }
+
+            .review-card p {
+                font-size: 0.85rem;
+            }
+
+            #starRating {
+                font-size: 1.5rem;
+            }
+
+            .reviews-section .btn {
+                padding: 0.6rem 1rem !important;
+                font-size: 0.9rem !important;
+            }
+        }
+
+        /* ── UTILITY CLASSES ────────────────────────────────────────────────── */
+        .object-fit-cover {
+            object-fit: cover !important;
+        }
+
+        .text-truncate {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    </style>
+
+    <script>
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+
+        // Intersection Observer for fade-in animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Apply fade-in animation to cards
+        document.querySelectorAll('.feature-card, .featured-room-card, .review-card').forEach(function(el) {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+
+        // ── LOCATION ACCESS FOR SEARCH ───────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', function() {
+            const areaInput = document.getElementById('areaInput');
+            const useMyLocationBtn = document.getElementById('useMyLocationBtn');
+            const ownerLocationBtn = document.getElementById('ownerLocationBtn');
+            const ownerLocationText = 'Vinh, Nghệ An, Việt Nam';
+
+            if (ownerLocationBtn && areaInput) {
+                ownerLocationBtn.addEventListener('click', function() {
+                    areaInput.value = ownerLocationText;
+                    areaInput.focus();
+                });
+            }
+
+            if (useMyLocationBtn && areaInput) {
+                useMyLocationBtn.addEventListener('click', function() {
+                    if (!navigator.geolocation) {
+                        alert('Trình duyệt không hỗ trợ lấy vị trí.');
+                        return;
+                    }
+
+                    const originalText = useMyLocationBtn.innerHTML;
+                    useMyLocationBtn.disabled = true;
+                    useMyLocationBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Đang lấy vị trí...';
+
+                    navigator.geolocation.getCurrentPosition(async function(position) {
+                        try {
+                            const lat = position.coords.latitude;
+                            const lon = position.coords.longitude;
+                            const response = await fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' + lat + '&lon=' + lon);
+
+                            if (!response.ok) {
+                                throw new Error('Reverse geocoding failed');
+                            }
+
+                            const data = await response.json();
+                            const addr = data.address || {};
+                            const district = addr.city_district || addr.suburb || addr.county || '';
+                            const city = addr.city || addr.town || addr.state || '';
+                            const country = addr.country || '';
+                            const areaText = [district, city, country].filter(Boolean).join(', ');
+
+                            areaInput.value = areaText || (lat.toFixed(6) + ', ' + lon.toFixed(6));
+                            areaInput.focus();
+                        } catch {
+                            areaInput.value = position.coords.latitude.toFixed(6) + ', ' + position.coords.longitude.toFixed(6);
+                            areaInput.focus();
+                        } finally {
+                            useMyLocationBtn.disabled = false;
+                            useMyLocationBtn.innerHTML = originalText;
+                        }
+                    }, function() {
+                        useMyLocationBtn.disabled = false;
+                        useMyLocationBtn.innerHTML = originalText;
+                        alert('Bạn chưa cho phép truy cập vị trí hoặc không thể lấy vị trí.');
+                    }, {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 60000
+                    });
+                });
+            }
+        });
+
+        // ── STAR RATING INTERACTION ──────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', function() {
+            const starElements = document.querySelectorAll('#starRating i[data-rating]');
+            const ratingInput = document.getElementById('selectedRating');
+
+            // Set initial filled stars (5 stars by default)
+            function updateStars(rating) {
+                starElements.forEach(function(star) {
+                    const starRating = parseInt(star.getAttribute('data-rating'));
+                    if (starRating <= rating) {
+                        star.classList.add('filled');
+                        star.classList.remove('bi-star');
+                        star.classList.add('bi-star-fill');
+                    } else {
+                        star.classList.remove('filled');
+                        star.classList.remove('bi-star-fill');
+                        star.classList.add('bi-star');
+                    }
+                });
+                ratingInput.value = rating;
+            }
+
+            // Initialize with 5 stars
+            updateStars(5);
+
+            // Add hover effect
+            starElements.forEach(function(star) {
+                star.addEventListener('mouseenter', function() {
+                    const hoverRating = parseInt(this.getAttribute('data-rating'));
+                    starElements.forEach(function(s) {
+                        const r = parseInt(s.getAttribute('data-rating'));
+                        if (r <= hoverRating) {
+                            s.style.color = '#FFD700';
+                        } else {
+                            s.style.color = '#D5F4E6';
+                        }
+                    });
+                });
+
+                // Click to set rating
+                star.addEventListener('click', function() {
+                    const selectedRating = parseInt(this.getAttribute('data-rating'));
+                    updateStars(selectedRating);
+                });
+            });
+
+            // Reset hover effect
+            document.getElementById('starRating').addEventListener('mouseleave', function() {
+                const currentRating = parseInt(ratingInput.value);
+                starElements.forEach(function(star) {
+                    const starRating = parseInt(star.getAttribute('data-rating'));
+                    if (starRating <= currentRating) {
+                        star.style.color = '#FFD700';
+                    } else {
+                        star.style.color = '#D5F4E6';
+                    }
+                });
+            });
+        });
+
+    </script>
+}

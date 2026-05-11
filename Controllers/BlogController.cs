@@ -1,66 +1,70 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using QuanLyThuVien.Models;
-using PagedList.Core;
+using QuanLyPhongTro.Areas.Admin.Data;
+using QuanLyPhongTro.Models;
 
-namespace QuanLyThuVien.Controllers
+namespace QuanLyPhongTro.Controllers
 {
     public class BlogController : Controller
     {
-        private readonly DataContext _context;
+        private readonly DataContext _db;
 
-        public BlogController(DataContext context)
+        public BlogController(DataContext db)
         {
-            _context = context;
+            _db = db;
         }
 
-        // GET: Blog/Index - Lấy tất cả bài viết từ CSDL và phân trang chuẩn
-        [HttpGet]
-        public IActionResult Index(int page = 1, string? search = "")
+        // GET: /Blog
+        public async Task<IActionResult> Index(string? category, int page = 1)
         {
-            int pageSize = 6;
-
-            // Lấy TẤT CẢ bài viết từ viewPostMenu (CSDL)
-            var posts = _context.viewPostMenus
-                .Where(p => p.IsActive == true)
+            const int pageSize = 9;
+            var query = _db.Posts
+                .Where(p => p.IsPublished)
                 .AsQueryable();
 
-            // Tìm kiếm theo tiêu đề
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                posts = posts.Where(p => p.Title != null && p.Title.Contains(search));
-            }
+            if (!string.IsNullOrWhiteSpace(category))
+                query = query.Where(p => p.Category == category);
 
-            // Sắp xếp theo ngày mới nhất
-            posts = posts.OrderByDescending(p => p.CreatedDate);
+            var total = await query.CountAsync();
+            var posts = await query
+                .OrderByDescending(p => p.IsPinned)
+                .ThenByDescending(p => p.PublishedAt)
+                .Skip((page - 1) * pageSize).Take(pageSize)
+                .ToListAsync();
 
-            // Phân trang chuẩn với PagedList.Core
-            var models = new PagedList<viewPostMenu>(posts, page, pageSize);
+            var categories = await _db.Posts
+                .Where(p => p.IsPublished && p.Category != null)
+                .Select(p => p.Category!)
+                .Distinct()
+                .ToListAsync();
 
-            ViewBag.SearchString = search;
-            
-
-            return View(models);
+            ViewBag.Category   = category;
+            ViewBag.Categories = categories;
+            ViewBag.Page       = page;
+            ViewBag.TotalPages = (int)Math.Ceiling(total / (double)pageSize);
+            ViewBag.TotalItems = total;
+            return View(posts);
         }
 
-        // GET: Blog/Details/{id}
+        // GET: /Blog/{slug}
+        public async Task<IActionResult> Detail(string slug)
+        {
+            var post = await _db.Posts
+                .FirstOrDefaultAsync(p => p.Slug == slug && p.IsPublished);
+            if (post == null) return NotFound();
 
-        [Route("/post-{slug}-{id:int}.html", Name = "BlogDetails")]
-        [HttpGet("post/{slug}-{id}")]
-public IActionResult Details(string slug, int id)
-{
-    var post = _context.viewPostMenus
-        .FirstOrDefault(p => p.PostID == id && p.IsActive == true);
+            post.ViewCount++;
+            await _db.SaveChangesAsync();
 
-    if (post == null)
-        return NotFound();
+            var related = await _db.Posts
+                .Where(p => p.IsPublished && p.PostId != post.PostId &&
+                            (p.Category == post.Category || post.Category == null))
+                .OrderByDescending(p => p.PublishedAt)
+                .Take(3)
+                .ToListAsync();
 
-    return View(post);
-}
-
+            ViewBag.Related = related;
+            return View(post);
+        }
     }
 }

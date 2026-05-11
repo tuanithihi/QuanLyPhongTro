@@ -1,0 +1,185 @@
+@model IEnumerable<QuanLyPhongTro.Models.tblInvoice>
+@using QuanLyPhongTro.Models
+@{
+    ViewData["Title"] = "Danh sách hóa đơn";
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+    int    currentPage = ViewBag.Page;
+    int    totalItems  = ViewBag.TotalItems;
+    int    totalPages  = ViewBag.TotalPages;
+    string search      = ViewBag.Search  ?? "";
+    string statusVal   = ViewBag.Status  ?? "";
+    int?   monthVal    = ViewBag.Month;
+    int    yearVal     = ViewBag.Year;
+}
+
+<main id="main" class="main">
+<div class="pagetitle">
+    <h1>Hóa đơn</h1>
+    <nav><ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item active">Danh sách hóa đơn</li>
+    </ol></nav>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="bi bi-check-circle me-1"></i> @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="bi bi-exclamation-triangle me-1"></i> @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<section class="section">
+<div class="card">
+<div class="card-body">
+
+    <div class="d-flex justify-content-between align-items-center mt-3 mb-3">
+        <span class="text-muted small">Tổng: <strong>@totalItems</strong> hóa đơn</span>
+        <a asp-area="Admin" asp-controller="Invoice" asp-action="SelectRoom"
+           class="btn btn-primary btn-sm">
+            <i class="bi bi-file-earmark-plus me-1"></i>Lập hóa đơn mới
+        </a>
+    </div>
+
+    <form method="get" asp-area="Admin" asp-controller="Invoice" asp-action="Index" class="row g-2 mb-3">
+        <div class="col-md-3">
+            <input type="text" name="search" value="@search" class="form-control"
+                   placeholder="Số HĐ, phòng, người thuê..." />
+        </div>
+        <div class="col-md-2">
+            <select name="status" class="form-select" asp-items="@((SelectList)ViewBag.StatusList)">
+                <option value="">-- Trạng thái --</option>
+            </select>
+        </div>
+        <div class="col-md-1">
+            <select name="month" class="form-select">
+                <option value="">Tháng</option>
+                @for (int m = 1; m <= 12; m++)
+                {
+                    if (monthVal == m)
+                    { <option value="@m" selected>@m</option> }
+                    else
+                    { <option value="@m">@m</option> }
+                }
+            </select>
+        </div>
+        <div class="col-md-2">
+            <input type="number" name="year" value="@(monthVal.HasValue ? yearVal : "")" class="form-control"
+                   placeholder="Năm" min="2000" max="2100" />
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-outline-primary w-100">
+                <i class="bi bi-search me-1"></i> Tìm
+            </button>
+        </div>
+        @if (!string.IsNullOrEmpty(search) || !string.IsNullOrEmpty(statusVal) || monthVal.HasValue)
+        {
+            <div class="col-md-2">
+                <a asp-area="Admin" asp-controller="Invoice" asp-action="Index" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-x-lg me-1"></i> Xóa lọc
+                </a>
+            </div>
+        }
+    </form>
+
+    <div class="table-responsive">
+    <table class="table table-hover table-sm align-middle">
+        <thead class="table-light">
+            <tr>
+                <th style="width:44px;">#</th>
+                <th>Số hóa đơn</th>
+                <th>Phòng</th>
+                <th>Người thuê</th>
+                <th class="text-center">Kỳ</th>
+                <th class="text-end">Tổng tiền</th>
+                <th class="text-center">Hạn TT</th>
+                <th class="text-center">Trạng thái</th>
+                <th class="text-center" style="width:80px;">Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.Any())
+            {
+                <tr><td colspan="9" class="text-center text-muted py-4">Không có dữ liệu.</td></tr>
+            }
+            @{ int stt = (currentPage - 1) * (int)ViewBag.PageSize + 1; }
+            @foreach (var inv in Model)
+            {
+                <tr class="cursor-pointer" onclick="window.location='/Admin/Invoice/Details/@inv.InvoiceId'">
+                    <td class="text-muted">@(stt++)</td>
+                    <td class="fw-semibold font-monospace small">@inv.InvoiceCode</td>
+                    <td>@(inv.Room?.RoomCode ?? "—")</td>
+                    <td class="small">@(inv.Contract?.Tenant?.FullName ?? "—")</td>
+                    <td class="text-center small">@inv.BillingMonth/@inv.BillingYear</td>
+                    <td class="text-end fw-semibold">@inv.TotalAmount.ToString("N0") ₫</td>
+                    <td class="text-center small text-muted">
+                        @inv.DueDate.ToString("dd/MM/yyyy")
+                    </td>
+                    <td class="text-center">
+                        @switch (inv.Status)
+                        {
+                            case InvoiceStatus.Paid:
+                                <span class="badge bg-success">Đã thanh toán</span>
+                                break;
+                            case InvoiceStatus.Overdue:
+                                <span class="badge bg-danger">Quá hạn</span>
+                                break;
+                            default:
+                                <span class="badge bg-warning text-dark">Chưa thanh toán</span>
+                                break;
+                        }
+                    </td>
+                    <td class="text-center" onclick="event.stopPropagation()">
+                        <a asp-area="Admin" asp-controller="Invoice" asp-action="Details"
+                           asp-route-id="@inv.InvoiceId" class="btn btn-sm btn-outline-info px-2" title="Chi tiết">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    </div>
+
+    @if (totalPages > 1)
+    {
+        <nav class="d-flex justify-content-center mt-3">
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                    <a class="page-link" asp-area="Admin" asp-controller="Invoice" asp-action="Index"
+                       asp-route-search="@search" asp-route-status="@statusVal"
+                       asp-route-month="@monthVal" asp-route-year="@yearVal"
+                       asp-route-page="@(currentPage - 1)">‹</a>
+                </li>
+                @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                {
+                    <li class="page-item @(i == currentPage ? "active" : "")">
+                        <a class="page-link" asp-area="Admin" asp-controller="Invoice" asp-action="Index"
+                           asp-route-search="@search" asp-route-status="@statusVal"
+                           asp-route-month="@monthVal" asp-route-year="@yearVal"
+                           asp-route-page="@i">@i</a>
+                    </li>
+                }
+                <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                    <a class="page-link" asp-area="Admin" asp-controller="Invoice" asp-action="Index"
+                       asp-route-search="@search" asp-route-status="@statusVal"
+                       asp-route-month="@monthVal" asp-route-year="@yearVal"
+                       asp-route-page="@(currentPage + 1)">›</a>
+                </li>
+            </ul>
+        </nav>
+    }
+
+</div>
+</div>
+</section>
+</main>
+
+<style>.cursor-pointer { cursor: pointer; }</style>

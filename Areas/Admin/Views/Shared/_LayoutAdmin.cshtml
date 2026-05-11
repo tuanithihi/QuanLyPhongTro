@@ -1,22 +1,23 @@
-@using QuanLyThuVien.Utilities
+@inject QuanLyPhongTro.Areas.Admin.Data.DataContext _db
+@using QuanLyPhongTro.Models
 @{
-    // Kiểm tra quyền truy cập Admin
-    if (!Functions.IsAdmin())
+    var adminUser = Context.Session.GetString("AdminUser");
+    if (string.IsNullOrEmpty(adminUser))
     {
-        Context.Response.Redirect("/Home/AccessDenied");
+        Context.Response.Redirect("/");
         return;
     }
+    int pendingBookings = _db.BookingRequests.Count(r => r.Status == BookingRequestStatus.Pending);
+    int unreadChats     = _db.ChatMessages.Count(m => !m.IsReadByAdmin && m.SenderType == ChatSenderType.Guest);
 }
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 
 <head>
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
-
-  <title>LibraHub - Admin</title>
+  <title>Quản Lý Phòng Trọ - Admin</title>
   <meta content="" name="description">
-  <meta content="" name="keywords">
 
   <!-- Favicons -->
   <link href="~/admin/assets/img/favicon.png" rel="icon">
@@ -38,12 +39,7 @@
   <!-- Template Main CSS File -->
   <link href="~/admin/assets/css/style.css" rel="stylesheet">
 
-  <!-- =======================================================
-  * Template Name: NiceAdmin - v2.4.1
-  * Template URL: https://bootstrapmade.com/nice-admin-bootstrap-admin-html-template/
-  * Author: BootstrapMade.com
-  * License: https://bootstrapmade.com/license/
-  ======================================================== -->
+  @RenderSection("Styles", required: false)
 </head>
 
 <body>
@@ -52,119 +48,163 @@
   <header id="header" class="header fixed-top d-flex align-items-center">
 
     <div class="d-flex align-items-center justify-content-between">
-      <a href="/Admin" class="logo d-flex align-items-center">
+      <a asp-area="Admin" asp-controller="Home" asp-action="Index" class="logo d-flex align-items-center">
         <img src="~/admin/assets/img/logo.png" alt="">
-        <span class="d-none d-lg-block">Trang quản lý</span>
+        <span class="d-none d-lg-block">Quản Lý Phòng Trọ</span>
       </a>
       <i class="bi bi-list toggle-sidebar-btn"></i>
-    </div><!-- End Logo -->
-
-    <div class="search-bar">
-      <form class="search-form d-flex align-items-center" method="POST" action="#">
-        <input type="text" name="query" placeholder="Search" title="Enter search keyword">
-        <button type="submit" title="Search"><i class="bi bi-search"></i></button>
-      </form>
-    </div><!-- End Search Bar -->
+    </div>
 
     <nav class="header-nav ms-auto">
       <ul class="d-flex align-items-center">
 
-        <li class="nav-item d-block d-lg-none">
-          <a class="nav-link nav-icon search-bar-toggle " href="#">
-            <i class="bi bi-search"></i>
-          </a>
-        </li><!-- End Search Icon-->
-
-        
-
         <li class="nav-item dropdown pe-3">
-
           <a class="nav-link nav-profile d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">
-            @if (!string.IsNullOrEmpty(Functions._Avatar))
-            {
-                <img src="@Functions._Avatar" alt="Profile" class="rounded-circle">
-            }
-            else
-            {
-                <img src="~/admin/assets/img/profile-img.jpg" alt="Profile" class="rounded-circle">
-            }
-            <span class="d-none d-md-block dropdown-toggle ps-2">@Functions._FullName</span>
-          </a><!-- End Profile Iamge Icon -->
+            <img src="~/admin/assets/img/profile-img.jpg" alt="Profile" class="rounded-circle">
+            <span class="d-none d-md-block dropdown-toggle ps-2">@adminUser</span>
+          </a>
 
           <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow profile">
             <li class="dropdown-header">
-              <h6>@Functions._FullName</h6>
-              <span>@Functions._Email</span>
-              <small class="text-muted d-block">@Functions._Role</small>
+              <h6>@adminUser</h6>
+              <span>Quản trị viên</span>
             </li>
+            <li><hr class="dropdown-divider"></li>
             <li>
-              <hr class="dropdown-divider">
-            </li>
-
-            <li>
-              <a class="dropdown-item d-flex align-items-center" asp-area="Admin" asp-controller="Account" asp-action="Info">
-                <i class="bi bi-person"></i>
-                <span>Thông tin tài khoản</span>
-              </a>
-            </li>
-            <li>
-              <hr class="dropdown-divider">
-            </li>
-
-            <li>
-              <a class="dropdown-item d-flex align-items-center" asp-area="Admin" asp-controller="Account" asp-action="Settings">
-                <i class="bi bi-gear"></i>
-                <span>Cài đặt tài khoản</span>
-              </a>
-            </li>
-            <li>
-              <hr class="dropdown-divider">
-            </li>
-
-            <li>
-              <a class="dropdown-item d-flex align-items-center" href="/Home/Index">
+              <a class="dropdown-item d-flex align-items-center" asp-area="" asp-controller="Home" asp-action="Index">
                 <i class="bi bi-house"></i>
                 <span>Về trang chủ</span>
               </a>
             </li>
+            <li><hr class="dropdown-divider"></li>
             <li>
-              <hr class="dropdown-divider">
-            </li>
-            <li>
-              <a class="dropdown-item d-flex align-items-center" href="/Account/Logout">
+              <a class="dropdown-item d-flex align-items-center" asp-area="Admin" asp-controller="Account" asp-action="Logout">
                 <i class="bi bi-box-arrow-right"></i>
                 <span>Đăng xuất</span>
               </a>
             </li>
-
-          </ul><!-- End Profile Dropdown Items -->
-        </li><!-- End Profile Nav -->
+          </ul>
+        </li>
 
       </ul>
-    </nav><!-- End Icons Navigation -->
+    </nav>
 
   </header><!-- End Header -->
 
   <!-- ======= Sidebar ======= -->
-@await Component.InvokeAsync("AdminMenu")<!-- End Sidebar-->
-@RenderBody()
-  <!-- End #main -->
+  <aside id="sidebar" class="sidebar">
+    <ul class="sidebar-nav" id="sidebar-nav">
+
+      <li class="nav-item">
+        <a class="nav-link" asp-area="Admin" asp-controller="Home" asp-action="Index">
+          <i class="bi bi-grid"></i>
+          <span>Tổng quan</span>
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link collapsed" data-bs-target="#room-nav" data-bs-toggle="collapse" href="#">
+          <i class="bi bi-building"></i><span>Quản lý phòng</span><i class="bi bi-chevron-down ms-auto"></i>
+        </a>
+        <ul id="room-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
+          <li>
+            <a asp-area="Admin" asp-controller="Room" asp-action="Index">
+              <i class="bi bi-circle"></i><span>Danh sách phòng</span>
+            </a>
+          </li>
+          <li>
+            <a asp-area="Admin" asp-controller="Room" asp-action="Create">
+              <i class="bi bi-circle"></i><span>Thêm phòng mới</span>
+            </a>
+          </li>
+        </ul>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link collapsed" data-bs-target="#user-nav" data-bs-toggle="collapse" href="#">
+          <i class="bi bi-people"></i><span>Người dùng</span><i class="bi bi-chevron-down ms-auto"></i>
+        </a>
+        <ul id="user-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
+          <li><a asp-area="Admin" asp-controller="User" asp-action="Index"><i class="bi bi-circle"></i><span>Người dùng</span></a></li>
+          <li><a asp-area="Admin" asp-controller="Tenant" asp-action="Index"><i class="bi bi-circle"></i><span>Người thuê</span></a></li>
+          <li><a asp-area="Admin" asp-controller="Tenant" asp-action="Create"><i class="bi bi-circle"></i><span>Thêm mới</span></a></li>
+        </ul>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link collapsed" data-bs-target="#contract-nav" data-bs-toggle="collapse" href="#">
+          <i class="bi bi-file-text"></i><span>Hợp đồng</span><i class="bi bi-chevron-down ms-auto"></i>
+        </a>
+        <ul id="contract-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
+          <li><a asp-area="Admin" asp-controller="Contract" asp-action="Index"><i class="bi bi-circle"></i><span>Danh sách</span></a></li>
+          <li><a asp-area="Admin" asp-controller="Contract" asp-action="Create"><i class="bi bi-circle"></i><span>Thêm hợp đồng</span></a></li>
+        </ul>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link collapsed" data-bs-target="#invoice-nav" data-bs-toggle="collapse" href="#">
+          <i class="bi bi-receipt"></i><span>Hóa đơn</span><i class="bi bi-chevron-down ms-auto"></i>
+        </a>
+        <ul id="invoice-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
+          <li><a asp-area="Admin" asp-controller="Invoice" asp-action="DueThisMonth"><i class="bi bi-circle"></i><span>Cần lập tháng này</span></a></li>
+          <li><a asp-area="Admin" asp-controller="Invoice" asp-action="Index"><i class="bi bi-circle"></i><span>Danh sách hóa đơn</span></a></li>
+        </ul>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link collapsed" data-bs-target="#service-nav" data-bs-toggle="collapse" href="#">
+          <i class="bi bi-gear"></i><span>Dịch vụ</span><i class="bi bi-chevron-down ms-auto"></i>
+        </a>
+        <ul id="service-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
+          <li><a asp-area="Admin" asp-controller="Service" asp-action="Index"><i class="bi bi-circle"></i><span>Danh sách dịch vụ</span></a></li>
+          <li><a asp-area="Admin" asp-controller="Service" asp-action="Create"><i class="bi bi-circle"></i><span>Thêm dịch vụ mới</span></a></li>
+        </ul>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link" asp-area="Admin" asp-controller="BookingRequest" asp-action="Index">
+          <i class="bi bi-calendar2-check"></i>
+          <span>Yêu cầu đặt lịch</span>
+          @if (pendingBookings > 0)
+          {
+            <span class="badge bg-danger ms-auto">@pendingBookings</span>
+          }
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link" asp-area="Admin" asp-controller="Chat" asp-action="Index">
+          <i class="bi bi-chat-dots"></i>
+          <span>Hộp thư Chat</span>
+          @if (unreadChats > 0)
+          {
+            <span class="badge bg-danger ms-auto">@unreadChats</span>
+          }
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link" asp-area="Admin" asp-controller="Post" asp-action="Index">
+          <i class="bi bi-newspaper"></i>
+          <span>Bài viết</span>
+        </a>
+      </li>
+
+    </ul>
+  </aside><!-- End Sidebar -->
+
+  @RenderBody()
 
   <!-- ======= Footer ======= -->
   <footer id="footer" class="footer">
     <div class="copyright">
-      &copy; Copyright <strong><span>Group 12</span></strong>. All Rights Reserved
+      &copy; Copyright <strong><span>QuanLyPhongTro</span></strong>. All Rights Reserved
     </div>
-    <div class="credits">
-      <!-- All the links in the footer should remain intact. -->
-      <!-- You can delete the links only if you purchased the pro version. -->
-      <!-- Licensing information: https://bootstrapmade.com/license/ -->
-      <!-- Purchase the pro version with working PHP/AJAX contact form: https://bootstrapmade.com/nice-admin-bootstrap-admin-html-template/ -->
-      Designed by <br /><a href="https://www.facebook.com/ngonguyentienquang">Ngô Nguyễn Tiến Quang<br /><a href="#">Hồ Đức Tuấn</a><br /><a href="https://www.facebook.com/share/16UXp6WdrM/?mibextid=wwXIfr">Nguyễn Văn Phúc</a></a>
-    </div>
-  </footer><!-- End Footer -->
+  </footer>
 
-  <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+  <a href="#" class="back-to-top d-flex align-items-center justify-content-center">
+    <i class="bi bi-arrow-up-short"></i>
+  </a>
 
   <!-- Vendor JS Files -->
   <script src="~/admin/assets/vendor/apexcharts/apexcharts.min.js"></script>
@@ -175,12 +215,9 @@
   <script src="~/admin/assets/vendor/simple-datatables/simple-datatables.js"></script>
   <script src="~/admin/assets/vendor/tinymce/tinymce.min.js"></script>
   <script src="~/admin/assets/vendor/php-email-form/validate.js"></script>
-
-  <!-- Template Main JS File -->
   <script src="~/admin/assets/js/main.js"></script>
 
   @RenderSection("Scripts", required: false)
 
 </body>
-
 </html>

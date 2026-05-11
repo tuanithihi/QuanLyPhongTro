@@ -1,0 +1,47 @@
+@model QuanLyPhongTro.Models.tblService
+@using QuanLyPhongTro.Models
+@{
+    ViewData["Title"] = "Thêm dịch vụ";
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<main id="main" class="main">
+
+    <div class="pagetitle">
+        <h1>Thêm dịch vụ mới</h1>
+        <nav>
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+                <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Service" asp-action="Index">Dịch vụ</a></li>
+                <li class="breadcrumb-item active">Thêm mới</li>
+            </ol>
+        </nav>
+    </div>
+
+    <section class="section">
+        <div class="card">
+            <div class="card-body pt-4">
+
+                <form asp-area="Admin" asp-controller="Service" asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
+
+                    @await Html.PartialAsync("_ServiceForm", Model)
+
+                    <div class="d-flex gap-2 pt-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-1"></i> Thêm dịch vụ
+                        </button>
+                        <a asp-area="Admin" asp-controller="Service" asp-action="Index"
+                           class="btn btn-outline-secondary">Huỷ</a>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </section>
+
+</main>
+
+@section Scripts {
+    @await Html.PartialAsync("_ServiceFormScript")
+}

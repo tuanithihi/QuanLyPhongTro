@@ -1,0 +1,262 @@
+@model QuanLyPhongTro.Models.tblRoom
+@using QuanLyPhongTro.Models
+@{
+    ViewData["Title"] = $"Chi tiết: {Model.RoomName}";
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<main id="main" class="main">
+
+    <div class="pagetitle">
+        <h1>Chi tiết phòng</h1>
+        <nav>
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+                <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Room" asp-action="Index">Danh sách phòng</a></li>
+                <li class="breadcrumb-item active">@Model.RoomCode</li>
+            </ol>
+        </nav>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="bi bi-check-circle me-1"></i> @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            <i class="bi bi-exclamation-triangle me-1"></i> @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <section class="section">
+        <div class="row">
+
+            <!-- ── THÔNG TIN PHÒNG ──────────────────── -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-body text-center pt-4">
+                        @if (!string.IsNullOrEmpty(Model.ThumbnailImage))
+                        {
+                            <img src="@Model.ThumbnailImage" alt="@Model.RoomName"
+                                 class="img-fluid rounded mb-3"
+                                 style="max-height:220px;object-fit:cover;width:100%;">
+                        }
+                        else
+                        {
+                            <div class="bg-light rounded d-flex align-items-center justify-content-center mb-3"
+                                 style="height:180px;">
+                                <i class="bi bi-building text-muted" style="font-size:3rem;"></i>
+                            </div>
+                        }
+
+                        <h4 class="mb-0">@Model.RoomName</h4>
+                        <p><code class="fs-6">@Model.RoomCode</code></p>
+
+                        @switch (Model.Status)
+                        {
+                            case RoomStatus.Available:
+                                <span class="badge bg-success fs-6 px-3 py-2">Phòng trống</span>
+                                break;
+                            case RoomStatus.Occupied:
+                                <span class="badge bg-primary fs-6 px-3 py-2">Đang thuê</span>
+                                break;
+                            case RoomStatus.Maintenance:
+                                <span class="badge bg-warning text-dark fs-6 px-3 py-2">Bảo trì</span>
+                                break;
+                        }
+
+                        <div class="mt-3 d-grid gap-2">
+                            <a asp-area="Admin" asp-controller="Room" asp-action="Edit"
+                               asp-route-id="@Model.RoomId" class="btn btn-primary">
+                                <i class="bi bi-pencil me-1"></i> Chỉnh sửa
+                            </a>
+                            <a asp-area="Admin" asp-controller="Room" asp-action="Index"
+                               class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i> Quay lại
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── CHI TIẾT & HỢP ĐỒNG ─────────────── -->
+            <div class="col-lg-8">
+
+                <!-- Thông tin cơ bản -->
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Thông tin cơ bản</h5>
+                        <div class="row">
+                            <div class="col-6 col-md-3 mb-3">
+                                <small class="text-muted d-block">Loại phòng</small>
+                                <strong>@(Model.RoomType?.RoomTypeName ?? "—")</strong>
+                            </div>
+                            <div class="col-6 col-md-3 mb-3">
+                                <small class="text-muted d-block">Tầng</small>
+                                <strong>Tầng @Model.Floor</strong>
+                            </div>
+                            <div class="col-6 col-md-3 mb-3">
+                                <small class="text-muted d-block">Diện tích</small>
+                                <strong>@Model.Area m²</strong>
+                            </div>
+                            <div class="col-6 col-md-3 mb-3">
+                                <small class="text-muted d-block">Số người tối đa</small>
+                                <strong>@Model.MaxOccupants người</strong>
+                            </div>
+                            <div class="col-6 col-md-3 mb-3">
+                                <small class="text-muted d-block">Giá thuê</small>
+                                <strong class="text-primary">@Model.RoomPrice.ToString("N0") đ/tháng</strong>
+                            </div>
+                            <div class="col-6 col-md-3 mb-3">
+                                <small class="text-muted d-block">Tiền đặt cọc</small>
+                                <strong>@Model.DefaultDeposit.ToString("N0") đ</strong>
+                            </div>
+                            <div class="col-6 col-md-3 mb-3">
+                                <small class="text-muted d-block">Hiển thị web</small>
+                                @if (Model.IsPublished)
+                                {
+                                    <span class="badge bg-success">Công khai</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Ẩn</span>
+                                }
+                            </div>
+                            <div class="col-6 col-md-3 mb-3">
+                                <small class="text-muted d-block">Ngày tạo</small>
+                                <strong>@Model.CreatedAt.ToString("dd/MM/yyyy")</strong>
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.Description))
+                        {
+                            <hr>
+                            <small class="text-muted d-block mb-1">Mô tả</small>
+                            <p class="mb-0">@Model.Description</p>
+                        }
+                    </div>
+                </div>
+
+                <!-- Lịch sử hợp đồng -->
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            Hợp đồng
+                            <span class="badge bg-secondary ms-1">@Model.Contracts.Count</span>
+                        </h5>
+
+                        @if (!Model.Contracts.Any())
+                        {
+                            <p class="text-muted fst-italic">Chưa có hợp đồng nào.</p>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Mã HĐ</th>
+                                            <th>Người thuê</th>
+                                            <th>Ngày bắt đầu</th>
+                                            <th>Ngày kết thúc</th>
+                                            <th>Giá thuê</th>
+                                            <th>Trạng thái</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var c in Model.Contracts.OrderByDescending(x => x.StartDate))
+                                        {
+                                            <tr>
+                                                <td><code>@c.ContractCode</code></td>
+                                                <td>@(c.Tenant?.FullName ?? "—")</td>
+                                                <td>@c.StartDate.ToString("dd/MM/yyyy")</td>
+                                                <td>@(c.EndDate.HasValue ? c.EndDate.Value.ToString("dd/MM/yyyy") : "Không xác định")</td>
+                                                <td>@c.MonthlyRent.ToString("N0") đ</td>
+                                                <td>
+                                                    @switch (c.Status)
+                                                    {
+                                                        case ContractStatus.Active:
+                                                            <span class="badge bg-success">Hiệu lực</span>
+                                                            break;
+                                                        case ContractStatus.Expired:
+                                                            <span class="badge bg-secondary">Hết hạn</span>
+                                                            break;
+                                                        case ContractStatus.Terminated:
+                                                            <span class="badge bg-danger">Đã chấm dứt</span>
+                                                            break;
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Hóa đơn gần nhất -->
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            Hóa đơn gần nhất
+                            <span class="badge bg-secondary ms-1">@Model.Invoices.Count</span>
+                        </h5>
+
+                        @if (!Model.Invoices.Any())
+                        {
+                            <p class="text-muted fst-italic">Chưa có hóa đơn nào.</p>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Mã HĐơn</th>
+                                            <th>Tháng</th>
+                                            <th>Tổng tiền</th>
+                                            <th>Hạn TT</th>
+                                            <th>Trạng thái</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var inv in Model.Invoices.OrderByDescending(i => i.BillingYear).ThenByDescending(i => i.BillingMonth).Take(10))
+                                        {
+                                            <tr>
+                                                <td><code>@inv.InvoiceCode</code></td>
+                                                <td>@inv.BillingMonth/@inv.BillingYear</td>
+                                                <td class="text-end">@inv.TotalAmount.ToString("N0") đ</td>
+                                                <td>@inv.DueDate.ToString("dd/MM/yyyy")</td>
+                                                <td>
+                                                    @switch (inv.Status)
+                                                    {
+                                                        case InvoiceStatus.Paid:
+                                                            <span class="badge bg-success">Đã thanh toán</span>
+                                                            break;
+                                                        case InvoiceStatus.Unpaid:
+                                                            <span class="badge bg-warning text-dark">Chưa TT</span>
+                                                            break;
+                                                        case InvoiceStatus.Overdue:
+                                                            <span class="badge bg-danger">Quá hạn</span>
+                                                            break;
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+</main>

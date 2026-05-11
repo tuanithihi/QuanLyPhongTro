@@ -1,0 +1,105 @@
+@model QuanLyPhongTro.Models.tblPost
+@using QuanLyPhongTro.Models
+@{
+    ViewData["Title"] = Model.Title;
+    List<tblPost> related = ViewBag.Related ?? new List<tblPost>();
+}
+
+<section class="py-5">
+<div class="container">
+<div class="row g-4">
+
+    <div class="col-lg-8">
+        @* Ảnh đại diện *@
+        @if (!string.IsNullOrEmpty(Model.ThumbnailImage))
+        {
+            <img src="@Model.ThumbnailImage" alt="@Model.Title"
+                 class="img-fluid rounded-3 w-100 mb-4"
+                 style="max-height:420px;object-fit:cover;">
+        }
+
+        @* Meta *@
+        <div class="d-flex flex-wrap gap-3 text-muted small mb-3 align-items-center">
+            @if (!string.IsNullOrEmpty(Model.Category))
+            {
+                <a asp-controller="Blog" asp-action="Index" asp-route-category="@Model.Category"
+                   class="badge bg-primary text-decoration-none">@Model.Category</a>
+            }
+            @if (Model.IsPinned)
+            {
+                <span class="badge bg-warning text-dark"><i class="bi bi-pin-fill me-1"></i>Ghim</span>
+            }
+            <span><i class="bi bi-calendar3 me-1"></i>@(Model.PublishedAt?.ToString("dd/MM/yyyy") ?? Model.CreatedAt.ToString("dd/MM/yyyy"))</span>
+            <span><i class="bi bi-eye me-1"></i>@Model.ViewCount lượt xem</span>
+        </div>
+
+        <h1 class="fw-bold mb-3">@Model.Title</h1>
+
+        @if (!string.IsNullOrEmpty(Model.Summary))
+        {
+            <p class="lead text-secondary border-start border-3 border-primary ps-3 mb-4">@Model.Summary</p>
+        }
+
+        @* Nội dung *@
+        <div class="post-content">
+            @if (!string.IsNullOrEmpty(Model.Content))
+            {
+                @Html.Raw(Model.Content)
+            }
+            else
+            {
+                <p class="text-muted">(Chưa có nội dung)</p>
+            }
+        </div>
+
+        <div class="mt-4 pt-3 border-top">
+            <a asp-controller="Blog" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách
+            </a>
+        </div>
+    </div>
+
+    @* Sidebar *@
+    <div class="col-lg-4">
+        @if (related.Any())
+        {
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white fw-semibold py-3">Bài viết liên quan</div>
+                <div class="list-group list-group-flush">
+                    @foreach (var p in related)
+                    {
+                        <a asp-controller="Blog" asp-action="Detail" asp-route-slug="@p.Slug"
+                           class="list-group-item list-group-item-action py-3">
+                            <div class="d-flex gap-3 align-items-start">
+                                @if (!string.IsNullOrEmpty(p.ThumbnailImage))
+                                {
+                                    <img src="@p.ThumbnailImage" alt="@p.Title"
+                                         class="rounded flex-shrink-0"
+                                         style="width:60px;height:60px;object-fit:cover;">
+                                }
+                                <div>
+                                    <div class="fw-semibold small lh-sm mb-1">@p.Title</div>
+                                    <small class="text-muted">
+                                        @(p.PublishedAt?.ToString("dd/MM/yyyy") ?? p.CreatedAt.ToString("dd/MM/yyyy"))
+                                    </small>
+                                </div>
+                            </div>
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+</div>
+</div>
+</section>
+
+@section Scripts {
+<style>
+.post-content { line-height: 1.8; font-size: 1.02rem; }
+.post-content img { max-width: 100%; border-radius: .5rem; }
+.post-content h2, .post-content h3 { margin-top: 1.5rem; }
+.post-content p { margin-bottom: 1rem; }
+</style>
+}

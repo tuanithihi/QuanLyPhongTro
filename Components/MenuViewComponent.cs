@@ -1,27 +1,26 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ViewEngines;
-using QuanLyThuVien.Models;
+using QuanLyPhongTro.Areas.Admin.Data;
+using QuanLyPhongTro.Models;
 
-namespace QuanLyThuVien.Components
+namespace QuanLyPhongTro.Components
 {
     [ViewComponent(Name = "MenuView")]
     public class MenuViewComponent : ViewComponent
     {
         private readonly DataContext _context;
+
         public MenuViewComponent(DataContext context)
         {
             _context = context;
         }
+
         public async Task<IViewComponentResult> InvokeAsync()
         {
-            var menus = (from m in _context.Menus where (m.isActive == true) && (m.Position == 1)select m).ToList();
+            var menus = _context.Menus
+                .Where(m => m.IsActive && m.Position == "header")
+                .OrderBy(m => m.SortOrder)
+                .ToList();
             return await Task.FromResult((IViewComponentResult)View("Default", menus));
         }
-        
-        
     }
 }

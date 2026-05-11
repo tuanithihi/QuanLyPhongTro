@@ -1,218 +1,203 @@
-@model dynamic
+@model QuanLyPhongTro.Areas.Admin.Models.DashboardViewModel
 @{
-    ViewData["Title"] = "Dashboard";
+    ViewData["Title"] = "Tổng quan";
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
 }
 
 <main id="main" class="main">
 
     <div class="pagetitle">
-      <h1>Dashboard</h1>
-      <nav>
-        <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="/Admin">Home</a></li>
-          <li class="breadcrumb-item active">Dashboard</li>
-        </ol>
-      </nav>
-    </div><!-- End Page Title -->
+        <h1>Tổng quan</h1>
+        <nav>
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+                <li class="breadcrumb-item active">Tổng quan</li>
+            </ol>
+        </nav>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-1"></i> @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
 
     <section class="section dashboard">
         <div class="row">
 
-            <!-- Statistics Cards -->
+            <!-- ── STATS CARDS ─────────────────────────── -->
             <div class="col-12">
                 <div class="row">
 
                     <div class="col-xxl-3 col-md-6">
                         <div class="card info-card sales-card">
-                            <div class="filter">
-                                <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
-                                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                                    <li class="dropdown-header text-start">
-                                        <h6>Filter</h6>
-                                    </li>
-                                    <li><a class="dropdown-item" href="#">Today</a></li>
-                                    <li><a class="dropdown-item" href="#">This Month</a></li>
-                                    <li><a class="dropdown-item" href="#">This Year</a></li>
-                                </ul>
-                            </div>
                             <div class="card-body">
-                                <h5 class="card-title">Tổng Sách <span>| Hoạt động</span></h5>
+                                <h5 class="card-title">Tổng phòng</h5>
                                 <div class="d-flex align-items-center">
                                     <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                                        <i class="bi bi-book"></i>
+                                        <i class="bi bi-building"></i>
                                     </div>
                                     <div class="ps-3">
-                                        <h6>@ViewBag.TotalBooks</h6>
-                                        <span class="text-success small pt-1 fw-bold">cuốn sách</span>
+                                        <h6>@Model.TotalRooms</h6>
+                                        <div class="small">
+                                            <span class="text-success fw-bold">@Model.AvailableRooms trống</span> &middot;
+                                            <span class="text-primary fw-bold">@Model.OccupiedRooms thuê</span> &middot;
+                                            <span class="text-warning fw-bold">@Model.MaintenanceRooms bảo trì</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div><!-- End Tổng Sách Card -->
+                    </div>
 
                     <div class="col-xxl-3 col-md-6">
                         <div class="card info-card revenue-card">
-                            <div class="filter">
-                                <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
-                                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                                    <li class="dropdown-header text-start">
-                                        <h6>Filter</h6>
-                                    </li>
-                                    <li><a class="dropdown-item" href="#">Today</a></li>
-                                    <li><a class="dropdown-item" href="#">This Month</a></li>
-                                    <li><a class="dropdown-item" href="#">This Year</a></li>
-                                </ul>
-                            </div>
                             <div class="card-body">
-                                <h5 class="card-title">Tác Giả <span>| Hoạt động</span></h5>
+                                <h5 class="card-title">Hợp đồng <span>| Hiệu lực</span></h5>
                                 <div class="d-flex align-items-center">
                                     <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                                        <i class="bi bi-person"></i>
+                                        <i class="bi bi-file-text"></i>
                                     </div>
                                     <div class="ps-3">
-                                        <h6>@ViewBag.TotalAuthors</h6>
-                                        <span class="text-success small pt-1 fw-bold">tác giả</span>
+                                        <h6>@Model.ActiveContracts</h6>
+                                        @if (Model.ExpiringContractsIn30Days > 0)
+                                        {
+                                            <span class="text-warning small fw-bold">@Model.ExpiringContractsIn30Days HĐ sắp hết hạn</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-success small fw-bold">hợp đồng đang hiệu lực</span>
+                                        }
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div><!-- End Tổng Tác Giả Card -->
+                    </div>
 
                     <div class="col-xxl-3 col-md-6">
                         <div class="card info-card customers-card">
-                            <div class="filter">
-                                <a class="icon" href="#" data-bs-toggle="dropdown"><i class="bi bi-three-dots"></i></a>
-                                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                                    <li class="dropdown-header text-start">
-                                        <h6>Filter</h6>
-                                    </li>
-                                    <li><a class="dropdown-item" href="#">Today</a></li>
-                                    <li><a class="dropdown-item" href="#">This Month</a></li>
-                                    <li><a class="dropdown-item" href="#">This Year</a></li>
-                                </ul>
-                            </div>
                             <div class="card-body">
-                                <h5 class="card-title">Người Dùng <span>| Đã đăng ký</span></h5>
+                                <h5 class="card-title">Người thuê <span>| Đang thuê</span></h5>
                                 <div class="d-flex align-items-center">
                                     <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
                                         <i class="bi bi-people"></i>
                                     </div>
                                     <div class="ps-3">
-                                        <h6>@ViewBag.TotalUsers</h6>
-                                        <span class="text-danger small pt-1 fw-bold">người dùng</span>
+                                        <h6>@Model.TotalTenants</h6>
+                                        <span class="text-muted small fw-bold">người thuê đang hoạt động</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div><!-- End Tổng Người Dùng Card -->
+                    </div>
 
                     <div class="col-xxl-3 col-md-6">
-                        <div class="card info-card customers-card">
+                        <div class="card info-card">
                             <div class="card-body">
-                                <h5 class="card-title">Lượt Mượn <span>| Tổng cộng</span></h5>
+                                <h5 class="card-title">Doanh thu <span>| Tháng này</span></h5>
                                 <div class="d-flex align-items-center">
                                     <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                                        <i class="bi bi-journal-check"></i>
+                                        <i class="bi bi-currency-dollar"></i>
                                     </div>
                                     <div class="ps-3">
-                                        <h6>@ViewBag.TotalBorrows</h6>
-                                        <span class="text-danger small pt-1 fw-bold">lượt mượn</span>
+                                        <h6>@Model.TotalRevenueThisMonth.ToString("N0") đ</h6>
+                                        <span class="text-success small fw-bold">@Model.PaidInvoicesThisMonth đã TT</span>
+                                        &middot;
+                                        <span class="text-danger small fw-bold">
+                                            @(Model.UnpaidInvoicesThisMonth + Model.OverdueInvoicesThisMonth) chưa TT
+                                        </span>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div><!-- End Tổng Lượt Mượn Card -->
-
-                </div>
-            </div><!-- End Statistics Cards -->
-
-            <!-- Main Content -->
-            <div class="col-lg-8">
-                <div class="row">
-
-                    <!-- Clock Widget -->
-                    <div class="col-12">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">Thời Gian Hiện Tại</h5>
-                                <div class="d-flex justify-content-center align-items-center" style="min-height: 300px;">
-                                    <div class="text-center">
-                                        <div id="current-time" class="display-4 font-weight-bold text-primary mb-2" style="font-size: 3rem;"></div>
-                                        <div id="current-date" class="h5 text-muted"></div>
-                                        <div id="current-day" class="text-muted mt-2"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div><!-- End Clock Widget -->
-                </div>
-            </div><!-- End Main Content -->
-            <!-- Right Sidebar -->
-            <!-- Right side columns -->
-            <div class="col-lg-4">
-
-                <!-- Top Books -->
-                <div class="card">
-                    <div class="card-body pb-0">
-                        <h5 class="card-title">Sách Được Mượn Nhiều Nhất</h5>
-
-                        <div class="news">
-                            @if (ViewBag.TopBorrowedBooks != null && ViewBag.TopBorrowedBooks.Count > 0)
-                            {
-                                foreach (var book in ViewBag.TopBorrowedBooks)
-                                {
-                                    <div class="post-item clearfix">
-                                        <div>
-                                            <h4><a href="#" class="text-truncate d-block">@book.BookName</a></h4>
-                                            <p class="text-muted small">@book.BorrowCount lượt mượn</p>
-                                        </div>
-                                    </div>
-                                }
-                            }
-                            else
-                            {
-                                <div class="text-center text-muted py-4">
-                                    <i class="bi bi-info-circle fs-1"></i>
-                                    <p class="mt-2">Chưa có dữ liệu mượn sách</p>
-                                </div>
-                            }
-                        </div><!-- End sidebar recent posts-->
-
                     </div>
-                </div><!-- End Top Books -->
+
+                </div>
+            </div>
+
+            <!-- ── ĐỒNG HỒ ─────────────────────────────── -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Thời gian hiện tại</h5>
+                        <div class="d-flex justify-content-center align-items-center" style="min-height:260px">
+                            <div class="text-center">
+                                <div id="current-time" class="display-4 text-primary fw-bold mb-2"
+                                     style="font-size:3rem;letter-spacing:2px;"></div>
+                                <div id="current-date" class="h5 text-muted"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── SHORTCUTS ──────────────────────────── -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Truy cập nhanh</h5>
+                        <div class="d-grid gap-2 mt-3">
+                            <a asp-area="Admin" asp-controller="Room" asp-action="Create"
+                               class="btn btn-outline-primary">
+                                <i class="bi bi-plus-circle me-1"></i> Thêm phòng mới
+                            </a>
+                            <a asp-area="Admin" asp-controller="Room" asp-action="Index"
+                               class="btn btn-outline-secondary">
+                                <i class="bi bi-building me-1"></i> Quản lý phòng
+                            </a>
+                            <a asp-area="Admin" asp-controller="Tenant" asp-action="Index"
+                               class="btn btn-outline-secondary">
+                                <i class="bi bi-people me-1"></i> Danh sách người thuê
+                            </a>
+                            <a asp-area="Admin" asp-controller="BookingRequest" asp-action="Index"
+                               class="btn @(Model.PendingBookingRequests > 0 ? "btn-warning" : "btn-outline-secondary")">
+                                <i class="bi bi-calendar2-check me-1"></i> Yêu cầu xem phòng
+                                @if (Model.PendingBookingRequests > 0)
+                                {
+                                    <span class="badge bg-danger ms-1">@Model.PendingBookingRequests chờ</span>
+                                }
+                            </a>
+                            <a asp-area="Admin" asp-controller="Chat" asp-action="Index"
+                               class="btn @(Model.OpenChatSessions > 0 ? "btn-info" : "btn-outline-secondary")">
+                                <i class="bi bi-chat-dots me-1"></i> Tin nhắn
+                                @if (Model.OpenChatSessions > 0)
+                                {
+                                    <span class="badge bg-danger ms-1">@Model.OpenChatSessions</span>
+                                }
+                            </a>
+                            <a asp-area="Admin" asp-controller="Invoice" asp-action="Index"
+                               asp-route-status="0"
+                               class="btn @(Model.UnpaidInvoicesThisMonth + Model.OverdueInvoicesThisMonth > 0 ? "btn-outline-danger" : "btn-outline-secondary")">
+                                <i class="bi bi-receipt me-1"></i> Hóa đơn chưa thanh toán
+                                @if (Model.UnpaidInvoicesThisMonth + Model.OverdueInvoicesThisMonth > 0)
+                                {
+                                    <span class="badge bg-danger ms-1">
+                                        @(Model.UnpaidInvoicesThisMonth + Model.OverdueInvoicesThisMonth)
+                                    </span>
+                                }
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </section>
 
 </main>
 
-<script>
-    // Real-time clock
-    function updateClock() {
-        const now = new Date();
-        const timeString = now.toLocaleTimeString('vi-VN', {
-            hour12: false,
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-        });
-        const dateString = now.toLocaleDateString('vi-VN', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-        const dayString = now.toLocaleDateString('vi-VN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        });
-
-        document.getElementById('current-time').textContent = timeString;
-        document.getElementById('current-date').textContent = dateString;
-        document.getElementById('current-day').textContent = dayString;
-    }
-
-    // Update clock immediately and then every second
-    updateClock();
-    setInterval(updateClock, 1000);
-</script>
+@section Scripts {
+    <script>
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('current-time').textContent =
+                now.toLocaleTimeString('vi-VN', { hour12: false });
+            document.getElementById('current-date').textContent =
+                now.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+}

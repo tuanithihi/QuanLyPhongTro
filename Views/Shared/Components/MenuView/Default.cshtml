@@ -1,59 +1,85 @@
-@using Microsoft.AspNetCore.Razor.Language
-@model IList<tblMenu>
+@{
+    var adminUser  = Context.Session.GetString("AdminUser");
+    var tenantId   = Context.Session.GetString("TenantUser");
+    var tenantName = Context.Session.GetString("TenantName");
+    var userId     = Context.Session.GetString("NormalUser");
+    var userName   = Context.Session.GetString("UserName");
 
-<header id="header" class="header sticky-top">
+    bool isAdmin    = !string.IsNullOrEmpty(adminUser);
+    bool isLoggedIn = isAdmin || !string.IsNullOrEmpty(tenantId) || !string.IsNullOrEmpty(userId);
+    string displayName = isAdmin                             ? adminUser!
+                       : !string.IsNullOrEmpty(tenantName)  ? tenantName
+                       : !string.IsNullOrEmpty(userName)    ? userName
+                       : "";
+    string roleLabel   = isAdmin                          ? "Quản trị viên"
+                       : !string.IsNullOrEmpty(tenantId)  ? "Người thuê"
+                       : "Khách";
+    string roleIcon    = isAdmin                          ? "bi-shield-check"
+                       : !string.IsNullOrEmpty(tenantId)  ? "bi-house"
+                       : "bi-person";
+
+}
+<header id="header" class="header sticky-top" style="background: #27AE60;">
     <div class="container-xl d-flex align-items-center position-relative">
-
-        <!-- LOGO -->
-        <a asp-controller="Home" asp-action="Index"
-           class="logo d-flex align-items-center order-1 me-auto">
-            <img src="~/assets/img/learning_16566016.png" alt="LibraHub Logo" style="height:40px" class="me-2">
-            <h1 class="sitename mb-0">LibraHub</h1>
+        <a asp-controller="Home" asp-action="Index" class="logo d-flex align-items-center order-1 me-auto">
+            <img src="~/assets/img/logo.png"
+                 alt="Phòng Trọ Mới Logo"
+                 class="me-2"
+                 style="height: 36px; width: auto;" />
+            <span class="sitename mb-0" style="color: white; font-weight: bold; font-size: 1.2rem;">Phòng Trọ Mới</span>
         </a>
 
-        <!-- LOGIN / REGISTER OR USER DROPDOWN -->
-        <div class="d-flex align-items-center order-2 order-xl-3 ms-3">
-            @if (QuanLyThuVien.Utilities.Functions.IsLogin())
+        <nav id="navmenu" class="navmenu order-3 order-xl-2">
+            <ul>
+                <li><a asp-controller="Home" asp-action="Index" style="color: white;">Trang chủ</a></li>
+                <li><a asp-controller="Blog" asp-action="Index" style="color: white;">Tin tức</a></li>
+                <li><a asp-controller="Contact" asp-action="Index" style="color: white;">Liên hệ</a></li>
+            </ul>
+        </nav>
+
+        <div class="order-4 d-flex align-items-center gap-2 ms-3">
+
+            @if (isLoggedIn)
             {
+                <!-- Dropdown khi đã đăng nhập -->
                 <div class="dropdown">
-                    <a class="btn-getstarted dropdown-toggle d-flex align-items-center"
-                       href="#"
-                       id="userDropdown"
-                       data-bs-toggle="dropdown"
-                       aria-expanded="false">
-                        <i class="bi bi-person-circle me-2"></i>
-                        @QuanLyThuVien.Utilities.Functions._FullName
-                    </a>
-
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                        <li class="dropdown-header">
-                            <h6 class="mb-0">@QuanLyThuVien.Utilities.Functions._FullName</h6>
-                            <small class="text-muted">@QuanLyThuVien.Utilities.Functions._Email</small>
-                        </li>
-                        <li><hr class="dropdown-divider"></li>
+                    <button class="btn btn-light btn-sm d-flex align-items-center gap-1"
+                            type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi @roleIcon"></i>
+                        <span class="d-none d-md-inline">@displayName</span>
+                        <i class="bi bi-chevron-down" style="font-size:.7rem;"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                         <li>
-                            <a class="dropdown-item"
-                               asp-controller="Account" asp-action="Info">
-                                <i class="bi bi-person me-2"></i>Thông tin tài khoản
+                            <span class="dropdown-item-text small text-muted">
+                                <i class="bi @roleIcon me-1"></i>@roleLabel
+                            </span>
+                        </li>
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li>
+                            <a class="dropdown-item" asp-controller="Account" asp-action="Info">
+                                <i class="bi bi-person-circle me-2"></i>Thông tin cá nhân
                             </a>
                         </li>
-                        <li>
-                            <a class="dropdown-item" asp-controller="Borrow" asp-action="History">
-                                <i class="bi bi-book me-2"></i>Lịch sử mượn
-                            </a>
-                        </li>
-
-                        @if (QuanLyThuVien.Utilities.Functions.IsAdmin())
+                        @if (!string.IsNullOrEmpty(tenantId))
                         {
-                            <li><hr class="dropdown-divider"></li>
                             <li>
-                                <a class="dropdown-item" asp-area="Admin" asp-controller="Home" asp-action="Index">
-                                    <i class="bi bi-shield-lock me-2"></i>Trang quản trị
+                                <a class="dropdown-item" asp-controller="Account" asp-action="Invoices">
+                                    <i class="bi bi-receipt me-2"></i>Hóa đơn &amp; Thanh toán
                                 </a>
                             </li>
                         }
-
-                        <li><hr class="dropdown-divider"></li>
+                        @if (isAdmin)
+                        {
+                            <li><hr class="dropdown-divider my-1"></li>
+                            <li>
+                                <a class="dropdown-item text-primary fw-semibold"
+                                   asp-area="Admin" asp-controller="Home" asp-action="Index">
+                                    <i class="bi bi-speedometer2 me-2"></i>Trang quản trị
+                                </a>
+                            </li>
+                        }
+                        <li><hr class="dropdown-divider my-1"></li>
                         <li>
                             <a class="dropdown-item text-danger"
                                asp-controller="Account" asp-action="Logout">
@@ -65,58 +91,22 @@
             }
             else
             {
-                <a asp-controller="Account" asp-action="Login"
-                   class="btn-getstarted me-2">Đăng nhập</a>
-                <a asp-controller="Account" asp-action="Register"
-                   class="btn-getstarted">Đăng ký</a>
+                <!-- Nút đăng nhập khi chưa đăng nhập -->
+                <button type="button"
+                        class="btn btn-light btn-sm d-flex align-items-center gap-1"
+                        data-bs-toggle="modal" data-bs-target="#authModal" data-open-tab="login">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    <span>Đăng nhập</span>
+                </button>
+                <button type="button"
+                        class="btn btn-outline-light btn-sm d-none d-md-flex align-items-center gap-1"
+                        data-bs-toggle="modal" data-bs-target="#authModal" data-open-tab="register">
+                    <i class="bi bi-person-plus"></i>
+                    <span>Đăng ký</span>
+                </button>
             }
         </div>
 
-        <!-- NAV MENU -->
-        <nav id="navmenu" class="navmenu order-3 order-xl-2">
-            <ul>
-                @foreach (var menu in Model.Where(m => m.Levels == 1).OrderBy(m => m.MenuOrder))
-                {
-                    var pID = menu.MenuID;
-                    var sMenu = Model.Where(s => s.ParentID == pID)
-                                     .OrderBy(s => s.MenuOrder)
-                                     .ToList();
-
-                    if (!sMenu.Any())
-                    {
-                        <li>
-                            <a asp-controller="@menu.ControllerName"
-                               asp-action="@menu.ActionName">
-                                @menu.MenuName
-                            </a>
-                        </li>
-                    }
-                    else
-                    {
-                        <li class="dropdown">
-                            <a href="javascript:void(0)">
-                                <span>@menu.MenuName</span>
-                                <i class="bi bi-chevron-down"></i>
-                            </a>
-                            <ul>
-                                @foreach (var smn in sMenu)
-                                {
-                                    <li>
-                                        <a asp-controller="@smn.ControllerName"
-                                           asp-action="@smn.ActionName">
-                                            @smn.MenuName
-                                        </a>
-                                    </li>
-                                }
-                            </ul>
-                        </li>
-                    }
-                }
-            </ul>
-        </nav>
-
-        <!-- MOBILE TOGGLE -->
-        <i class="mobile-nav-toggle d-xl-none bi bi-list order-4"></i>
-
+        <i class="mobile-nav-toggle d-xl-none bi bi-list order-5" style="color: white;"></i>
     </div>
 </header>

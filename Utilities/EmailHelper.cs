@@ -3,11 +3,11 @@ using Microsoft.Extensions.Configuration;
 using SendGrid;
 using SendGrid.Helpers.Mail;
 
-namespace QuanLyThuVien.Utilities
+namespace QuanLyPhongTro.Utilities
 {
     public class EmailHelper
     {
-        private static IConfiguration _config;
+        private static IConfiguration? _config;
 
         public static void Configure(IConfiguration config)
         {

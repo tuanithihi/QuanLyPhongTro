@@ -1,55 +1,48 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.FileProviders;
-using QuanLyThuVien.Models;
-using QuanLyThuVien.Services;
+using QuanLyPhongTro.Areas.Admin.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 var connection = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<DataContext>(options => options.UseSqlServer(connection));
-// Add services to the container.
+
+// ── EF Core ──────────────────────────────────────────────────────────
+builder.Services.AddDbContext<DataContext>(options =>
+    options.UseSqlServer(connection));
+
+// ── MVC ──────────────────────────────────────────────────────────────
 builder.Services.AddControllersWithViews();
-builder.Services.AddHttpClient();
-builder.Services.AddMemoryCache();
-builder.Services.AddHttpClient<ChatbotService>();
-builder.Services.AddHttpClient<PdfAnalysisService>();
-builder.Services.AddScoped<TextToSpeechService>();
 
-
-
-
-// Cấu hình EmailHelper
-QuanLyThuVien.Utilities.EmailHelper.Configure(builder.Configuration);
+// ── Session ───────────────────────────────────────────────────────────
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout        = TimeSpan.FromHours(4);
+    options.Cookie.HttpOnly    = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.Name        = ".QuanLyPhongTro.Session";
+});
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// ── Pipeline ──────────────────────────────────────────────────────────
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-app.UseStaticFiles(new StaticFileOptions()
-{
-    FileProvider = new PhysicalFileProvider(
-        Path.Combine(Directory.GetCurrentDirectory(), "uploads")),
-    RequestPath =  "/files"
-});
-
-
 app.UseRouting();
-
+app.UseSession();        // ← phải đặt TRƯỚC UseAuthorization
 app.UseAuthorization();
-app.MapControllers();
+
+// ── Routes ────────────────────────────────────────────────────────────
 app.MapControllerRoute(
-        name: "areas",
-     pattern: "{area:exists}/{controller=Home}/{action=Index}/{id?}");
+    name:    "areas",
+    pattern: "{area:exists}/{controller=Home}/{action=Index}/{id?}");
 
 app.MapControllerRoute(
-    name: "default",
+    name:    "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
