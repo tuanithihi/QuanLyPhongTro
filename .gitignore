@@ -23,3 +23,6 @@ lib/
 # Chặn thư viện bên thứ ba
 wwwroot/lib/
 wwwroot/admin/assets/vendor/
+
+# Chặn file hướng dẫn của trợ lý AI
+CLAUDE.md
