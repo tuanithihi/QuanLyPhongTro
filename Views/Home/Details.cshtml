@@ -2,11 +2,14 @@
 @using QuanLyPhongTro.Models
 @{
     ViewData["Title"] = Model.Room.RoomName;
-    var room        = Model.Room;
-    bool hasAlert   = TempData["BookingSuccess"] != null || TempData["BookingError"] != null;
-    bool isLoggedIn = ViewBag.IsLoggedIn ?? false;
-    string preName  = ViewBag.BookingName  ?? "";
-    string prePhone = ViewBag.BookingPhone ?? "";
+    var room          = Model.Room;
+    bool hasAlert     = TempData["BookingSuccess"] != null || TempData["BookingError"] != null;
+    bool hasReviewMsg = TempData["ReviewSuccess"]  != null || TempData["ReviewError"]  != null;
+    bool isLoggedIn   = ViewBag.IsLoggedIn ?? false;
+    string preName    = ViewBag.BookingName  ?? "";
+    string prePhone   = ViewBag.BookingPhone ?? "";
+    double avg        = Model.AverageRating;
+    int    rCount     = Model.ReviewCount;
 }
 
 @* ── Breadcrumb ─────────────────────────────────────────────────────── *@
@@ -41,6 +44,20 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 }
+@if (TempData["ReviewSuccess"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-0 rounded-0 text-center" role="alert">
+        <i class="bi bi-star-fill me-2"></i>@TempData["ReviewSuccess"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ReviewError"] != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show mb-0 rounded-0 text-center" role="alert">
+        <i class="bi bi-exclamation-circle-fill me-2"></i>@TempData["ReviewError"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
 
 @* ════════════════════════════ NỘI DUNG CHÍNH ════════════════════════════ *@
 <section class="py-5">
@@ -71,6 +88,14 @@
                 {
                     <span class="badge bg-primary-subtle text-primary rounded-pill px-3">
                         @room.RoomType.RoomTypeName
+                    </span>
+                }
+                @* ── Số sao đánh giá trung bình ── *@
+                @if (rCount > 0)
+                {
+                    <span class="badge bg-warning text-dark rounded-pill px-3 d-flex align-items-center gap-1">
+                        <i class="bi bi-star-fill"></i>
+                        @avg.ToString("0.0") <span class="fw-normal">(@rCount đánh giá)</span>
                     </span>
                 }
             </div>
@@ -185,6 +210,147 @@
                         <i class="bi bi-info-circle me-1"></i>
                         Điện/nước tính theo chỉ số thực tế hàng tháng. Các phí cố định thu vào ngày lập hóa đơn.
                     </p>
+                }
+            </div>
+
+            @* ════════════ ĐÁNH GIÁ PHÒNG ════════════ *@
+            <div class="mb-4" id="room-reviews">
+                <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                    <i class="bi bi-star-half text-warning"></i> Đánh giá phòng
+                    @if (rCount > 0)
+                    {
+                        <span class="ms-1 text-muted fw-normal" style="font-size:.85rem;">
+                            — trung bình
+                            @for (int s = 1; s <= 5; s++)
+                            {
+                                if (s <= Math.Floor(avg))
+                                {
+                                    <i class="bi bi-star-fill text-warning" style="font-size:.85rem;"></i>
+                                }
+                                else if (s - avg < 1 && avg % 1 >= 0.5)
+                                {
+                                    <i class="bi bi-star-half text-warning" style="font-size:.85rem;"></i>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-star text-warning" style="font-size:.85rem;"></i>
+                                }
+                            }
+                            <strong class="text-dark ms-1">@avg.ToString("0.0")</strong> / 5
+                            &nbsp;(@rCount nhận xét)
+                        </span>
+                    }
+                </h5>
+
+                @* ── Danh sách đánh giá ── *@
+                @if (!Model.RoomReviews.Any())
+                {
+                    <p class="text-muted small fst-italic">
+                        <i class="bi bi-chat-square-dots me-1"></i>Chưa có đánh giá nào. Hãy là người đầu tiên!
+                    </p>
+                }
+                else
+                {
+                    <div class="review-list mb-4">
+                        @foreach (var rv in Model.RoomReviews)
+                        {
+                            <div class="review-card d-flex gap-3 py-3 border-bottom">
+                                <div class="review-avatar flex-shrink-0 rounded-circle bg-success-subtle d-flex align-items-center justify-content-center"
+                                     style="width:44px;height:44px;">
+                                    <span class="fw-bold text-success" style="font-size:1.1rem;">
+                                        @rv.FullName.Substring(0, 1).ToUpper()
+                                    </span>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                                        <span class="fw-semibold text-dark">@rv.FullName</span>
+                                        <span class="ms-auto text-muted small">
+                                            <i class="bi bi-clock me-1"></i>@rv.CreatedAt.ToString("dd/MM/yyyy")
+                                        </span>
+                                    </div>
+                                    <div class="mb-1">
+                                        @for (int s = 1; s <= 5; s++)
+                                        {
+                                            <i class="bi @(s <= rv.Rating ? "bi-star-fill text-warning" : "bi-star text-muted")" style="font-size:.8rem;"></i>
+                                        }
+                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(rv.Comment))
+                                    {
+                                        <p class="text-secondary small mb-0">@rv.Comment</p>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+
+                @* ── Form gửi / sửa đánh giá ── *@
+                @if (isLoggedIn)
+                {
+                    var isEdit = Model.MyReview != null;
+                    var formAction = isEdit ? "UpdateRoomReview" : "SubmitRoomReview";
+                    var formTitle  = isEdit ? "Sửa đánh giá của bạn" : "Gửi đánh giá của bạn";
+                    var formIcon   = isEdit ? "bi-pencil" : "bi-pencil-square";
+                    var btnText    = isEdit ? "Cập nhật đánh giá" : "Gửi đánh giá";
+                    var prefillComment = isEdit ? Model.MyReview!.Comment : "";
+                    var prefillRating  = isEdit ? Model.MyReview!.Rating : 5;
+                    var prefillName2   = isEdit ? Model.MyReview!.FullName : Model.ReviewName;
+
+                    <div class="card border-0 @(isEdit ? "bg-warning-subtle" : "bg-light") rounded-4 p-4">
+                        <h6 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                            <i class="bi @formIcon text-primary"></i> @formTitle
+                        </h6>
+                        <form asp-controller="Home" asp-action="@formAction" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="roomId" value="@room.RoomId" />
+                            @if (isEdit)
+                            {
+                                <input type="hidden" name="reviewId" value="@Model.MyReview!.RoomReviewId" />
+                            }
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Họ và tên <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                    <input type="text" name="reviewName" class="form-control"
+                                           placeholder="Nguyễn Văn A"
+                                           value="@prefillName2" required />
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Số sao đánh giá <span class="text-danger">*</span></label>
+                                <div class="star-picker d-flex gap-2" id="starPicker">
+                                    @for (int s = 5; s >= 1; s--)
+                                    {
+                                        <input type="radio" class="d-none star-radio" name="reviewRating"
+                                               id="star@(s)" value="@s" @(s == prefillRating ? "checked" : "") />
+                                        <label for="star@(s)" class="star-label" title="@s sao">
+                                            <i class="bi bi-star-fill"></i>
+                                        </label>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Nhận xét (tùy chọn)</label>
+                                <textarea name="reviewComment" class="form-control" rows="3"
+                                          placeholder="Chia sẻ trải nghiệm của bạn về phòng...">@prefillComment</textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary fw-semibold rounded-3">
+                                <i class="bi @(isEdit ? "bi-check-lg" : "bi-send") me-1"></i> @btnText
+                            </button>
+                        </form>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-light border rounded-4 text-center small py-3">
+                        <i class="bi bi-lock me-1 text-warning"></i>
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#authModal" class="fw-semibold">Đăng nhập</a>
+                        để gửi đánh giá của bạn về phòng này.
+                    </div>
                 }
             </div>
 
@@ -394,12 +560,56 @@
     .text-primary {
         color: #27AE60 !important;
     }
+
+    /* ── Star Picker (form đánh giá phòng) ── */
+    .star-picker {
+        flex-direction: row-reverse;
+        justify-content: flex-end;
+    }
+    .star-label {
+        font-size: 1.6rem;
+        color: #d1d5db;
+        cursor: pointer;
+        transition: color .15s;
+        line-height: 1;
+    }
+    /* Tô màu sao đang hover và tất cả sao trước nó (nhờ RTL + ~ selector) */
+    .star-label:hover,
+    .star-label:hover ~ .star-label {
+        color: #f59e0b;
+    }
+    /* Tô màu sao đã chọn */
+    .star-radio:checked + .star-label,
+    .star-radio:checked + .star-label ~ .star-label {
+        color: #f59e0b;
+    }
+    /* Review card hover */
+    .review-card {
+        transition: background .15s;
+        border-radius: .5rem;
+        padding-left: .5rem;
+        padding-right: .5rem;
+    }
+    .review-card:hover {
+        background: #f0fdf4;
+    }
 </style>
 
 <script>
-    @if (hasAlert)
+    @if (hasAlert || hasReviewMsg)
     {
         <text>window.scrollTo({ top: 0, behavior: 'smooth' });</text>
+    }
+
+    // Scroll to review section after submitting
+    @if (hasReviewMsg)
+    {
+        <text>
+        window.addEventListener('DOMContentLoaded', function () {
+            var sec = document.getElementById('room-reviews');
+            if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+        </text>
     }
 
     function openLoginForBooking() {

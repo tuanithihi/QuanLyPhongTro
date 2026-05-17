@@ -45,8 +45,11 @@ namespace QuanLyPhongTro.Areas.Admin.Data
         /// <summary>Người dùng đăng ký trên website</summary>
         public DbSet<tblUser> Users { get; set; }
 
-        /// <summary>Đánh giá từ khách hàng</summary>
+        /// <summary>Đánh giá từ khách hàng (testimonial trang chủ)</summary>
         public DbSet<tblReview> Reviews { get; set; }
+
+        /// <summary>Đánh giá phòng trọ cụ thể từ khách hàng</summary>
+        public DbSet<tblRoomReview> RoomReviews { get; set; }
 
         /// <summary>Yêu cầu đặt lịch xem phòng và tin nhắn liên hệ</summary>
         public DbSet<tblBookingRequest> BookingRequests { get; set; }
@@ -186,6 +189,18 @@ namespace QuanLyPhongTro.Areas.Admin.Data
             {
                 entity.Property(r => r.Rating).HasDefaultValue(5);
                 entity.Property(r => r.IsApproved).HasDefaultValue(true);
+            });
+
+            // ── tblRoomReview ─────────────────────────────────────────────
+            modelBuilder.Entity<tblRoomReview>(entity =>
+            {
+                entity.Property(r => r.Rating).HasDefaultValue(5);
+                entity.Property(r => r.IsApproved).HasDefaultValue(true);
+
+                entity.HasOne(r => r.Room)
+                      .WithMany(room => room.RoomReviews)
+                      .HasForeignKey(r => r.RoomId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
             // ── tblBookingRequest ─────────────────────────────────────────

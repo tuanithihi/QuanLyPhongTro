@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -62,7 +63,41 @@ namespace QuanLyPhongTro.Utilities
 
         public static string TitleSlugGeneration(string type, string? title, long id)
         {
-            return type + "-" + SlugGenerator.SlugGenerator.GenerateSlug(title) + "-" + id.ToString() + ".html";
+            return type + "-" + GenerateSlug(title) + "-" + id.ToString() + ".html";
+        }
+
+        private static string GenerateSlug(string? text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return string.Empty;
+
+            var normalized = text.Normalize(NormalizationForm.FormD);
+            var builder = new StringBuilder();
+            var previousDash = false;
+
+            foreach (var rawChar in normalized)
+            {
+                var category = CharUnicodeInfo.GetUnicodeCategory(rawChar);
+                if (category == UnicodeCategory.NonSpacingMark)
+                    continue;
+
+                var c = char.ToLowerInvariant(rawChar);
+                if (c == 'đ')
+                    c = 'd';
+
+                if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9'))
+                {
+                    builder.Append(c);
+                    previousDash = false;
+                }
+                else if (!previousDash)
+                {
+                    builder.Append('-');
+                    previousDash = true;
+                }
+            }
+
+            return builder.ToString().Trim('-');
         }
 
         public static string MD5Hash(string text)

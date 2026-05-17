@@ -104,10 +104,48 @@
                                 </div>
                             </div>
 
-                            <div class="mb-0">
+                            <div class="mb-3">
                                 <label asp-for="Description" class="form-label fw-semibold"></label>
                                 <textarea asp-for="Description" class="form-control" rows="5"
                                           placeholder="Mô tả chi tiết về phòng (tiện nghi, nội thất, vị trí...)"></textarea>
+                            </div>
+
+                            @* ── Vị trí phòng ── *@
+                            <div class="card border-success border-opacity-25 mt-3">
+                                <div class="card-header py-2" style="background:#E8F8F5">
+                                    <h6 class="mb-0 fw-semibold text-success">
+                                        <i class="bi bi-geo-alt-fill me-1"></i>Vị trí phòng
+                                    </h6>
+                                </div>
+                                <div class="card-body pt-3">
+                                    <div class="row mb-2">
+                                        <div class="col-md-9">
+                                            <label asp-for="Address" class="form-label fw-semibold"></label>
+                                            <input asp-for="Address" class="form-control" id="addressInput"
+                                                   placeholder="VD: 123 Lê Lợi, TP. Vinh, Nghệ An" />
+                                        </div>
+                                        <div class="col-md-3 d-flex align-items-end">
+                                            <button type="button" id="btnGeocode" class="btn btn-outline-success w-100">
+                                                <i class="bi bi-crosshair me-1"></i>Lấy tọa độ
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label asp-for="Latitude" class="form-label fw-semibold"></label>
+                                            <input asp-for="Latitude" class="form-control" id="latInput"
+                                                   type="number" step="any" placeholder="VD: 18.6796" />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label asp-for="Longitude" class="form-label fw-semibold"></label>
+                                            <input asp-for="Longitude" class="form-control" id="lngInput"
+                                                   type="number" step="any" placeholder="VD: 105.6813" />
+                                        </div>
+                                    </div>
+                                    <small class="text-muted mt-1 d-block">
+                                        <i class="bi bi-info-circle me-1"></i>Nhập địa chỉ rồi bấm "Lấy tọa độ" để tự động điền vĩ độ & kinh độ.
+                                    </small>
+                                </div>
                             </div>
 
                         </div>
@@ -175,5 +213,32 @@
         }
         const vs = document.getElementById('val-summary');
         if (vs && vs.querySelectorAll('li').length) vs.classList.remove('d-none');
+
+        // ── GEOCODING ──────────────────────────────────────────────────
+        document.getElementById('btnGeocode')?.addEventListener('click', async function () {
+            const addr = document.getElementById('addressInput').value.trim();
+            if (!addr) { alert('Vui lòng nhập địa chỉ trước.'); return; }
+
+            const btn = this;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Đang tìm...';
+
+            try {
+                const resp = await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=' + encodeURIComponent(addr));
+                const data = await resp.json();
+                if (data.length > 0) {
+                    document.getElementById('latInput').value = parseFloat(data[0].lat).toFixed(7);
+                    document.getElementById('lngInput').value = parseFloat(data[0].lon).toFixed(7);
+                } else {
+                    alert('Không tìm thấy tọa độ cho địa chỉ này. Vui lòng nhập chính xác hơn.');
+                }
+            } catch {
+                alert('Lỗi khi gọi API geocoding. Vui lòng thử lại.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
     </script>
 }

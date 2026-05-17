@@ -24,7 +24,9 @@
                 </div>
 
                 <!-- Search Form -->
-                <form method="get" action="/Home/Index" class="search-form">
+                <form method="get" action="/Home/Index" class="search-form" id="searchForm">
+                    <input type="hidden" name="userLat" id="userLat" value="@(Model.UserLat?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")" />
+                    <input type="hidden" name="userLng" id="userLng" value="@(Model.UserLng?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")" />
                     <div class="mb-3">
                         <div class="input-group input-group-lg">
                             <span class="input-group-text" style="background: white; border-color: #D5F4E6;">
@@ -121,6 +123,162 @@
     </div>
 </section>
 
+@{
+    bool isSearch = !string.IsNullOrEmpty(Model.Area) || Model.RoomTypeId.HasValue || 
+                    !string.IsNullOrEmpty(Model.PriceRange) || !string.IsNullOrEmpty(Model.AreaRange) || 
+                    !string.IsNullOrEmpty(Model.FloorRange) || Model.UserLat.HasValue;
+}
+
+@if (isSearch)
+{
+    <!-- ════════════════════════════════════════════════════════════════════════════════════
+         SEARCH RESULTS SECTION
+         ════════════════════════════════════════════════════════════════════════════════════ -->
+    <section class="search-results-section py-5" id="searchResults" style="background: #f8fafc;">
+        <div class="container">
+            <div class="mb-5 d-flex justify-content-between align-items-end border-bottom pb-3">
+                <div>
+                    <h2 class="display-6 fw-bold text-dark mb-2" style="color: #1E8449 !important;">Kết Quả Tìm Kiếm</h2>
+                    <p class="fs-5 text-muted mb-0">Tìm thấy <strong style="color: #27AE60;">@Model.AvailableRooms.Count</strong> phòng trọ phù hợp</p>
+                </div>
+                <div>
+                    <a href="/Home/Index" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle me-1"></i>Xóa tìm kiếm
+                    </a>
+                </div>
+            </div>
+
+            @if (Model.AvailableRooms.Any())
+            {
+                <div class="row g-4 mb-4">
+                    @foreach (var room in Model.AvailableRooms)
+                    {
+                        <div class="col-lg-4 col-md-6">
+                            <div class="featured-room-card h-100" style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.08); transition: all 0.3s ease;">
+                                <!-- Image -->
+                                <div style="position: relative; height: 240px; overflow: hidden; background: #e0e0e0;">
+                                    @if (!string.IsNullOrEmpty(room.ThumbnailImage))
+                                    {
+                                        <img src="@room.ThumbnailImage" alt="@room.RoomName" class="w-100 h-100" style="object-fit: cover; transition: transform 0.3s ease;" />
+                                    }
+                                    else
+                                    {
+                                        <div class="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
+                                            <i class="bi bi-image" style="font-size: 3rem; color: #ccc;"></i>
+                                        </div>
+                                    }
+                                    <div style="position: absolute; top: 12px; right: 12px;">
+                                        <span class="badge" style="background: #27AE60; color: white;">
+                                            <i class="bi bi-check-circle-fill me-1"></i>Có sẵn
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Content -->
+                                <div class="p-4">
+                                    <h5 class="fw-bold mb-2 text-truncate" style="color: #1E8449;">@room.RoomName</h5>
+                                    
+                                    <!-- Price -->
+                                    <div class="mb-3">
+                                        <p class="fs-4 fw-bold mb-0" style="color: #27AE60;">
+                                            @room.RoomPrice.ToString("C0", System.Globalization.CultureInfo.GetCultureInfo("vi-VN"))
+                                            <span class="fs-6 fw-normal text-muted">/tháng</span>
+                                        </p>
+                                    </div>
+
+                                    <!-- Stats Row -->
+                                    <div class="row g-2 mb-4 small">
+                                        @if (room.MaxOccupants > 0)
+                                        {
+                                            <div class="col-6">
+                                                <span class="text-muted"><i class="bi bi-door-open" style="color: #27AE60;"></i> @room.MaxOccupants phòng</span>
+                                            </div>
+                                        }
+                                        @if (room.Area > 0)
+                                        {
+                                            <div class="col-6">
+                                                <span class="text-muted"><i class="bi bi-rulers" style="color: #27AE60;"></i> @room.Area m²</span>
+                                            </div>
+                                        }
+                                        @if (room.Floor > 0)
+                                        {
+                                            <div class="col-6">
+                                                <span class="text-muted"><i class="bi bi-building" style="color: #27AE60;"></i> Tầng @room.Floor</span>
+                                            </div>
+                                        }
+                                        <div class="col-6">
+                                            @if (room.ReviewCount > 0)
+                                            {
+                                                <span class="text-muted"><i class="bi bi-star-fill" style="color: #FFD700;"></i> @room.AverageRating.ToString("0.0") (@room.ReviewCount)</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted"><i class="bi bi-star" style="color: #ccc;"></i> Chưa có đánh giá</span>
+                                            }
+                                        </div>
+                                        @if (room.DistanceKm.HasValue)
+                                        {
+                                            <div class="col-6">
+                                                <span class="fw-semibold" style="color: #E74C3C;">
+                                                    <i class="bi bi-geo-alt" style="color: #E74C3C;"></i>
+                                                    Cách bạn @room.DistanceKm.Value.ToString("0.#") km
+                                                </span>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <!-- Description -->
+                                    @if (!string.IsNullOrEmpty(room.Description))
+                                    {
+                                        <p class="text-muted small mb-4" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                            @room.Description
+                                        </p>
+                                    }
+
+                                    <!-- View Details Button -->
+                                    <a href="/Home/Details/@room.RoomId" class="btn btn-sm fw-bold w-100" style="background: #27AE60; color: white; border: none; padding: 0.6rem;">
+                                        <i class="bi bi-arrow-right me-1"></i>Xem Chi Tiết
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                
+                <div class="text-center mt-4">
+                    @{
+                        var allRoomsUrl = $"/Home/AllRooms?area={Model.Area}&roomTypeId={Model.RoomTypeId}&priceRange={Model.PriceRange}&areaRange={Model.AreaRange}&floorRange={Model.FloorRange}";
+                        if (Model.UserLat.HasValue && Model.UserLng.HasValue)
+                        {
+                            allRoomsUrl += $"&userLat={Model.UserLat.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}&userLng={Model.UserLng.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+                        }
+                    }
+                    <a href="@allRoomsUrl" class="btn btn-outline-success fw-bold" style="border-color: #27AE60; color: #27AE60;">
+                        <i class="bi bi-collection me-2"></i>Xem đầy đủ kết quả (Bộ lọc nâng cao)
+                    </a>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5 bg-white" style="border-radius: 12px; border: 1px dashed #ccc;">
+                    <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                    <p class="fs-5 text-muted mt-3 mb-0">Không tìm thấy phòng trọ phù hợp với tiêu chí của bạn.</p>
+                </div>
+            }
+        </div>
+    </section>
+    
+    <script>
+        // Tự động cuộn xuống phần kết quả tìm kiếm nếu có tìm kiếm
+        document.addEventListener("DOMContentLoaded", function() {
+            const results = document.getElementById('searchResults');
+            if(results) {
+                results.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+    </script>
+}
+
 <!-- ════════════════════════════════════════════════════════════════════════════════════
      WHY CHOOSE US SECTION
      ════════════════════════════════════════════════════════════════════════════════════ -->
@@ -190,10 +348,10 @@
         </div>
 
         <!-- Featured Rooms Grid -->
-        @if (Model.AvailableRooms.Any())
+        @if (Model.FeaturedRooms.Any())
         {
             <div class="row g-4 mb-5">
-                @foreach (var room in Model.AvailableRooms.Take(3))
+                @foreach (var room in Model.FeaturedRooms)
                 {
                     <div class="col-lg-4 col-md-6">
                         <div class="featured-room-card h-100" style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.08); transition: all 0.3s ease;">
@@ -259,9 +417,25 @@
                                     }
                                     <div class="col-6">
                                         <span class="text-muted">
-                                            <i class="bi bi-star-fill" style="color: #FFD700;"></i> 4.8 (48)
+                                            @if (room.ReviewCount > 0)
+                                            {
+                                                <i class="bi bi-star-fill" style="color: #FFD700;"></i> @room.AverageRating.ToString("0.0") <text>(@room.ReviewCount)</text>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-star" style="color: #ccc;"></i> <text>Chưa có đánh giá</text>
+                                            }
                                         </span>
                                     </div>
+                                    @if (room.DistanceKm.HasValue)
+                                    {
+                                        <div class="col-6">
+                                            <span class="fw-semibold" style="color: #E74C3C;">
+                                                <i class="bi bi-geo-alt" style="color: #E74C3C;"></i>
+                                                Cách bạn @room.DistanceKm.Value.ToString("0.#") km
+                                            </span>
+                                        </div>
+                                    }
                                 </div>
 
                                 <!-- Description -->
@@ -287,7 +461,7 @@
             <div class="text-center">
                 <a href="/Home/AllRooms" class="btn btn-outline-success btn-lg fw-bold"
                    style="border-color: #27AE60; color: #27AE60; padding: 0.75rem 2rem;">
-                    <i class="bi bi-collection me-2"></i>Xem Tất Cả @Model.AvailableRooms.Count Phòng Trọ
+                    <i class="bi bi-collection me-2"></i>Xem Tất Cả Phòng Trọ
                 </a>
             </div>
         }
@@ -851,12 +1025,25 @@
             const areaInput = document.getElementById('areaInput');
             const useMyLocationBtn = document.getElementById('useMyLocationBtn');
             const ownerLocationBtn = document.getElementById('ownerLocationBtn');
-            const ownerLocationText = 'Vinh, Nghệ An, Việt Nam';
+            const ownerLocationText = 'Vinh, Nghệ An';
 
             if (ownerLocationBtn && areaInput) {
                 ownerLocationBtn.addEventListener('click', function() {
-                    areaInput.value = ownerLocationText;
-                    areaInput.focus();
+                    // Đặt tọa độ cố định của chủ trọ (Vinh, Nghệ An)
+                    document.getElementById('userLat').value = '18.6796';
+                    document.getElementById('userLng').value = '105.6813';
+                    areaInput.value = 'Chủ trọ: ' + ownerLocationText;
+                    
+                    // Tự động submit để hiển thị khoảng cách từ vị trí này
+                    document.getElementById('searchForm').submit();
+                });
+            }
+
+            // Khi người dùng tự nhập khu vực, xóa tọa độ để tìm theo text
+            if (areaInput) {
+                areaInput.addEventListener('input', function() {
+                    document.getElementById('userLat').value = '';
+                    document.getElementById('userLng').value = '';
                 });
             }
 
@@ -875,6 +1062,11 @@
                         try {
                             const lat = position.coords.latitude;
                             const lon = position.coords.longitude;
+
+                            // Điền tọa độ vào hidden fields
+                            document.getElementById('userLat').value = lat;
+                            document.getElementById('userLng').value = lon;
+
                             const response = await fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' + lat + '&lon=' + lon);
 
                             if (!response.ok) {
@@ -889,13 +1081,13 @@
                             const areaText = [district, city, country].filter(Boolean).join(', ');
 
                             areaInput.value = areaText || (lat.toFixed(6) + ', ' + lon.toFixed(6));
-                            areaInput.focus();
                         } catch {
                             areaInput.value = position.coords.latitude.toFixed(6) + ', ' + position.coords.longitude.toFixed(6);
-                            areaInput.focus();
                         } finally {
                             useMyLocationBtn.disabled = false;
                             useMyLocationBtn.innerHTML = originalText;
+                            // Tự động submit form sau khi có tọa độ
+                            document.getElementById('searchForm').submit();
                         }
                     }, function() {
                         useMyLocationBtn.disabled = false;

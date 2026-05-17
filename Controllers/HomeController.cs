@@ -16,7 +16,7 @@ namespace QuanLyPhongTro.Controllers
             _db = db;
         }
 
-        public async Task<IActionResult> Index(string? area, int? roomTypeId, string? priceRange, string? areaRange, string? floorRange)
+        public async Task<IActionResult> Index(string? area, int? roomTypeId, string? priceRange, string? areaRange, string? floorRange, double? userLat, double? userLng)
         {
             // ── Lọc phòng đang trống, đã hiển thị ───────────────────────
             var query = _db.Rooms
@@ -25,7 +25,8 @@ namespace QuanLyPhongTro.Controllers
                 .AsQueryable();
 
             // ── Áp dụng bộ lọc nếu có ────────────────────────────────────
-            if (!string.IsNullOrWhiteSpace(area))
+            // Nếu có tọa độ (tìm theo khoảng cách), bỏ qua lọc text tuyệt đối theo area
+            if (!string.IsNullOrWhiteSpace(area) && (!userLat.HasValue || !userLng.HasValue))
             {
                 area = area.Trim();
                 query = query.Where(r => r.RoomName.Contains(area) || (r.Description != null && r.Description.Contains(area)));
@@ -69,9 +70,38 @@ namespace QuanLyPhongTro.Controllers
                 };
             }
 
+            var rooms = await query.OrderBy(r => r.RoomPrice).ToListAsync();
+
+            // ── Lấy phòng nổi bật (không bị ảnh hưởng bởi tìm kiếm) ──────
+            var featuredRooms = await _db.Rooms
+                .Include(r => r.RoomType)
+                .Where(r => r.Status == RoomStatus.Available && r.IsPublished)
+                .OrderByDescending(r => r.CreatedAt)
+                .Take(3)
+                .ToListAsync();
+
+            // ── Tính khoảng cách nếu có tọa độ người dùng ──────────────
+            if (userLat.HasValue && userLng.HasValue)
+            {
+                foreach (var room in rooms)
+                {
+                    if (room.Latitude.HasValue && room.Longitude.HasValue)
+                        room.DistanceKm = HaversineKm(userLat.Value, userLng.Value, room.Latitude.Value, room.Longitude.Value);
+                }
+                rooms = rooms
+                    .OrderBy(r => r.DistanceKm.HasValue ? 0 : 1)
+                    .ThenBy(r => r.DistanceKm ?? double.MaxValue)
+                    .ToList();
+            }
+
+            // ── Gắn rating thực từ DB cho mỗi phòng ─────────────────
+            await PopulateRoomRatingsAsync(rooms);
+            await PopulateRoomRatingsAsync(featuredRooms);
+
             var vm = new HomeIndexViewModel
             {
-                AvailableRooms = await query.OrderBy(r => r.RoomPrice).ToListAsync(),
+                AvailableRooms = rooms,
+                FeaturedRooms  = featuredRooms,
                 RoomTypes      = await _db.RoomTypes.Where(rt => rt.IsActive).OrderBy(rt => rt.SortOrder).ToListAsync(),
                 RecentPosts    = await _db.Posts
                                      .Where(p => p.IsPublished)
@@ -89,12 +119,14 @@ namespace QuanLyPhongTro.Controllers
                 PriceRange     = priceRange,
                 AreaRange      = areaRange,
                 FloorRange     = floorRange,
+                UserLat        = userLat,
+                UserLng        = userLng,
             };
 
             return View(vm);
         }
 
-        public async Task<IActionResult> AllRooms(string? area, int? roomTypeId, string? priceRange, string? areaRange, string? floorRange, int page = 1)
+        public async Task<IActionResult> AllRooms(string? area, int? roomTypeId, string? priceRange, string? areaRange, string? floorRange, double? userLat, double? userLng, int page = 1)
         {
             const int pageSize = 12;
             var query = _db.Rooms
@@ -102,7 +134,8 @@ namespace QuanLyPhongTro.Controllers
                 .Where(r => r.Status == RoomStatus.Available && r.IsPublished)
                 .AsQueryable();
 
-            if (!string.IsNullOrWhiteSpace(area))
+            // Nếu có tọa độ (tìm theo khoảng cách), bỏ qua lọc text tuyệt đối theo area
+            if (!string.IsNullOrWhiteSpace(area) && (!userLat.HasValue || !userLng.HasValue))
             {
                 area = area.Trim();
                 query = query.Where(r => r.RoomName.Contains(area) || (r.Description != null && r.Description.Contains(area)));
@@ -153,6 +186,23 @@ namespace QuanLyPhongTro.Controllers
                 .Take(pageSize)
                 .ToListAsync();
 
+            // ── Tính khoảng cách nếu có tọa độ người dùng ──────────────
+            if (userLat.HasValue && userLng.HasValue)
+            {
+                foreach (var room in rooms)
+                {
+                    if (room.Latitude.HasValue && room.Longitude.HasValue)
+                        room.DistanceKm = HaversineKm(userLat.Value, userLng.Value, room.Latitude.Value, room.Longitude.Value);
+                }
+                rooms = rooms
+                    .OrderBy(r => r.DistanceKm.HasValue ? 0 : 1)
+                    .ThenBy(r => r.DistanceKm ?? double.MaxValue)
+                    .ToList();
+            }
+
+            // ── Gắn rating thực từ DB cho mỗi phòng ─────────────────
+            await PopulateRoomRatingsAsync(rooms);
+
             var vm = new HomeIndexViewModel
             {
                 AvailableRooms = rooms,
@@ -162,6 +212,8 @@ namespace QuanLyPhongTro.Controllers
                 PriceRange     = priceRange,
                 AreaRange      = areaRange,
                 FloorRange     = floorRange,
+                UserLat        = userLat,
+                UserLng        = userLng,
             };
 
             ViewBag.Page = page;
@@ -214,9 +266,20 @@ namespace QuanLyPhongTro.Controllers
                 .OrderBy(s => s.ServiceType)
                 .ToListAsync();
 
+            // ── Tải đánh giá phòng ─────────────────────────────────────
+            var roomReviews = await _db.RoomReviews
+                .Where(rv => rv.RoomId == id && rv.IsApproved)
+                .OrderByDescending(rv => rv.CreatedAt)
+                .ToListAsync();
+
+            double avgRating  = roomReviews.Count > 0 ? roomReviews.Average(rv => rv.Rating) : 0;
+            int    reviewCount = roomReviews.Count;
+
             // ── Kiểm tra đăng nhập để điền sẵn thông tin đặt lịch ──
             int? tenantId = int.TryParse(HttpContext.Session.GetString("TenantUser"), out var tid) ? tid : null;
             int? userId   = int.TryParse(HttpContext.Session.GetString("NormalUser"),  out var uid) ? uid : null;
+
+            string prefillName = "";
 
             if (tenantId.HasValue)
             {
@@ -226,6 +289,7 @@ namespace QuanLyPhongTro.Controllers
                     ViewBag.IsLoggedIn    = true;
                     ViewBag.BookingName   = tenant.FullName;
                     ViewBag.BookingPhone  = tenant.Phone ?? "";
+                    prefillName           = tenant.FullName;
                 }
             }
             else if (userId.HasValue)
@@ -236,6 +300,7 @@ namespace QuanLyPhongTro.Controllers
                     ViewBag.IsLoggedIn    = true;
                     ViewBag.BookingName   = string.IsNullOrEmpty(user.FullName) ? user.Username : user.FullName;
                     ViewBag.BookingPhone  = user.Phone ?? "";
+                    prefillName           = ViewBag.BookingName;
                 }
             }
             else
@@ -243,7 +308,113 @@ namespace QuanLyPhongTro.Controllers
                 ViewBag.IsLoggedIn = false;
             }
 
-            return View(new RoomDetailViewModel { Room = room, Services = services });
+            // ── Tìm đánh giá hiện tại của user (nếu đã đánh giá) ──
+            tblRoomReview? myReview = null;
+            if (tenantId.HasValue)
+                myReview = roomReviews.FirstOrDefault(rv => rv.TenantId == tenantId.Value);
+            else if (userId.HasValue)
+                myReview = roomReviews.FirstOrDefault(rv => rv.UserId == userId.Value);
+
+            return View(new RoomDetailViewModel
+            {
+                Room          = room,
+                Services      = services,
+                RoomReviews   = roomReviews,
+                AverageRating = avgRating,
+                ReviewCount   = reviewCount,
+                ReviewName    = prefillName,
+                MyReview      = myReview,
+                ReviewRating  = myReview?.Rating ?? 5,
+                ReviewComment = myReview?.Comment
+            });
+        }
+
+        // POST: /Home/SubmitRoomReview
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SubmitRoomReview(int roomId, string reviewName, int reviewRating, string? reviewComment)
+        {
+            int? tenantId = int.TryParse(HttpContext.Session.GetString("TenantUser"), out var tid) ? tid : (int?)null;
+            int? userId   = int.TryParse(HttpContext.Session.GetString("NormalUser"),  out var uid) ? uid : (int?)null;
+            if (!tenantId.HasValue && !userId.HasValue)
+            {
+                TempData["ReviewError"] = "Vui lòng đăng nhập để gửi đánh giá.";
+                return RedirectToAction("Details", new { id = roomId });
+            }
+
+            reviewName = (reviewName ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(reviewName))
+            {
+                TempData["ReviewError"] = "Vui lòng nhập tên của bạn.";
+                return RedirectToAction("Details", new { id = roomId });
+            }
+
+            // Kiểm tra đã đánh giá chưa
+            var existing = await _db.RoomReviews.FirstOrDefaultAsync(rv =>
+                rv.RoomId == roomId &&
+                ((tenantId.HasValue && rv.TenantId == tenantId) || (userId.HasValue && rv.UserId == userId)));
+            if (existing != null)
+            {
+                TempData["ReviewError"] = "Bạn đã đánh giá phòng này rồi. Hãy dùng chức năng sửa đánh giá.";
+                return RedirectToAction("Details", new { id = roomId });
+            }
+
+            reviewRating = Math.Clamp(reviewRating, 1, 5);
+
+            _db.RoomReviews.Add(new tblRoomReview
+            {
+                RoomId     = roomId,
+                TenantId   = tenantId,
+                UserId     = userId,
+                FullName   = reviewName,
+                Rating     = reviewRating,
+                Comment    = reviewComment?.Trim(),
+                IsApproved = true,
+                CreatedAt  = DateTime.Now
+            });
+            await _db.SaveChangesAsync();
+
+            TempData["ReviewSuccess"] = "Cảm ơn bạn đã đánh giá phòng!";
+            return RedirectToAction("Details", new { id = roomId });
+        }
+
+        // POST: /Home/UpdateRoomReview — Sửa đánh giá phòng
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateRoomReview(int roomId, int reviewId, string reviewName, int reviewRating, string? reviewComment)
+        {
+            int? tenantId = int.TryParse(HttpContext.Session.GetString("TenantUser"), out var tid) ? tid : (int?)null;
+            int? userId   = int.TryParse(HttpContext.Session.GetString("NormalUser"),  out var uid) ? uid : (int?)null;
+            if (!tenantId.HasValue && !userId.HasValue)
+            {
+                TempData["ReviewError"] = "Vui lòng đăng nhập để sửa đánh giá.";
+                return RedirectToAction("Details", new { id = roomId });
+            }
+
+            var review = await _db.RoomReviews.FindAsync(reviewId);
+            if (review == null || review.RoomId != roomId)
+            {
+                TempData["ReviewError"] = "Không tìm thấy đánh giá.";
+                return RedirectToAction("Details", new { id = roomId });
+            }
+
+            // Chỉ cho phép sửa đánh giá của chính mình
+            bool isOwner = (tenantId.HasValue && review.TenantId == tenantId) ||
+                           (userId.HasValue && review.UserId == userId);
+            if (!isOwner)
+            {
+                TempData["ReviewError"] = "Bạn không có quyền sửa đánh giá này.";
+                return RedirectToAction("Details", new { id = roomId });
+            }
+
+            review.FullName = (reviewName ?? string.Empty).Trim();
+            review.Rating   = Math.Clamp(reviewRating, 1, 5);
+            review.Comment  = reviewComment?.Trim();
+
+            await _db.SaveChangesAsync();
+
+            TempData["ReviewSuccess"] = "Đánh giá đã được cập nhật!";
+            return RedirectToAction("Details", new { id = roomId });
         }
 
         // POST: /Home/BookViewing  — Đặt lịch xem phòng → lưu DB
@@ -335,6 +506,34 @@ namespace QuanLyPhongTro.Controllers
             {
                 RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
             });
+        }
+        // ── Haversine: tính khoảng cách (km) giữa hai tọa độ ───────────
+        private static double HaversineKm(double lat1, double lon1, double lat2, double lon2)
+        {
+            const double R = 6371;
+            double dLat = (lat2 - lat1) * Math.PI / 180;
+            double dLon = (lon2 - lon1) * Math.PI / 180;
+            double a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2)
+                     + Math.Cos(lat1 * Math.PI / 180) * Math.Cos(lat2 * Math.PI / 180)
+                     * Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+            return R * 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+        }
+
+        // ── Gắn AverageRating + ReviewCount vào danh sách phòng ─────
+        private async Task PopulateRoomRatingsAsync(List<tblRoom> rooms)
+        {
+            if (!rooms.Any()) return;
+            var roomIds = rooms.Select(r => r.RoomId).ToList();
+            var stats = await _db.RoomReviews
+                .Where(rv => roomIds.Contains(rv.RoomId) && rv.IsApproved)
+                .GroupBy(rv => rv.RoomId)
+                .Select(g => new { RoomId = g.Key, Avg = g.Average(rv => rv.Rating), Count = g.Count() })
+                .ToListAsync();
+            foreach (var room in rooms)
+            {
+                var s = stats.FirstOrDefault(x => x.RoomId == room.RoomId);
+                if (s != null) { room.AverageRating = s.Avg; room.ReviewCount = s.Count; }
+            }
         }
     }
 }

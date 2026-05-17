@@ -360,6 +360,36 @@ namespace QuanLyPhongTro.Controllers
             return $"/images/avatars/{fileName}";
         }
 
+        // ── API: Hóa đơn chưa thanh toán / trễ hạn ──────────────────────
+        [HttpGet]
+        public async Task<IActionResult> GetOverdueInvoices()
+        {
+            var tenantIdStr = HttpContext.Session.GetString(SESSION_TENANT);
+            if (string.IsNullOrEmpty(tenantIdStr) || !int.TryParse(tenantIdStr, out int tenantId))
+                return Json(new { invoices = Array.Empty<object>() });
+
+            var now = DateTime.Now;
+            var unpaid = await _context.Invoices
+                .Include(i => i.Room)
+                .Where(i => i.Contract != null && i.Contract.TenantId == tenantId
+                         && (i.Status == InvoiceStatus.Unpaid || i.Status == InvoiceStatus.Overdue))
+                .OrderBy(i => i.DueDate)
+                .Select(i => new
+                {
+                    i.InvoiceCode,
+                    RoomName    = i.Room != null ? i.Room.RoomName : "N/A",
+                    i.BillingMonth,
+                    i.BillingYear,
+                    DueDate     = i.DueDate.ToString("dd/MM/yyyy"),
+                    IsOverdue   = i.DueDate < now,
+                    TotalAmount = i.TotalAmount.ToString("N0"),
+                    Status      = i.Status == InvoiceStatus.Overdue ? "Quá hạn" : "Chưa thanh toán"
+                })
+                .ToListAsync();
+
+            return Json(new { invoices = unpaid });
+        }
+
         // ── Logout ───────────────────────────────────────────────────────
 
         // GET: /Account/Logout

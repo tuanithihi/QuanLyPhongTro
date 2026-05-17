@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using QuanLyPhongTro.Areas.Admin.Attributes;
 using QuanLyPhongTro.Areas.Admin.Data;
 using QuanLyPhongTro.Models;
+using MiniSoftware;
 
 namespace QuanLyPhongTro.Areas.Admin.Controllers
 {
@@ -12,10 +13,12 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
     public class InvoiceController : Controller
     {
         private readonly DataContext _context;
+        private readonly IWebHostEnvironment _env;
 
-        public InvoiceController(DataContext context)
+        public InvoiceController(DataContext context, IWebHostEnvironment env)
         {
             _context = context;
+            _env = env;
         }
 
         // ── INDEX ────────────────────────────────────────────────────────
@@ -441,6 +444,67 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
 
             var contract = await _context.Contracts.FindAsync(contractId);
             return Json(new { ok = true, electricStart = contract?.InitialElectricIndex ?? 0, waterStart = contract?.InitialWaterIndex ?? 0 });
+        }
+
+        // ── EXPORT WORD ──────────────────────────────────────────────────
+        [HttpGet]
+        public async Task<IActionResult> ExportWord(int id)
+        {
+            var invoice = await _context.Invoices
+                .Include(i => i.Room)
+                .Include(i => i.Contract).ThenInclude(c => c!.Tenant)
+                .Include(i => i.InvoiceDetails).ThenInclude(d => d.Service)
+                .FirstOrDefaultAsync(i => i.InvoiceId == id);
+
+            if (invoice == null) return NotFound();
+
+            string templatePath = Path.Combine(_env.WebRootPath, "templates", "HoaDon_Template.docx");
+            if (!System.IO.File.Exists(templatePath))
+            {
+                TempData["Error"] = "Không tìm thấy file template hóa đơn (HoaDon_Template.docx) trong thư mục wwwroot/templates.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            var rows = invoice.InvoiceDetails.Select(d => new Dictionary<string, object>
+            {
+                ["ServiceName"] = d.Service?.ServiceName ?? d.Description ?? "Dịch vụ khác",
+                ["Qty"] = d.Quantity.ToString("N2"),
+                ["Price"] = d.UnitPrice.ToString("N0"),
+                ["Amount"] = d.Amount.ToString("N0")
+            }).ToList();
+
+            var value = new Dictionary<string, object>
+            {
+                ["InvoiceCode"] = invoice.InvoiceCode,
+                ["BillingPeriod"] = $"{invoice.BillingMonth}/{invoice.BillingYear}",
+                ["DueDate"] = invoice.DueDate.ToString("dd/MM/yyyy"),
+                
+                ["RoomCode"] = invoice.Room?.RoomCode ?? "",
+                ["RoomName"] = invoice.Room?.RoomName ?? "",
+                ["TenantName"] = invoice.Contract?.Tenant?.FullName ?? "",
+                
+                ["ElectricStart"] = invoice.ElectricIndexStart.ToString("N1"),
+                ["ElectricEnd"] = invoice.ElectricIndexEnd.ToString("N1"),
+                ["ElectricQty"] = (invoice.ElectricIndexEnd - invoice.ElectricIndexStart).ToString("N1"),
+                
+                ["WaterStart"] = invoice.WaterIndexStart.ToString("N1"),
+                ["WaterEnd"] = invoice.WaterIndexEnd.ToString("N1"),
+                ["WaterQty"] = (invoice.WaterIndexEnd - invoice.WaterIndexStart).ToString("N1"),
+                
+                ["RoomRent"] = invoice.RoomRentAmount.ToString("N0"),
+                ["TotalService"] = invoice.TotalServiceAmount.ToString("N0"),
+                ["Discount"] = invoice.Discount.ToString("N0"),
+                ["TotalAmount"] = invoice.TotalAmount.ToString("N0"),
+                
+                ["rows"] = rows
+            };
+
+            var memoryStream = new MemoryStream();
+            MiniWord.SaveAsByTemplate(memoryStream, templatePath, value);
+            memoryStream.Position = 0;
+
+            string fileName = $"HoaDon_{invoice.InvoiceCode}.docx";
+            return File(memoryStream, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", fileName);
         }
 
         // ── HELPERS ──────────────────────────────────────────────────────

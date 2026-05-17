@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using QuanLyPhongTro.Areas.Admin.Attributes;
 using QuanLyPhongTro.Areas.Admin.Data;
 using QuanLyPhongTro.Models;
+using MiniSoftware;
 
 namespace QuanLyPhongTro.Areas.Admin.Controllers
 {
@@ -12,10 +13,14 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
     public class ContractController : Controller
     {
         private readonly DataContext _context;
+        private readonly IWebHostEnvironment _env;
+        private readonly IConfiguration _config;
 
-        public ContractController(DataContext context)
+        public ContractController(DataContext context, IWebHostEnvironment env, IConfiguration config)
         {
             _context = context;
+            _env = env;
+            _config = config;
         }
 
         // ── INDEX ────────────────────────────────────────────────────────
@@ -259,6 +264,63 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
 
             TempData["Success"] = $"Đã xóa hợp đồng {contract.ContractCode}.";
             return RedirectToAction(nameof(Index));
+        }
+
+        // ── EXPORT WORD ──────────────────────────────────────────────────
+        [HttpGet]
+        public async Task<IActionResult> ExportWord(int id)
+        {
+            var contract = await _context.Contracts
+                .Include(c => c.Room).ThenInclude(r => r!.RoomType)
+                .Include(c => c.Tenant)
+                .FirstOrDefaultAsync(c => c.ContractId == id);
+
+            if (contract == null) return NotFound();
+
+            string templatePath = Path.Combine(_env.WebRootPath, "templates", "HopDong_Template.docx");
+            if (!System.IO.File.Exists(templatePath))
+            {
+                TempData["Error"] = "Không tìm thấy file template hợp đồng (HopDong_Template.docx) trong thư mục wwwroot/templates.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            var value = new Dictionary<string, object>
+            {
+                ["ContractCode"] = contract.ContractCode,
+                ["LandlordName"] = _config["Landlord:Name"] ?? "",
+                ["LandlordIdentity"] = _config["Landlord:IdentityNumber"] ?? "",
+                ["LandlordPhone"] = _config["Landlord:Phone"] ?? "",
+                ["LandlordAddress"] = _config["Landlord:Address"] ?? "",
+                
+                ["TenantName"] = contract.Tenant?.FullName ?? "",
+                ["TenantIdentity"] = contract.Tenant?.IdentityNumber ?? "",
+                ["TenantPhone"] = contract.Tenant?.Phone ?? "",
+                ["TenantAddress"] = contract.Tenant?.PermanentAddress ?? "",
+                
+                ["RoomCode"] = contract.Room?.RoomCode ?? "",
+                ["RoomName"] = contract.Room?.RoomName ?? "",
+                ["RoomType"] = contract.Room?.RoomType?.RoomTypeName ?? "",
+                
+                ["StartDate"] = contract.StartDate.ToString("dd/MM/yyyy"),
+                ["EndDate"] = contract.EndDate?.ToString("dd/MM/yyyy") ?? "...",
+                
+                ["MonthlyRent"] = contract.MonthlyRent.ToString("N0"),
+                ["Deposit"] = contract.Deposit.ToString("N0"),
+                ["PaymentDay"] = contract.PaymentDayOfMonth.ToString(),
+                
+                ["ElectricIndex"] = contract.InitialElectricIndex.ToString("N1"),
+                ["WaterIndex"] = contract.InitialWaterIndex.ToString("N1"),
+                
+                ["Terms"] = contract.Terms ?? "",
+                ["SignDate"] = contract.CreatedAt.ToString("dd/MM/yyyy")
+            };
+
+            var memoryStream = new MemoryStream();
+            MiniWord.SaveAsByTemplate(memoryStream, templatePath, value);
+            memoryStream.Position = 0;
+
+            string fileName = $"HopDong_{contract.ContractCode}.docx";
+            return File(memoryStream, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", fileName);
         }
 
         // ── AJAX: lấy giá phòng khi chọn phòng ──────────────────────────

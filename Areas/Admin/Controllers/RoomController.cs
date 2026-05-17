@@ -133,6 +133,9 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 MaxOccupants   = vm.MaxOccupants,
                 Description    = vm.Description,
                 ThumbnailImage = thumbnail,
+                Address        = vm.Address?.Trim(),
+                Latitude       = vm.Latitude,
+                Longitude      = vm.Longitude,
                 Status         = vm.Status,
                 IsPublished    = vm.IsPublished,
                 CreatedAt      = DateTime.Now
@@ -168,6 +171,9 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 Floor            = room.Floor,
                 MaxOccupants     = room.MaxOccupants,
                 Description      = room.Description,
+                Address          = room.Address,
+                Latitude         = room.Latitude,
+                Longitude        = room.Longitude,
                 Status           = room.Status,
                 IsPublished      = room.IsPublished,
                 CurrentThumbnail = room.ThumbnailImage
@@ -214,6 +220,9 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             room.Floor          = vm.Floor;
             room.MaxOccupants   = vm.MaxOccupants;
             room.Description    = vm.Description;
+            room.Address        = vm.Address?.Trim();
+            room.Latitude       = vm.Latitude;
+            room.Longitude      = vm.Longitude;
             room.Status         = vm.Status;
             room.IsPublished    = vm.IsPublished;
             room.UpdatedAt      = DateTime.Now;

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using QuanLyPhongTro.Areas.Admin.Data;
+using QuanLyPhongTro.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 var connection = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -10,6 +11,10 @@ builder.Services.AddDbContext<DataContext>(options =>
 
 // ── MVC ──────────────────────────────────────────────────────────────
 builder.Services.AddControllersWithViews();
+
+// ── Groq AI Chatbot ─────────────────────────────────────────────────
+builder.Services.AddMemoryCache(); // Cache response AI
+builder.Services.AddHttpClient<GroqService>();
 
 // ── Session ───────────────────────────────────────────────────────────
 builder.Services.AddDistributedMemoryCache();

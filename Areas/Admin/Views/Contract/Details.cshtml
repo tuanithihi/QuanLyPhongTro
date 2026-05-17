@@ -198,6 +198,10 @@
                             <i class="bi bi-receipt me-1"></i>Lập hóa đơn tháng này
                         </a>
                     }
+                    <a asp-area="Admin" asp-controller="Contract" asp-action="ExportWord"
+                       asp-route-id="@Model.ContractId" class="btn btn-outline-info">
+                        <i class="bi bi-file-word me-1"></i>Xuất file Word
+                    </a>
                     <a asp-area="Admin" asp-controller="Invoice" asp-action="Index"
                        asp-route-contractId="@Model.ContractId"
                        class="btn btn-outline-secondary">

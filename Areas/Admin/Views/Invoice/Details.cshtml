@@ -46,6 +46,10 @@
                asp-route-id="@Model.InvoiceId" class="btn btn-sm btn-outline-primary">
                 <i class="bi bi-pencil me-1"></i>Sửa
             </a>
+            <a asp-area="Admin" asp-controller="Invoice" asp-action="ExportWord"
+               asp-route-id="@Model.InvoiceId" class="btn btn-sm btn-outline-info">
+                <i class="bi bi-file-word me-1"></i>Xuất Word
+            </a>
             <button type="button" class="btn btn-sm btn-outline-danger"
                     onclick="confirmDelete(@Model.InvoiceId, '@Model.InvoiceCode')">
                 <i class="bi bi-trash me-1"></i>Xóa

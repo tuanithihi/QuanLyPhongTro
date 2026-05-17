@@ -67,6 +67,29 @@ namespace QuanLyPhongTro.Models
         [Display(Name = "Ảnh đại diện phòng")]
         public string? ThumbnailImage { get; set; }
 
+        // ── VỊ TRÍ ────────────────────────────────────────────────────────
+        [StringLength(255)]
+        [Display(Name = "Địa chỉ")]
+        public string? Address { get; set; }
+
+        [Display(Name = "Vĩ độ")]
+        public double? Latitude { get; set; }
+
+        [Display(Name = "Kinh độ")]
+        public double? Longitude { get; set; }
+
+        /// <summary>Khoảng cách (km) tính từ vị trí người dùng — chỉ dùng hiển thị, không lưu DB.</summary>
+        [NotMapped]
+        public double? DistanceKm { get; set; }
+
+        /// <summary>Điểm đánh giá trung bình — chỉ dùng hiển thị, không lưu DB.</summary>
+        [NotMapped]
+        public double AverageRating { get; set; }
+
+        /// <summary>Số lượng đánh giá — chỉ dùng hiển thị, không lưu DB.</summary>
+        [NotMapped]
+        public int ReviewCount { get; set; }
+
         // ── TRẠNG THÁI ────────────────────────────────────────────────
         [Display(Name = "Trạng thái")]
         public RoomStatus Status { get; set; } = RoomStatus.Available;
@@ -84,5 +107,6 @@ namespace QuanLyPhongTro.Models
 
         public virtual ICollection<tblContract> Contracts { get; set; } = new List<tblContract>();
         public virtual ICollection<tblInvoice> Invoices { get; set; } = new List<tblInvoice>();
+        public virtual ICollection<tblRoomReview> RoomReviews { get; set; } = new List<tblRoomReview>();
     }
 }

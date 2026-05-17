@@ -6,7 +6,8 @@ namespace QuanLyPhongTro.Models
     public class HomeIndexViewModel
     {
         // ── Dữ liệu hiển thị ─────────────────────────────────────────────
-        public List<tblRoom>     AvailableRooms { get; set; } = new();
+        public List<tblRoom>     AvailableRooms { get; set; } = new(); // Search results
+        public List<tblRoom>     FeaturedRooms  { get; set; } = new(); // Featured/Top rooms
         public List<tblRoomType> RoomTypes      { get; set; } = new();
         public List<tblPost>     RecentPosts    { get; set; } = new();
         public List<tblReview>   RecentReviews  { get; set; } = new();
@@ -17,5 +18,9 @@ namespace QuanLyPhongTro.Models
         public string? PriceRange { get; set; }
         public string? AreaRange  { get; set; }
         public string? FloorRange { get; set; }
+
+        // ── Vị trí người dùng (để tính khoảng cách) ─────────────────────
+        public double? UserLat { get; set; }
+        public double? UserLng { get; set; }
     }
 }

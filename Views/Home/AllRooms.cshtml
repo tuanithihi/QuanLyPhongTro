@@ -30,10 +30,12 @@
                     </div>
                     <div class="card-body p-0">
                         <form method="get" action="/Home/AllRooms">
+                            <input type="hidden" name="userLat" id="allRoomsLat" value="@(Model.UserLat?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")" />
+                            <input type="hidden" name="userLng" id="allRoomsLng" value="@(Model.UserLng?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "")" />
                             <!-- Area Filter -->
                             <div class="p-3 border-bottom">
                                 <label class="form-label fw-bold small" style="color: #1E8449;">Khu Vực</label>
-                                <input type="text" name="area" class="form-control form-control-sm"
+                                <input type="text" name="area" id="allRoomsArea" class="form-control form-control-sm"
                                        placeholder="Nhập khu vực..."
                                        value="@(string.IsNullOrEmpty(Model.Area) ? "" : Model.Area)"
                                        style="border-color: #D5F4E6;" />
@@ -179,9 +181,25 @@
                                             }
                                             <div class="col-6">
                                                 <span class="text-muted">
-                                                    <i class="bi bi-star-fill" style="color: #FFD700;"></i> 4.8 (48)
+                                                    @if (room.ReviewCount > 0)
+                                                    {
+                                                        <i class="bi bi-star-fill" style="color: #FFD700;"></i> @room.AverageRating.ToString("0.0") <text>(@room.ReviewCount)</text>
+                                                    }
+                                                    else
+                                                    {
+                                                        <i class="bi bi-star" style="color: #ccc;"></i> <text>Chưa có đánh giá</text>
+                                                    }
                                                 </span>
                                             </div>
+                                            @if (room.DistanceKm.HasValue)
+                                            {
+                                                <div class="col-6">
+                                                    <span class="fw-semibold" style="color: #E74C3C;">
+                                                        <i class="bi bi-geo-alt" style="color: #E74C3C;"></i>
+                                                        Cách bạn @room.DistanceKm.Value.ToString("0.#") km
+                                                    </span>
+                                                </div>
+                                            }
                                         </div>
 
                                         <!-- Description -->
@@ -288,4 +306,15 @@
             }
         }
     </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const areaInput = document.getElementById('allRoomsArea');
+            if (areaInput) {
+                areaInput.addEventListener('input', function () {
+                    document.getElementById('allRoomsLat').value = '';
+                    document.getElementById('allRoomsLng').value = '';
+                });
+            }
+        });
+    </script>
 }

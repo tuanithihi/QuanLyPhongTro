@@ -56,6 +56,17 @@ namespace QuanLyPhongTro.Areas.Admin.Models
         [Display(Name = "Hiển thị trên website")]
         public bool IsPublished { get; set; } = true;
 
+        // ── VỊ TRÍ ──────────────────────────────────────────────────────
+        [StringLength(255)]
+        [Display(Name = "Địa chỉ")]
+        public string? Address { get; set; }
+
+        [Display(Name = "Vĩ độ (Latitude)")]
+        public double? Latitude { get; set; }
+
+        [Display(Name = "Kinh độ (Longitude)")]
+        public double? Longitude { get; set; }
+
         // ── Upload ảnh mới (không bắt buộc khi Edit) ───────────────────
         [Display(Name = "Ảnh đại diện phòng")]
         public IFormFile? ThumbnailFile { get; set; }

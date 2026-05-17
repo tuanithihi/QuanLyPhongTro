@@ -1,4 +1,4 @@
-﻿  <!DOCTYPE html>
+  <!DOCTYPE html>
   <html lang="vi">
 
   <head>
@@ -175,17 +175,9 @@
 
       <div class="copyright text-center mt-4">
         <div class="container">
-          <p class="mb-2">
-            &copy; @DateTime.Now.Year Copyright by <strong><span>Group 12</span></strong>. All Rights Reserved
+          <p class="mb-0">
+            &copy; @DateTime.Now.Year Copyright by <strong>Group 12</strong>. All Rights Reserved | Designed by <a href="#" target="_blank" rel="noopener noreferrer">Hồ Đức Tuấn</a>
           </p>
-          <div class="credits">
-            <p class="mb-1">Designed by:</p>
-            <div class="d-flex justify-content-center gap-3 flex-wrap">
-              <a href="#" target="_blank" rel="noopener noreferrer">
-                Hồ Đức Tuấn
-              </a>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -444,6 +436,92 @@
         });
     </script>
 
+    @* ── Modal thông báo hóa đơn trễ hạn ── *@
+    @{
+        bool _isTenantLoggedIn = !string.IsNullOrEmpty(Context.Session.GetString("TenantUser"));
+    }
+    @if (_isTenantLoggedIn)
+    {
+        <div class="modal fade" id="overdueModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content" style="border:none;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden;">
+                    <div class="modal-header border-0" style="background:linear-gradient(135deg,#E74C3C,#C0392B);color:#fff;padding:1.25rem 1.5rem;">
+                        <h5 class="modal-title fw-bold">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>Thông báo hóa đơn chưa thanh toán
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <div class="alert alert-warning d-flex align-items-start gap-2 mb-3" style="border-radius:10px;">
+                            <i class="bi bi-info-circle-fill fs-5 mt-1" style="color:#E67E22;"></i>
+                            <div class="small">
+                                Bạn có <strong id="overdueCount">0</strong> hóa đơn chưa thanh toán.
+                                Vui lòng thanh toán trước hạn để tránh phí phạt trễ hạn.
+                            </div>
+                        </div>
+                        <div class="table-responsive" style="max-height:320px;overflow-y:auto;">
+                            <table class="table table-hover table-sm align-middle mb-0" style="font-size:.88rem;">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Mã HĐ</th>
+                                        <th>Phòng</th>
+                                        <th>Kỳ</th>
+                                        <th>Hạn thanh toán</th>
+                                        <th class="text-end">Số tiền</th>
+                                        <th class="text-center">Trạng thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="overdueTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 bg-light" style="border-radius:0 0 16px 16px;">
+                        <a href="/Account/Invoices" class="btn fw-semibold" style="background:#27AE60;color:#fff;border:none;">
+                            <i class="bi bi-receipt me-1"></i>Xem hóa đơn & Thanh toán
+                        </a>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Để sau</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', async function () {
+                // Chỉ hiện 1 lần mỗi phiên đăng nhập
+                if (sessionStorage.getItem('overdueShown')) return;
+
+                try {
+                    const res = await fetch('/Account/GetOverdueInvoices');
+                    const data = await res.json();
+                    if (!data.invoices || data.invoices.length === 0) return;
+
+                    // Đánh dấu đã hiện
+                    sessionStorage.setItem('overdueShown', '1');
+
+                    // Điền dữ liệu
+                    document.getElementById('overdueCount').textContent = data.invoices.length;
+                    const tbody = document.getElementById('overdueTableBody');
+                    data.invoices.forEach(function (inv) {
+                        const statusClass = inv.isOverdue ? 'bg-danger' : 'bg-warning text-dark';
+                        const row = document.createElement('tr');
+                        row.innerHTML =
+                            '<td class="fw-semibold">' + inv.invoiceCode + '</td>' +
+                            '<td>' + inv.roomName + '</td>' +
+                            '<td>' + ('0' + inv.billingMonth).slice(-2) + '/' + inv.billingYear + '</td>' +
+                            '<td>' + (inv.isOverdue ? '<span class="text-danger fw-bold">' + inv.dueDate + '</span>' : inv.dueDate) + '</td>' +
+                            '<td class="text-end fw-bold" style="color:#E74C3C;">' + inv.totalAmount + ' ₫</td>' +
+                            '<td class="text-center"><span class="badge ' + statusClass + ' rounded-pill">' + inv.status + '</span></td>';
+                        tbody.appendChild(row);
+                    });
+
+                    // Hiện modal
+                    var modal = new bootstrap.Modal(document.getElementById('overdueModal'));
+                    modal.show();
+                } catch (e) { /* im lặng nếu lỗi */ }
+            });
+        </script>
+    }
+
   <!-- ══════════════ FLOATING CHAT WIDGET ══════════════ -->
   <div id="chatWidget">
     <button id="chatToggleBtn" onclick="chatToggle()" title="Nhắn tin với chúng tôi">
@@ -494,7 +572,7 @@
   </div>
 
   <style>
-    #chatWidget { position:fixed; bottom:90px; right:24px; z-index:9999; font-family:inherit; }
+    #chatWidget { position:fixed; bottom:80px; right:24px; z-index:9999; font-family:inherit; }
     #chatToggleBtn {
       width:56px;height:56px;border-radius:50%;border:none;
       background:linear-gradient(135deg,#27AE60,#2ECC71);
@@ -525,6 +603,13 @@
     .chat-admin  { background:#27AE60;color:#fff;border-bottom-right-radius:.2rem; }
     .chat-system { background:#fff3cd;color:#856404;font-size:.78rem;border-radius:.5rem;padding:.3rem .65rem;text-align:center; }
     .chat-time   { font-size:.68rem;opacity:.6;margin-top:.15rem; }
+
+    /* ── Mobile responsive for contact chat ── */
+    @@media (max-width: 576px) {
+      #chatWidget { bottom:70px; right:16px; }
+      #chatToggleBtn { width:48px; height:48px; font-size:1.3rem; }
+      #chatPanel { width: calc(100vw - 32px); right: -16px; bottom: 60px; }
+    }
   </style>
 
   @{
@@ -640,6 +725,360 @@
       function startPoll(){ stopPoll(); _timer=setInterval(fetchMsgs,4000); }
       function stopPoll(){ if(_timer){clearInterval(_timer);_timer=null;} }
       function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    })();
+  </script>
+
+  <!-- ══════════════ AI CHATBOT WIDGET (BOTTOM-LEFT) ══════════════ -->
+  <div id="aiChatWidget">
+    <!-- Tooltip bubble -->
+    <div id="aiTooltip">
+      <span>Bạn cần giúp gì? 🏠</span>
+      <button onclick="document.getElementById('aiTooltip').style.display='none'" style="background:none;border:none;color:#999;font-size:.8rem;cursor:pointer;padding:0 0 0 6px;">&times;</button>
+    </div>
+    <!-- Toggle button -->
+    <button id="aiToggleBtn" onclick="aiChatToggle()" title="AI Tư vấn phòng trọ">
+      <i class="bi bi-robot" id="aiToggleIcon"></i>
+    </button>
+    <!-- Chat panel -->
+    <div id="aiPanel" class="d-none">
+      <div id="aiHeader">
+        <div class="d-flex align-items-center gap-2">
+          <div class="ai-avatar"><i class="bi bi-robot"></i></div>
+          <div>
+            <div class="fw-semibold" style="font-size:.95rem;">AI Tư Vấn Phòng Trọ</div>
+            <div style="font-size:.72rem;opacity:.85;"><i class="bi bi-circle-fill text-white" style="font-size:.4rem;"></i> Trực tuyến — Phản hồi tức thì</div>
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-1">
+          <button onclick="aiNewChat()" title="Đoạn chat mới" style="background:rgba(255,255,255,.15);border:none;color:#fff;font-size:.85rem;cursor:pointer;border-radius:8px;padding:4px 10px;transition:background .2s;">
+            <i class="bi bi-plus-lg me-1"></i>Mới
+          </button>
+          <button onclick="aiChatToggle()" style="background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;padding:4px 6px;">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+      </div>
+      <!-- Welcome + messages -->
+      <div id="aiMsgArea">
+        <div id="aiWelcome" class="ai-welcome">
+          <div style="font-size:2.5rem;">🏠</div>
+          <div class="fw-bold" style="color:#1E8449;font-size:1.05rem;">Xin chào! Tôi là trợ lý AI</div>
+          <p class="text-muted small mb-3" style="line-height:1.6;">
+            Tôi giúp bạn tìm phòng trọ phù hợp, tư vấn giá cả, diện tích và tiện ích. Hãy hỏi bất cứ điều gì!
+          </p>
+          <div class="ai-quick-actions">
+            <button onclick="aiSendQuick('Có phòng trống nào không?')">🔍 Phòng trống</button>
+            <button onclick="aiSendQuick('Phòng giá rẻ nhất?')">💰 Giá rẻ nhất</button>
+            <button onclick="aiSendQuick('Phòng cho 2 người')">👥 Phòng 2 người</button>
+            <button onclick="aiSendQuick('Phòng diện tích lớn nhất')">📐 Phòng rộng</button>
+          </div>
+        </div>
+      </div>
+      <!-- Input -->
+      <div id="aiInputArea">
+        <div class="ai-input-wrap">
+          <input type="text" id="aiInput" placeholder="Hỏi về phòng trọ..." autocomplete="off"
+                 onkeydown="if(event.key==='Enter'){event.preventDefault();aiSend();}">
+          <button id="aiSendBtn" onclick="aiSend()" title="Gửi">
+            <i class="bi bi-send-fill"></i>
+          </button>
+        </div>
+        <div class="text-center" style="font-size:.65rem;color:#aaa;margin-top:6px;">
+          <i class="bi bi-shield-check"></i> AI tư vấn dựa trên dữ liệu phòng thực tế
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    /* ── AI Widget Container (BOTTOM-LEFT) ──────────────────── */
+    #aiChatWidget {
+      position: fixed; bottom: 80px; left: 24px; z-index: 9998;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    /* ── Tooltip bubble ─────────────────────────────────────── */
+    #aiTooltip {
+      position: absolute; bottom: 68px; left: 0;
+      background: #fff; color: #333;
+      padding: 8px 14px; border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.15);
+      font-size: .85rem; font-weight: 500;
+      white-space: nowrap;
+      display: flex; align-items: center; gap: 4px;
+      animation: aiBounceIn .5s ease;
+    }
+    #aiTooltip::after {
+      content: ''; position: absolute; bottom: -6px; left: 20px;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-top: 6px solid #fff;
+    }
+
+    /* ── Toggle Button ──────────────────────────────────────── */
+    #aiToggleBtn {
+      width: 60px; height: 60px; border-radius: 50%; border: none;
+      background: linear-gradient(135deg, #8E44AD, #9B59B6);
+      color: #fff; font-size: 1.7rem; cursor: pointer;
+      box-shadow: 0 4px 20px rgba(142, 68, 173, .45);
+      display: flex; align-items: center; justify-content: center;
+      transition: transform .2s, box-shadow .2s;
+      position: relative;
+    }
+    #aiToggleBtn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 28px rgba(142, 68, 173, .55);
+    }
+
+    /* ── Chat Panel ─────────────────────────────────────────── */
+    #aiPanel {
+      position: absolute; bottom: 72px; left: 0;
+      width: 400px; height: 540px;
+      border-radius: 20px; overflow: hidden;
+      box-shadow: 0 12px 48px rgba(0,0,0,.2);
+      background: #fff;
+      display: flex; flex-direction: column;
+      animation: aiSlideUp .3s ease;
+    }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    #aiHeader {
+      background: linear-gradient(135deg, #8E44AD, #9B59B6);
+      color: #fff; padding: .85rem 1.1rem;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .ai-avatar {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: rgba(255,255,255,.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; flex-shrink: 0;
+    }
+
+    /* ── Message Area ───────────────────────────────────────── */
+    #aiMsgArea {
+      flex: 1; overflow-y: auto; padding: 1rem;
+      background: #f8f9fa;
+      display: flex; flex-direction: column; gap: .75rem;
+    }
+
+    /* ── Welcome ────────────────────────────────────────────── */
+    .ai-welcome {
+      text-align: center; padding: 1.5rem .5rem;
+      margin: auto 0;
+    }
+    .ai-quick-actions {
+      display: flex; flex-wrap: wrap; gap: .4rem; justify-content: center; margin-top: .5rem;
+    }
+    .ai-quick-actions button {
+      background: #fff; border: 1.5px solid #8E44AD; color: #6C3483;
+      border-radius: 18px; padding: .3rem .75rem; font-size: .78rem;
+      cursor: pointer; transition: all .2s; font-weight: 500;
+    }
+    .ai-quick-actions button:hover {
+      background: #8E44AD; color: #fff;
+      transform: translateY(-1px);
+      box-shadow: 0 3px 10px rgba(142,68,173,.3);
+    }
+
+    /* ── Message bubbles ────────────────────────────────────── */
+    .ai-msg { display: flex; gap: .5rem; max-width: 88%; animation: aiFadeIn .3s ease; }
+    .ai-msg.user { align-self: flex-end; flex-direction: row-reverse; }
+    .ai-msg.bot  { align-self: flex-start; }
+
+    .ai-msg .ai-bubble {
+      padding: .6rem .85rem; border-radius: 16px;
+      line-height: 1.65; font-size: .85rem; word-break: break-word;
+      white-space: pre-wrap;
+    }
+    .ai-msg.user .ai-bubble {
+      background: linear-gradient(135deg, #8E44AD, #9B59B6);
+      color: #fff; border-bottom-right-radius: 4px;
+    }
+    .ai-msg.bot .ai-bubble {
+      background: #fff; color: #333;
+      border: 1px solid #e0e0e0;
+      border-bottom-left-radius: 4px;
+    }
+    .ai-msg .ai-icon {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .75rem; flex-shrink: 0; margin-top: 2px;
+    }
+    .ai-msg.bot .ai-icon  { background: #8E44AD; color: #fff; }
+    .ai-msg.user .ai-icon { background: #3498DB; color: #fff; }
+
+    /* ── Typing indicator ───────────────────────────────────── */
+    .ai-typing { display: flex; gap: 4px; padding: .5rem .75rem; }
+    .ai-typing span {
+      width: 7px; height: 7px; border-radius: 50%; background: #aaa;
+      animation: aiTypingBounce 1.4s infinite;
+    }
+    .ai-typing span:nth-child(2) { animation-delay: .2s; }
+    .ai-typing span:nth-child(3) { animation-delay: .4s; }
+
+    /* ── Input area ─────────────────────────────────────────── */
+    #aiInputArea {
+      padding: .75rem 1rem; background: #fff;
+      border-top: 1px solid #eee; flex-shrink: 0;
+    }
+    .ai-input-wrap {
+      display: flex; gap: .4rem; align-items: center;
+      background: #f5f5f5; border-radius: 22px;
+      padding: 4px 4px 4px 14px;
+      border: 2px solid transparent; transition: border-color .3s;
+    }
+    .ai-input-wrap:focus-within { border-color: #8E44AD; background: #fff; }
+    .ai-input-wrap input {
+      flex: 1; border: none; background: transparent; outline: none;
+      font-size: .88rem; padding: .4rem 0;
+    }
+    .ai-input-wrap input::placeholder { color: #bbb; }
+    #aiSendBtn {
+      width: 38px; height: 38px; border-radius: 50%; border: none;
+      background: #8E44AD; color: #fff; font-size: .9rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all .2s; flex-shrink: 0;
+    }
+    #aiSendBtn:hover { background: #6C3483; transform: scale(1.05); }
+    #aiSendBtn:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* ── Animations ─────────────────────────────────────────── */
+    @@keyframes aiSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @@keyframes aiFadeIn  { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @@keyframes aiBounceIn { 0% { opacity:0; transform:scale(.8); } 60% { transform:scale(1.05); } 100% { opacity:1; transform:scale(1); } }
+    @@keyframes aiTypingBounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: .4; }
+      30% { transform: translateY(-6px); opacity: 1; }
+    }
+
+    /* ── Responsive ─────────────────────────────────────────── */
+    @@media (max-width: 576px) {
+      #aiChatWidget { left: 16px; bottom: 140px; }
+      #aiToggleBtn { width: 48px; height: 48px; font-size: 1.4rem; }
+      #aiPanel { width: calc(100vw - 32px); left: -8px; height: 65vh; bottom: 60px; }
+      #aiTooltip { display: none !important; }
+    }
+  </style>
+
+  <script>
+    (function(){
+      let _aiOpen = false, _aiWaiting = false;
+
+      // ── Toggle panel ────────────────────────────────────────
+      window.aiChatToggle = function(){
+        const panel = document.getElementById('aiPanel');
+        _aiOpen = !_aiOpen;
+        panel.classList.toggle('d-none', !_aiOpen);
+        // Ẩn panel thì hiển thị flex, ẩn thì d-none
+        if(_aiOpen) { panel.style.display = 'flex'; }
+        document.getElementById('aiToggleIcon').className = _aiOpen ? 'bi bi-x-lg' : 'bi bi-robot';
+        document.getElementById('aiTooltip').style.display = 'none';
+        if(_aiOpen) document.getElementById('aiInput').focus();
+      };
+
+      // ── Quick action ────────────────────────────────────────
+      window.aiSendQuick = function(text){
+        document.getElementById('aiInput').value = text;
+        aiSend();
+      };
+
+      // ── New chat (reset) ────────────────────────────────────
+      window.aiNewChat = function(){
+        const area = document.getElementById('aiMsgArea');
+        area.innerHTML = '';
+        // Tạo lại welcome
+        const welcome = document.createElement('div');
+        welcome.id = 'aiWelcome';
+        welcome.className = 'ai-welcome';
+        welcome.innerHTML =
+          '<div style="font-size:2.5rem;">🏠</div>' +
+          '<div class="fw-bold" style="color:#1E8449;font-size:1.05rem;">Xin chào! Tôi là trợ lý AI</div>' +
+          '<p class="text-muted small mb-3" style="line-height:1.6;">Tôi giúp bạn tìm phòng trọ phù hợp, tư vấn giá cả, diện tích và tiện ích. Hãy hỏi bất cứ điều gì!</p>' +
+          '<div class="ai-quick-actions">' +
+            '<button onclick="aiSendQuick(\'Có phòng trống nào không?\')">🔍 Phòng trống</button>' +
+            '<button onclick="aiSendQuick(\'Phòng giá rẻ nhất?\')">💰 Giá rẻ nhất</button>' +
+            '<button onclick="aiSendQuick(\'Phòng cho 2 người\')">👥 Phòng 2 người</button>' +
+            '<button onclick="aiSendQuick(\'Phòng diện tích lớn nhất\')">📐 Phòng rộng</button>' +
+          '</div>';
+        area.appendChild(welcome);
+        _aiWaiting = false;
+        document.getElementById('aiSendBtn').disabled = false;
+        document.getElementById('aiInput').value = '';
+        document.getElementById('aiInput').focus();
+      };
+
+      // ── Send message ────────────────────────────────────────
+      window.aiSend = async function(){
+        const inp = document.getElementById('aiInput');
+        const text = inp.value.trim();
+        if(!text || _aiWaiting) return;
+
+        // Ẩn welcome
+        const w = document.getElementById('aiWelcome');
+        if(w) w.remove();
+
+        // Hiện tin user
+        aiAppend('user', text);
+        inp.value = '';
+        inp.focus();
+
+        // Hiện typing
+        const typing = aiShowTyping();
+        _aiWaiting = true;
+        document.getElementById('aiSendBtn').disabled = true;
+
+        try {
+          const res = await fetch('/api/chat/ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: text })
+          });
+          const data = await res.json();
+          typing.remove();
+          aiAppend('bot', data.success ? data.reply : (data.reply || 'Xin lỗi, có lỗi xảy ra.'));
+        } catch(err) {
+          typing.remove();
+          aiAppend('bot', '⚠️ Không thể kết nối. Vui lòng thử lại.');
+        } finally {
+          _aiWaiting = false;
+          document.getElementById('aiSendBtn').disabled = false;
+        }
+      };
+
+      // ── Append bubble ───────────────────────────────────────
+      function aiAppend(role, text) {
+        const area = document.getElementById('aiMsgArea');
+        const div = document.createElement('div');
+        div.className = 'ai-msg ' + role;
+        const icon = role === 'bot' ? 'bi-robot' : 'bi-person-fill';
+        let html = esc(text)
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/^\s*[-•]\s+(.+)/gm, '&bull; $1')
+          .replace(/\n/g, '<br>');
+        div.innerHTML = '<div class="ai-icon"><i class="bi '+icon+'"></i></div><div class="ai-bubble">'+html+'</div>';
+        area.appendChild(div);
+        area.scrollTop = area.scrollHeight;
+      }
+
+      // ── Typing indicator ────────────────────────────────────
+      function aiShowTyping() {
+        const area = document.getElementById('aiMsgArea');
+        const div = document.createElement('div');
+        div.className = 'ai-msg bot';
+        div.innerHTML = '<div class="ai-icon"><i class="bi bi-robot"></i></div><div class="ai-bubble"><div class="ai-typing"><span></span><span></span><span></span></div></div>';
+        area.appendChild(div);
+        area.scrollTop = area.scrollHeight;
+        return div;
+      }
+
+      function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+      // ── Auto-show tooltip after 3s ──────────────────────────
+      setTimeout(function(){
+        const tip = document.getElementById('aiTooltip');
+        if(tip) tip.style.display = 'flex';
+      }, 3000);
     })();
   </script>
 
