@@ -3,6 +3,12 @@
 @{
     ViewData["Title"] = $"Chi tiết: {Model.RoomName}";
     Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+    var galleryImages = (Model.GalleryImages ?? "")
+        .Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .ToList();
+    var amenityItems = (Model.IncludedAmenities ?? "")
+        .Split(new[] { "\r\n", "\n", ",", ";" }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .ToList();
 }
 
 <main id="main" class="main">
@@ -137,6 +143,33 @@
                             <hr>
                             <small class="text-muted d-block mb-1">Mô tả</small>
                             <p class="mb-0">@Model.Description</p>
+                        }
+                        @if (amenityItems.Any())
+                        {
+                            <hr>
+                            <small class="text-muted d-block mb-2">Vật dụng / đồ dùng có sẵn</small>
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach (var item in amenityItems)
+                                {
+                                    <span class="badge bg-light text-dark border">
+                                        <i class="bi bi-check2 text-success me-1"></i>@item
+                                    </span>
+                                }
+                            </div>
+                        }
+                        @if (galleryImages.Any())
+                        {
+                            <hr>
+                            <small class="text-muted d-block mb-2">Ảnh mô tả thêm</small>
+                            <div class="row g-2">
+                                @foreach (var image in galleryImages)
+                                {
+                                    <div class="col-6 col-md-4">
+                                        <img src="@image" alt="@Model.RoomName" class="img-fluid rounded border"
+                                             style="height:110px;width:100%;object-fit:cover;">
+                                    </div>
+                                }
+                            </div>
                         }
                     </div>
                 </div>

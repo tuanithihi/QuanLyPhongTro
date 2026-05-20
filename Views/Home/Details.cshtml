@@ -10,6 +10,17 @@
     string prePhone   = ViewBag.BookingPhone ?? "";
     double avg        = Model.AverageRating;
     int    rCount     = Model.ReviewCount;
+    var galleryImages = new List<string>();
+    if (!string.IsNullOrWhiteSpace(room.ThumbnailImage))
+    {
+        galleryImages.Add(room.ThumbnailImage);
+    }
+    galleryImages.AddRange((room.GalleryImages ?? "")
+        .Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+    galleryImages = galleryImages.Distinct().ToList();
+    var amenityItems = (room.IncludedAmenities ?? "")
+        .Split(new[] { "\r\n", "\n", ",", ";" }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .ToList();
 }
 
 @* ── Breadcrumb ─────────────────────────────────────────────────────── *@
@@ -69,14 +80,51 @@
         <div class="col-lg-8">
 
             @* ── Ảnh phòng ── *@
-            <div class="rounded-4 overflow-hidden mb-4 shadow-sm detail-hero-img"
-                 style="max-height:420px;">
-                <img src="@(string.IsNullOrEmpty(room.ThumbnailImage) ? "" : room.ThumbnailImage)"
-                     alt="@room.RoomName"
-                     class="w-100 h-100"
-                     style="object-fit:cover; max-height:420px;"
-                     onerror="this.src='https://placehold.co/900x420/e2e8f0/64748b?text=Ảnh+phòng'" />
-            </div>
+            @if (galleryImages.Any())
+            {
+                <div id="roomGalleryCarousel" class="carousel slide rounded-4 overflow-hidden mb-3 shadow-sm detail-hero-img">
+                    <div class="carousel-inner">
+                        @for (int i = 0; i < galleryImages.Count; i++)
+                        {
+                            <div class="carousel-item @(i == 0 ? "active" : "")">
+                                <img src="@galleryImages[i]" alt="@room.RoomName" class="w-100"
+                                     style="height:420px;object-fit:cover;"
+                                     onerror="this.src='https://placehold.co/900x420/e2e8f0/64748b?text=Ảnh+phòng'" />
+                            </div>
+                        }
+                    </div>
+                    @if (galleryImages.Count > 1)
+                    {
+                        <button class="carousel-control-prev" type="button" data-bs-target="#roomGalleryCarousel" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Trước</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#roomGalleryCarousel" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Sau</span>
+                        </button>
+                    }
+                </div>
+                @if (galleryImages.Count > 1)
+                {
+                    <div class="d-flex gap-2 flex-wrap mb-4">
+                        @for (int i = 0; i < galleryImages.Count; i++)
+                        {
+                            <button type="button" class="p-0 border rounded-3 overflow-hidden bg-white gallery-thumb"
+                                    data-bs-target="#roomGalleryCarousel" data-bs-slide-to="@i" aria-label="Ảnh @(i + 1)">
+                                <img src="@galleryImages[i]" alt="Ảnh @(i + 1)" style="width:88px;height:64px;object-fit:cover;">
+                            </button>
+                        }
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="rounded-4 overflow-hidden mb-4 shadow-sm detail-hero-img">
+                    <img src="https://placehold.co/900x420/e2e8f0/64748b?text=Ảnh+phòng"
+                         alt="@room.RoomName" class="w-100" style="height:420px;object-fit:cover;" />
+                </div>
+            }
 
             @* ── Tiêu đề + badges ── *@
             <div class="d-flex flex-wrap align-items-start gap-2 mb-1">
@@ -123,6 +171,24 @@
                     </div>
                 }
             </div>
+
+            @if (amenityItems.Any())
+            {
+                <div class="mb-4">
+                    <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                        <i class="bi bi-box-seam text-primary"></i> Vật dụng có sẵn
+                    </h5>
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach (var item in amenityItems)
+                        {
+                            <span class="badge bg-light text-dark border rounded-pill px-3 py-2">
+                                <i class="bi bi-check2 text-success me-1"></i>@item
+                            </span>
+                        }
+                    </div>
+                </div>
+                <hr class="my-4">
+            }
 
             @* ── Mô tả chi tiết ── *@
             @if (!string.IsNullOrWhiteSpace(room.Description))
@@ -348,7 +414,7 @@
                 {
                     <div class="alert alert-light border rounded-4 text-center small py-3">
                         <i class="bi bi-lock me-1 text-warning"></i>
-                        <a href="#" data-bs-toggle="modal" data-bs-target="#authModal" class="fw-semibold">Đăng nhập</a>
+                        <a href="#" onclick="openGuestLogin(event)" class="fw-semibold">Đăng nhập</a>
                         để gửi đánh giá của bạn về phòng này.
                     </div>
                 }
@@ -411,12 +477,12 @@
                         {
                             <button type="button"
                                     class="btn btn-primary btn-lg w-100 fw-semibold rounded-3"
-                                    onclick="openLoginForBooking()">
+                                    onclick="openGuestLogin(event)">
                                 <i class="bi bi-person-lock me-2"></i>Đăng nhập để đặt lịch
                             </button>
                             <p class="text-center text-muted small mt-2 mb-0">
                                 Chưa có tài khoản?
-                                <a href="#" data-bs-toggle="modal" data-bs-target="#authModal" data-open-tab="register">
+                                <a href="#" onclick="openGuestLogin(event, 'register')">
                                     Đăng ký ngay
                                 </a>
                             </p>
@@ -612,10 +678,24 @@
         </text>
     }
 
-    function openLoginForBooking() {
-        // Ghi returnUrl vào hidden field của login form trong authModal
+    async function openGuestLogin(event, tab) {
+        if (event) event.preventDefault();
+
+        try {
+            await fetch('/Account/ClearAdminSession', { method: 'POST' });
+        } catch {
+            // Nếu request lỗi, vẫn mở modal để người dùng có thể đăng nhập lại.
+        }
+
         var retInput = document.getElementById('loginReturnUrl');
         if (retInput) retInput.value = window.location.pathname + window.location.search;
+
+        if (tab === 'register' && typeof authSwitchTab === 'function') {
+            authSwitchTab('register');
+        } else if (typeof authSwitchTab === 'function') {
+            authSwitchTab('login');
+        }
+
         new bootstrap.Modal(document.getElementById('authModal')).show();
     }
 </script>

@@ -119,6 +119,7 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             string? thumbnail = null;
             if (vm.ThumbnailFile != null && vm.ThumbnailFile.Length > 0)
                 thumbnail = await SaveImageAsync(vm.ThumbnailFile);
+            var galleryImages = await SaveImagesAsync(vm.GalleryFiles);
 
             // Map ViewModel -> Entity
             var room = new tblRoom
@@ -132,7 +133,9 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 Floor          = vm.Floor,
                 MaxOccupants   = vm.MaxOccupants,
                 Description    = vm.Description,
+                IncludedAmenities = vm.IncludedAmenities,
                 ThumbnailImage = thumbnail,
+                GalleryImages  = SerializeGalleryImages(galleryImages),
                 Address        = vm.Address?.Trim(),
                 Latitude       = vm.Latitude,
                 Longitude      = vm.Longitude,
@@ -171,12 +174,14 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 Floor            = room.Floor,
                 MaxOccupants     = room.MaxOccupants,
                 Description      = room.Description,
+                IncludedAmenities = room.IncludedAmenities,
                 Address          = room.Address,
                 Latitude         = room.Latitude,
                 Longitude        = room.Longitude,
                 Status           = room.Status,
                 IsPublished      = room.IsPublished,
-                CurrentThumbnail = room.ThumbnailImage
+                CurrentThumbnail = room.ThumbnailImage,
+                CurrentGalleryImages = room.GalleryImages
             };
 
             await PopulateDropdownsAsync(vm);
@@ -210,6 +215,14 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 room.ThumbnailImage = await SaveImageAsync(vm.ThumbnailFile);
             }
 
+            var galleryImages = ParseGalleryImages(room.GalleryImages);
+            foreach (var image in vm.RemoveGalleryImages ?? new List<string>())
+            {
+                if (galleryImages.Remove(image))
+                    DeleteImage(image);
+            }
+            galleryImages.AddRange(await SaveImagesAsync(vm.GalleryFiles));
+
             // Cap nhat tung truong
             room.RoomCode       = vm.RoomCode.Trim();
             room.RoomName       = vm.RoomName.Trim();
@@ -220,6 +233,8 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             room.Floor          = vm.Floor;
             room.MaxOccupants   = vm.MaxOccupants;
             room.Description    = vm.Description;
+            room.IncludedAmenities = vm.IncludedAmenities;
+            room.GalleryImages  = SerializeGalleryImages(galleryImages);
             room.Address        = vm.Address?.Trim();
             room.Latitude       = vm.Latitude;
             room.Longitude      = vm.Longitude;
@@ -265,6 +280,8 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
 
             // Xoa anh vat ly tren server
             DeleteImage(room.ThumbnailImage);
+            foreach (var image in ParseGalleryImages(room.GalleryImages))
+                DeleteImage(image);
 
             _context.Rooms.Remove(room);
             await _context.SaveChangesAsync();
@@ -303,6 +320,37 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             await file.CopyToAsync(stream);
 
             return "/" + IMAGE_FOLDER + "/" + fileName;
+        }
+
+        private async Task<List<string>> SaveImagesAsync(IEnumerable<IFormFile>? files)
+        {
+            var saved = new List<string>();
+            if (files == null) return saved;
+
+            foreach (var file in files.Where(f => f != null && f.Length > 0))
+                saved.Add(await SaveImageAsync(file));
+
+            return saved;
+        }
+
+        private static List<string> ParseGalleryImages(string? galleryImages)
+        {
+            if (string.IsNullOrWhiteSpace(galleryImages)) return new List<string>();
+
+            return galleryImages
+                .Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Distinct()
+                .ToList();
+        }
+
+        private static string? SerializeGalleryImages(IEnumerable<string> galleryImages)
+        {
+            var images = galleryImages
+                .Where(path => !string.IsNullOrWhiteSpace(path))
+                .Distinct()
+                .ToList();
+
+            return images.Count == 0 ? null : string.Join('|', images);
         }
 
         /// <summary>Xoa file anh vat ly khoi wwwroot (bo qua neu khong tim thay).</summary>

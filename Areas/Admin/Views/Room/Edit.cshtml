@@ -20,6 +20,7 @@
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="RoomId">
             <input type="hidden" asp-for="CurrentThumbnail">
+            <input type="hidden" asp-for="CurrentGalleryImages">
             <div asp-validation-summary="ModelOnly" class="alert alert-danger d-none mb-3" id="val-summary"></div>
 
             <div class="row g-3">
@@ -110,6 +111,13 @@
                                 <textarea asp-for="Description" class="form-control" rows="5"></textarea>
                             </div>
 
+                            <div class="mb-3">
+                                <label asp-for="IncludedAmenities" class="form-label fw-semibold"></label>
+                                <textarea asp-for="IncludedAmenities" class="form-control" rows="4"
+                                          placeholder="VD: Máy lạnh, tủ lạnh, máy giặt, giường, nệm, bàn học, kệ bếp..."></textarea>
+                                <small class="text-muted">Mỗi vật dụng có thể xuống dòng riêng để hiển thị rõ hơn trên trang chi tiết.</small>
+                            </div>
+
                             @* ── Vị trí phòng ── *@
                             <div class="card border-success border-opacity-25 mt-3">
                                 <div class="card-header py-2" style="background:#E8F8F5">
@@ -181,6 +189,45 @@
                                     <i class="bi bi-image fs-2 d-block mb-1"></i>Chưa có ảnh
                                 </div>
                             }
+                        </div>
+                    </div>
+
+                    <div class="card mt-3">
+                        <div class="card-header py-3">
+                            <h6 class="mb-0 fw-semibold">Ảnh mô tả thêm</h6>
+                        </div>
+                        <div class="card-body">
+                            @{
+                                var galleryImages = (Model.CurrentGalleryImages ?? "")
+                                    .Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                                    .ToList();
+                            }
+                            @if (galleryImages.Any())
+                            {
+                                <div class="row g-2 mb-3">
+                                    @for (int i = 0; i < galleryImages.Count; i++)
+                                    {
+                                        var image = galleryImages[i];
+                                        <div class="col-6">
+                                            <div class="border rounded p-2 h-100">
+                                                <img src="@image" alt="gallery" class="img-fluid rounded mb-2"
+                                                     style="height:96px;width:100%;object-fit:cover;">
+                                                <div class="form-check small">
+                                                    <input class="form-check-input" type="checkbox" name="RemoveGalleryImages" value="@image" id="removeGallery_@i">
+                                                    <label class="form-check-label" for="removeGallery_@i">Xóa ảnh này</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="text-muted small mb-3">Chưa có ảnh mô tả thêm.</p>
+                            }
+                            <label class="form-label fw-semibold small">Thêm ảnh mới</label>
+                            <input asp-for="GalleryFiles" class="form-control" type="file" accept="image/*" multiple>
+                            <small class="text-muted d-block mt-2">Có thể chọn nhiều ảnh mới, ảnh cũ vẫn được giữ nếu không tích xóa.</small>
                         </div>
                     </div>
 

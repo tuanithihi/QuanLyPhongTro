@@ -67,6 +67,12 @@ namespace QuanLyPhongTro.Models
         [Display(Name = "Ảnh đại diện phòng")]
         public string? ThumbnailImage { get; set; }
 
+        [Display(Name = "Ảnh mô tả thêm")]
+        public string? GalleryImages { get; set; }
+
+        [Display(Name = "Vật dụng / đồ dùng có sẵn")]
+        public string? IncludedAmenities { get; set; }
+
         // ── VỊ TRÍ ────────────────────────────────────────────────────────
         [StringLength(255)]
         [Display(Name = "Địa chỉ")]

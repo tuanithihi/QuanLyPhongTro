@@ -462,6 +462,14 @@ namespace QuanLyPhongTro.Controllers
             return Json(new { success = true, updated = bookings.Count });
         }
 
+        // POST: /Account/ClearAdminSession
+        [HttpPost]
+        public IActionResult ClearAdminSession()
+        {
+            HttpContext.Session.Remove(SESSION_ADMIN);
+            return Json(new { success = true });
+        }
+
         // ── Logout ───────────────────────────────────────────────────────
 
         // GET: /Account/Logout

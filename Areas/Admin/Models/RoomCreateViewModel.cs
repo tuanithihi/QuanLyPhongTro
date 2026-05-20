@@ -50,6 +50,9 @@ namespace QuanLyPhongTro.Areas.Admin.Models
         [Display(Name = "Mô tả")]
         public string? Description { get; set; }
 
+        [Display(Name = "Vật dụng / đồ dùng có sẵn")]
+        public string? IncludedAmenities { get; set; }
+
         [Display(Name = "Trạng thái")]
         public RoomStatus Status { get; set; } = RoomStatus.Available;
 
@@ -71,8 +74,13 @@ namespace QuanLyPhongTro.Areas.Admin.Models
         [Display(Name = "Ảnh đại diện phòng")]
         public IFormFile? ThumbnailFile { get; set; }
 
+        [Display(Name = "Ảnh mô tả thêm")]
+        public List<IFormFile> GalleryFiles { get; set; } = new();
+
         // Lưu đường dẫn ảnh hiện tại (dùng khi Edit)
         public string? CurrentThumbnail { get; set; }
+        public string? CurrentGalleryImages { get; set; }
+        public List<string> RemoveGalleryImages { get; set; } = new();
 
         // ── Dropdown data (populate trong controller) ──────────────────
         public SelectList? RoomTypeSelectList { get; set; }
