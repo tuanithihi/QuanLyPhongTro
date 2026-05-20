@@ -16,6 +16,15 @@ namespace QuanLyPhongTro.Areas.Admin.Models
         public int PaidInvoicesThisMonth { get; set; }
         public int UnpaidInvoicesThisMonth { get; set; }
         public int OverdueInvoicesThisMonth { get; set; }
+        public decimal ExpectedRevenueInPeriod { get; set; }
+        public int TotalInvoicesInPeriod { get; set; }
+        public string PeriodType { get; set; } = "month";
+        public string PeriodLabel { get; set; } = string.Empty;
+        public DateTime PeriodStart { get; set; }
+        public DateTime PeriodEnd { get; set; }
+        public int SelectedMonth { get; set; }
+        public int SelectedQuarter { get; set; }
+        public int SelectedYear { get; set; }
 
         // Hợp đồng
         public int ActiveContracts { get; set; }

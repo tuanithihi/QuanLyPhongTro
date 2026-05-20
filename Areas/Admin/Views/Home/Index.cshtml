@@ -27,6 +27,72 @@
     <section class="section dashboard">
         <div class="row">
 
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                            <h5 class="card-title mb-0">Bộ lọc thống kê <span>| @Model.PeriodLabel</span></h5>
+                            <a asp-area="Admin" asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-arrow-clockwise me-1"></i>Tháng hiện tại
+                            </a>
+                        </div>
+
+                        <form method="get" asp-area="Admin" asp-controller="Home" asp-action="Index" class="row g-3 align-items-end" id="dashboardFilterForm">
+                            <div class="col-lg-2 col-md-4">
+                                <label class="form-label small fw-semibold">Kiểu thống kê</label>
+                                <select name="period" id="periodType" class="form-select">
+                                    <option value="month" selected="@(Model.PeriodType == "month")">Theo tháng</option>
+                                    <option value="quarter" selected="@(Model.PeriodType == "quarter")">Theo quý</option>
+                                    <option value="year" selected="@(Model.PeriodType == "year")">Theo năm</option>
+                                    <option value="custom" selected="@(Model.PeriodType == "custom")">Tùy chỉnh</option>
+                                </select>
+                            </div>
+
+                            <div class="col-lg-2 col-md-4 filter-month">
+                                <label class="form-label small fw-semibold">Tháng</label>
+                                <select name="month" class="form-select">
+                                    @for (int m = 1; m <= 12; m++)
+                                    {
+                                        <option value="@m" selected="@(Model.SelectedMonth == m)">Tháng @m</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-lg-2 col-md-4 filter-quarter">
+                                <label class="form-label small fw-semibold">Quý</label>
+                                <select name="quarter" class="form-select">
+                                    @for (int q = 1; q <= 4; q++)
+                                    {
+                                        <option value="@q" selected="@(Model.SelectedQuarter == q)">Quý @q</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-lg-2 col-md-4 filter-year">
+                                <label class="form-label small fw-semibold">Năm</label>
+                                <input type="number" name="year" class="form-control" min="2000" max="2100" value="@Model.SelectedYear" />
+                            </div>
+
+                            <div class="col-lg-2 col-md-4 filter-custom">
+                                <label class="form-label small fw-semibold">Từ ngày</label>
+                                <input type="date" name="fromDate" class="form-control" value="@Model.PeriodStart.ToString("yyyy-MM-dd")" />
+                            </div>
+
+                            <div class="col-lg-2 col-md-4 filter-custom">
+                                <label class="form-label small fw-semibold">Đến ngày</label>
+                                <input type="date" name="toDate" class="form-control" value="@Model.PeriodEnd.ToString("yyyy-MM-dd")" />
+                            </div>
+
+                            <div class="col-lg-2 col-md-4">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="bi bi-funnel me-1"></i>Lọc
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
             <!-- ── STATS CARDS ─────────────────────────── -->
             <div class="col-12">
                 <div class="row">
@@ -96,7 +162,7 @@
                     <div class="col-xxl-3 col-md-6">
                         <div class="card info-card">
                             <div class="card-body">
-                                <h5 class="card-title">Doanh thu <span>| Tháng này</span></h5>
+                                <h5 class="card-title">Doanh thu <span>| @Model.PeriodLabel</span></h5>
                                 <div class="d-flex align-items-center">
                                     <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
                                         <i class="bi bi-currency-dollar"></i>
@@ -108,6 +174,9 @@
                                         <span class="text-danger small fw-bold">
                                             @(Model.UnpaidInvoicesThisMonth + Model.OverdueInvoicesThisMonth) chưa TT
                                         </span>
+                                        <div class="small text-muted mt-1">
+                                            @Model.TotalInvoicesInPeriod hóa đơn &middot; dự kiến @Model.ExpectedRevenueInPeriod.ToString("N0") đ
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -168,7 +237,7 @@
                                 }
                             </a>
                             <a asp-area="Admin" asp-controller="Invoice" asp-action="Index"
-                               asp-route-status="0"
+                            asp-route-status="0"
                                class="btn @(Model.UnpaidInvoicesThisMonth + Model.OverdueInvoicesThisMonth > 0 ? "btn-outline-danger" : "btn-outline-secondary")">
                                 <i class="bi bi-receipt me-1"></i> Hóa đơn chưa thanh toán
                                 @if (Model.UnpaidInvoicesThisMonth + Model.OverdueInvoicesThisMonth > 0)
@@ -199,5 +268,16 @@
         }
         updateClock();
         setInterval(updateClock, 1000);
+
+        function updateDashboardFilterControls() {
+            const type = document.getElementById('periodType')?.value || 'month';
+            document.querySelectorAll('.filter-month').forEach(el => el.classList.toggle('d-none', type !== 'month'));
+            document.querySelectorAll('.filter-quarter').forEach(el => el.classList.toggle('d-none', type !== 'quarter'));
+            document.querySelectorAll('.filter-year').forEach(el => el.classList.toggle('d-none', type === 'custom'));
+            document.querySelectorAll('.filter-custom').forEach(el => el.classList.toggle('d-none', type !== 'custom'));
+        }
+
+        document.getElementById('periodType')?.addEventListener('change', updateDashboardFilterControls);
+        updateDashboardFilterControls();
     </script>
 }
