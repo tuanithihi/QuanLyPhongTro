@@ -65,6 +65,7 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
 
             req.Status    = action == "accept" ? BookingRequestStatus.Accepted : BookingRequestStatus.Rejected;
             req.AdminNote = adminNote?.Trim();
+            req.IsGuestNotified = false;
             await _context.SaveChangesAsync();
 
             // ── Gửi thông báo hệ thống tới phiên chat của khách (nếu có) ──

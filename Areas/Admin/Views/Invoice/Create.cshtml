@@ -99,11 +99,12 @@
                            class="form-control font-monospace" min="0" step="0.1"
                            onchange="syncElectricQty()" />
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-3" style="position:relative;">
                     <label class="form-label fw-semibold">Điện cuối kỳ (kWh)</label>
                     <input asp-for="ElectricIndexEnd" type="number" id="ElectricIndexEnd"
                            class="form-control font-monospace" min="0" step="0.1"
                            onchange="syncElectricQty()" />
+                    <div class="invalid-tooltip" id="elecEndTooltip"></div>
                     <div class="form-text" id="elecDiff"></div>
                 </div>
                 <div class="col-md-3">
@@ -112,11 +113,12 @@
                            class="form-control font-monospace" min="0" step="0.1"
                            onchange="syncWaterQty()" />
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-3" style="position:relative;">
                     <label class="form-label fw-semibold">Nước cuối kỳ (m³)</label>
                     <input asp-for="WaterIndexEnd" type="number" id="WaterIndexEnd"
                            class="form-control font-monospace" min="0" step="0.1"
                            onchange="syncWaterQty()" />
+                    <div class="invalid-tooltip" id="waterEndTooltip"></div>
                     <div class="form-text" id="waterDiff"></div>
                 </div>
             </div>
@@ -267,6 +269,63 @@ function updateDueDate() {
     document.querySelector('[name="DueDate"]').value = d.toISOString().split('T')[0];
 }
 
+// ── Kiểm tra chỉ số hợp lệ ────────────────────────────────────
+function validateIndices() {
+    const startEl = document.getElementById('ElectricIndexStart');
+    const endEl = document.getElementById('ElectricIndexEnd');
+    const wStartEl = document.getElementById('WaterIndexStart');
+    const wEndEl = document.getElementById('WaterIndexEnd');
+    const submitBtn = document.querySelector('button[type="submit"]');
+
+    const start = parseFloat(startEl.value) || 0;
+    const end = parseFloat(endEl.value) || 0;
+    const wStart = parseFloat(wStartEl.value) || 0;
+    const wEnd = parseFloat(wEndEl.value) || 0;
+
+    let isValid = true;
+
+    // Điện
+    if (endEl) {
+        const elecTooltip = document.getElementById('elecEndTooltip');
+        if (endEl.value !== "") {
+            if (end < start) {
+                endEl.classList.add('is-invalid');
+                if (elecTooltip) elecTooltip.textContent = "Chỉ số cuối kỳ phải ≥ chỉ số đầu kỳ (" + start + " kWh)";
+                isValid = false;
+            } else {
+                endEl.classList.remove('is-invalid');
+                if (elecTooltip) elecTooltip.textContent = "";
+            }
+        } else {
+            endEl.classList.remove('is-invalid');
+            if (elecTooltip) elecTooltip.textContent = "";
+        }
+    }
+
+    // Nước
+    if (wEndEl) {
+        const waterTooltip = document.getElementById('waterEndTooltip');
+        if (wEndEl.value !== "") {
+            if (wEnd < wStart) {
+                wEndEl.classList.add('is-invalid');
+                if (waterTooltip) waterTooltip.textContent = "Chỉ số cuối kỳ phải ≥ chỉ số đầu kỳ (" + wStart + " m³)";
+                isValid = false;
+            } else {
+                wEndEl.classList.remove('is-invalid');
+                if (waterTooltip) waterTooltip.textContent = "";
+            }
+        } else {
+            wEndEl.classList.remove('is-invalid');
+            if (waterTooltip) waterTooltip.textContent = "";
+        }
+    }
+
+    if (submitBtn) {
+        submitBtn.disabled = !isValid;
+    }
+    return isValid;
+}
+
 // ── Đồng bộ chỉ số điện → số lượng ──────────────────────────
 function syncElectricQty() {
     const start = parseFloat(document.getElementById('ElectricIndexStart').value) || 0;
@@ -277,6 +336,7 @@ function syncElectricQty() {
         el.value = diff.toFixed(2);
         recalcRow(el.closest('tr'));
     });
+    validateIndices();
 }
 
 function syncWaterQty() {
@@ -288,6 +348,7 @@ function syncWaterQty() {
         el.value = diff.toFixed(2);
         recalcRow(el.closest('tr'));
     });
+    validateIndices();
 }
 
 // ── Tính lại 1 dòng dịch vụ ──────────────────────────────────

@@ -57,6 +57,9 @@ namespace QuanLyPhongTro.Models
         [Display(Name = "Ghi chú của quản trị viên")]
         public string? AdminNote { get; set; }
 
+        [Display(Name = "Đã thông báo cho khách")]
+        public bool IsGuestNotified { get; set; } = false;
+
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         // Navigation

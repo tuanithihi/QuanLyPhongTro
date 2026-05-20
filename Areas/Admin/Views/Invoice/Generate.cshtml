@@ -128,12 +128,13 @@
                 <input type="number" id="elecStartDisplay" value="@elecStart"
                        class="form-control bg-light" readonly />
             </div>
-            <div class="col-md-3">
+            <div class="col-md-3" style="position:relative;">
                 <label class="form-label fw-semibold">Cuối kỳ (kWh) <span class="text-danger">*</span></label>
                 <input type="number" name="ElectricIndexEnd" id="elecEnd"
                        class="form-control"
                        placeholder="Nhập chỉ số..." step="0.01"
-                       min="@elecStart.ToString(ic)" oninput="recalc()" required />
+                       oninput="recalc()" required />
+                <div class="invalid-tooltip" id="elecEndTooltip"></div>
             </div>
             <div class="col-md-3">
                 <label class="form-label fw-semibold">Đơn giá (đ/kWh) <span class="text-danger">*</span></label>
@@ -167,12 +168,13 @@
                 <input type="number" id="waterStartDisplay" value="@waterStart"
                        class="form-control bg-light" readonly />
             </div>
-            <div class="col-md-3">
+            <div class="col-md-3" style="position:relative;">
                 <label class="form-label fw-semibold">Cuối kỳ (m³) <span class="text-danger">*</span></label>
                 <input type="number" name="WaterIndexEnd" id="waterEnd"
                        class="form-control"
                        placeholder="Nhập chỉ số..." step="0.01"
-                       min="@waterStart.ToString(ic)" oninput="recalc()" required />
+                       oninput="recalc()" required />
+                <div class="invalid-tooltip" id="waterEndTooltip"></div>
             </div>
             <div class="col-md-3">
                 <label class="form-label fw-semibold">Đơn giá (đ/m³) <span class="text-danger">*</span></label>
@@ -351,6 +353,50 @@ function recalc() {
     const ePrice = getVal('elecPriceInput');
     const wPrice = getVal('waterPriceInput');
     const discount = getVal('discountInput');
+
+    const elecEndInput = document.getElementById('elecEnd');
+    const waterEndInput = document.getElementById('waterEnd');
+    const submitBtn = document.querySelector('button[type="submit"]');
+    
+    let isValid = true;
+
+    if (elecEndInput) {
+        const elecTooltip = document.getElementById('elecEndTooltip');
+        if (elecEndInput.value !== "") {
+            if (eEnd < ELEC_START) {
+                elecEndInput.classList.add('is-invalid');
+                if (elecTooltip) elecTooltip.textContent = "Chỉ số cuối kỳ phải ≥ chỉ số đầu kỳ (" + ELEC_START + " kWh)";
+                isValid = false;
+            } else {
+                elecEndInput.classList.remove('is-invalid');
+                if (elecTooltip) elecTooltip.textContent = "";
+            }
+        } else {
+            elecEndInput.classList.remove('is-invalid');
+            if (elecTooltip) elecTooltip.textContent = "";
+        }
+    }
+
+    if (waterEndInput) {
+        const waterTooltip = document.getElementById('waterEndTooltip');
+        if (waterEndInput.value !== "") {
+            if (wEnd < WATER_START) {
+                waterEndInput.classList.add('is-invalid');
+                if (waterTooltip) waterTooltip.textContent = "Chỉ số cuối kỳ phải ≥ chỉ số đầu kỳ (" + WATER_START + " m³)";
+                isValid = false;
+            } else {
+                waterEndInput.classList.remove('is-invalid');
+                if (waterTooltip) waterTooltip.textContent = "";
+            }
+        } else {
+            waterEndInput.classList.remove('is-invalid');
+            if (waterTooltip) waterTooltip.textContent = "";
+        }
+    }
+
+    if (submitBtn) {
+        submitBtn.disabled = !isValid;
+    }
 
     const eQty  = Math.max(0, eEnd - ELEC_START);
     const wQty  = Math.max(0, wEnd - WATER_START);

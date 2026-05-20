@@ -176,7 +176,7 @@
       <div class="copyright text-center mt-4">
         <div class="container">
           <p class="mb-0">
-            &copy; @DateTime.Now.Year Copyright by <strong>Group 12</strong>. All Rights Reserved | Designed by <a href="#" target="_blank" rel="noopener noreferrer">Hồ Đức Tuấn</a>
+            &copy; @DateTime.Now.Year. All Rights Reserved | Designed by <a href="#" target="_blank" rel="noopener noreferrer">Hồ Đức Tuấn</a>
           </p>
         </div>
       </div>
@@ -229,9 +229,6 @@
 
                     <!-- ── Login Form ── -->
                     <div id="loginPane">
-                        <p class="text-muted small mb-3">
-                            <i class="bi bi-info-circle me-1"></i>Hệ thống tự nhận dạng loại tài khoản của bạn.
-                        </p>
                         <form id="loginForm" novalidate>
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="returnUrl" id="loginReturnUrl" value="" />
@@ -439,6 +436,8 @@
     @* ── Modal thông báo hóa đơn trễ hạn ── *@
     @{
         bool _isTenantLoggedIn = !string.IsNullOrEmpty(Context.Session.GetString("TenantUser"));
+        bool _isNormalUserLoggedIn = !string.IsNullOrEmpty(Context.Session.GetString("NormalUser"));
+        bool _isGuestLoggedIn = _isTenantLoggedIn || _isNormalUserLoggedIn;
     }
     @if (_isTenantLoggedIn)
     {
@@ -516,6 +515,114 @@
 
                     // Hiện modal
                     var modal = new bootstrap.Modal(document.getElementById('overdueModal'));
+                    modal.show();
+                } catch (e) { /* im lặng nếu lỗi */ }
+            });
+        </script>
+    }
+
+    @if (_isGuestLoggedIn)
+    {
+        <div class="modal fade" id="bookingNotifyModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content" style="border:none;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden;">
+                    <div class="modal-header border-0" style="background:linear-gradient(135deg,#34495E,#2C3E50);color:#fff;padding:1.25rem 1.5rem;">
+                        <h5 class="modal-title fw-bold">
+                            <i class="bi bi-calendar-check-fill me-2"></i>Thông báo lịch hẹn xem phòng
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <div class="alert alert-info d-flex align-items-start gap-2 mb-3" style="border-radius:10px;">
+                            <i class="bi bi-info-circle-fill fs-5 mt-1" style="color:#3498DB;"></i>
+                            <div class="small">
+                                Chủ trọ đã phản hồi <strong id="bookingNotifyCount">0</strong> yêu cầu đặt lịch xem phòng của bạn.
+                            </div>
+                        </div>
+                        <div class="table-responsive" style="max-height:320px;overflow-y:auto;">
+                            <table class="table table-hover table-sm align-middle mb-0" style="font-size:.88rem;">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Phòng</th>
+                                        <th>Ngày muốn xem</th>
+                                        <th class="text-center">Trạng thái</th>
+                                        <th>Ghi chú của chủ trọ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bookingNotifyTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 bg-light" style="border-radius:0 0 16px 16px;">
+                        <button type="button" id="bookingNotifyOkBtn" class="btn fw-semibold" style="background:#27AE60;color:#fff;border:none;">
+                            <i class="bi bi-check-circle me-1"></i>Đã hiểu
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Để sau</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', async function () {
+                const shownKey = 'bookingNotifyShownIds';
+                const shownIds = JSON.parse(sessionStorage.getItem(shownKey) || '[]');
+
+                try {
+                    const res = await fetch('/Account/GetBookingNotifications');
+                    const data = await res.json();
+                    if (!data.bookings || data.bookings.length === 0) return;
+
+                    const bookings = data.bookings.filter(function (booking) {
+                        return !shownIds.includes(booking.requestId);
+                    });
+                    if (bookings.length === 0) return;
+
+                    const bookingIds = bookings.map(function (booking) { return booking.requestId; });
+                    sessionStorage.setItem(shownKey, JSON.stringify(Array.from(new Set(shownIds.concat(bookingIds)))));
+
+                    document.getElementById('bookingNotifyCount').textContent = bookings.length;
+                    const tbody = document.getElementById('bookingNotifyTableBody');
+                    tbody.innerHTML = '';
+
+                    bookings.forEach(function (booking) {
+                        const row = document.createElement('tr');
+                        const roomCell = document.createElement('td');
+                        const dateCell = document.createElement('td');
+                        const statusCell = document.createElement('td');
+                        const noteCell = document.createElement('td');
+                        const badge = document.createElement('span');
+
+                        roomCell.className = 'fw-semibold';
+                        roomCell.textContent = booking.roomName;
+                        dateCell.textContent = booking.preferredDate;
+                        statusCell.className = 'text-center';
+                        badge.className = 'badge rounded-pill ' + (booking.status === 'Accepted' ? 'bg-success' : 'bg-danger');
+                        badge.textContent = booking.statusText;
+                        statusCell.appendChild(badge);
+                        noteCell.textContent = booking.adminNote || 'Không có ghi chú';
+
+                        row.appendChild(roomCell);
+                        row.appendChild(dateCell);
+                        row.appendChild(statusCell);
+                        row.appendChild(noteCell);
+                        tbody.appendChild(row);
+                    });
+
+                    const modalEl = document.getElementById('bookingNotifyModal');
+                    const modal = new bootstrap.Modal(modalEl);
+                    document.getElementById('bookingNotifyOkBtn').onclick = async function () {
+                        try {
+                            await fetch('/Account/MarkBookingNotified', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ requestIds: bookingIds })
+                            });
+                        } finally {
+                            modal.hide();
+                        }
+                    };
+
                     modal.show();
                 } catch (e) { /* im lặng nếu lỗi */ }
             });

@@ -196,6 +196,19 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 return RedirectToAction(nameof(DueThisMonth));
             }
 
+            // Server-side index validation
+            if (model.ElectricIndexEnd < model.ElectricIndexStart)
+            {
+                TempData["Error"] = $"Lỗi: Chỉ số điện cuối kỳ ({model.ElectricIndexEnd} kWh) không được nhỏ hơn chỉ số đầu kỳ ({model.ElectricIndexStart} kWh).";
+                return RedirectToAction(nameof(Generate), new { contractId });
+            }
+
+            if (model.WaterIndexEnd < model.WaterIndexStart)
+            {
+                TempData["Error"] = $"Lỗi: Chỉ số nước cuối kỳ ({model.WaterIndexEnd} m³) không được nhỏ hơn chỉ số đầu kỳ ({model.WaterIndexStart} m³).";
+                return RedirectToAction(nameof(Generate), new { contractId });
+            }
+
             var details = new List<tblInvoiceDetail>();
 
             // Điện — tính trực tiếp từ chỉ số đầu/cuối kỳ
@@ -309,6 +322,17 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 i.BillingYear   == model.BillingYear);
             if (duplicate)
                 ModelState.AddModelError("", $"Hóa đơn tháng {model.BillingMonth}/{model.BillingYear} đã tồn tại.");
+
+            // Server-side index validation
+            if (model.ElectricIndexEnd < model.ElectricIndexStart)
+            {
+                ModelState.AddModelError("ElectricIndexEnd", $"Chỉ số điện cuối kỳ ({model.ElectricIndexEnd} kWh) không được nhỏ hơn chỉ số đầu kỳ ({model.ElectricIndexStart} kWh).");
+            }
+
+            if (model.WaterIndexEnd < model.WaterIndexStart)
+            {
+                ModelState.AddModelError("WaterIndexEnd", $"Chỉ số nước cuối kỳ ({model.WaterIndexEnd} m³) không được nhỏ hơn chỉ số đầu kỳ ({model.WaterIndexStart} m³).");
+            }
 
             if (!ModelState.IsValid)
             {

@@ -390,6 +390,78 @@ namespace QuanLyPhongTro.Controllers
             return Json(new { invoices = unpaid });
         }
 
+        // ── API: Thông báo phản hồi lịch hẹn xem phòng ─────────────────────────
+        [HttpGet]
+        public async Task<IActionResult> GetBookingNotifications()
+        {
+            var phone = await GetLoggedInPhone();
+            if (string.IsNullOrWhiteSpace(phone))
+                return Json(new { bookings = Array.Empty<object>() });
+
+            var normalizedPhone = NormalizePhone(phone);
+
+            var rawBookings = await _context.BookingRequests
+                .Include(b => b.Room)
+                .Where(b => b.RequestType == BookingRequestType.ViewingRequest
+                         && b.Status != BookingRequestStatus.Pending
+                         && !b.IsGuestNotified
+                         && (b.Phone.Trim() == phone
+                             || b.Phone.Replace(" ", "").Replace(".", "").Replace("-", "") == normalizedPhone))
+                .OrderByDescending(b => b.CreatedAt)
+                .Select(b => new
+                {
+                    b.RequestId,
+                    RoomName = b.Room != null ? b.Room.RoomName : $"Phòng #{b.RoomId}",
+                    b.PreferredDate,
+                    b.Status,
+                    b.AdminNote,
+                    b.CreatedAt
+                })
+                .ToListAsync();
+
+            var bookings = rawBookings.Select(b => new
+            {
+                b.RequestId,
+                b.RoomName,
+                PreferredDate = string.IsNullOrWhiteSpace(b.PreferredDate) ? "Chưa chọn" : b.PreferredDate,
+                Status = b.Status == BookingRequestStatus.Accepted ? "Accepted" : "Rejected",
+                StatusText = b.Status == BookingRequestStatus.Accepted ? "Đã chấp nhận" : "Đã từ chối",
+                AdminNote = string.IsNullOrWhiteSpace(b.AdminNote) ? "" : b.AdminNote,
+                CreatedAt = b.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+            }).ToList();
+
+            return Json(new { bookings });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> MarkBookingNotified([FromBody] BookingNotificationMarkRequest request)
+        {
+            if (request.RequestIds == null || request.RequestIds.Count == 0)
+                return Json(new { success = true, updated = 0 });
+
+            var phone = await GetLoggedInPhone();
+            if (string.IsNullOrWhiteSpace(phone))
+                return Unauthorized();
+
+            var normalizedPhone = NormalizePhone(phone);
+            var requestIds = request.RequestIds.Distinct().ToList();
+
+            var bookings = await _context.BookingRequests
+                .Where(b => requestIds.Contains(b.RequestId)
+                         && b.RequestType == BookingRequestType.ViewingRequest
+                         && b.Status != BookingRequestStatus.Pending
+                         && !b.IsGuestNotified
+                         && (b.Phone.Trim() == phone
+                             || b.Phone.Replace(" ", "").Replace(".", "").Replace("-", "") == normalizedPhone))
+                .ToListAsync();
+
+            foreach (var booking in bookings)
+                booking.IsGuestNotified = true;
+
+            await _context.SaveChangesAsync();
+            return Json(new { success = true, updated = bookings.Count });
+        }
+
         // ── Logout ───────────────────────────────────────────────────────
 
         // GET: /Account/Logout
@@ -403,5 +475,37 @@ namespace QuanLyPhongTro.Controllers
             TempData["Success"] = "Đã đăng xuất thành công.";
             return RedirectToAction("Index", "Home");
         }
+
+        private async Task<string?> GetLoggedInPhone()
+        {
+            var tenantIdStr = HttpContext.Session.GetString(SESSION_TENANT);
+            if (!string.IsNullOrEmpty(tenantIdStr) && int.TryParse(tenantIdStr, out int tenantId))
+                return (await _context.Tenants
+                    .Where(t => t.TenantId == tenantId)
+                    .Select(t => t.Phone)
+                    .FirstOrDefaultAsync())?.Trim();
+
+            var userIdStr = HttpContext.Session.GetString(SESSION_USER);
+            if (!string.IsNullOrEmpty(userIdStr) && int.TryParse(userIdStr, out int userId))
+                return (await _context.Users
+                    .Where(u => u.UserId == userId)
+                    .Select(u => u.Phone)
+                    .FirstOrDefaultAsync())?.Trim();
+
+            return null;
+        }
+
+        private static string NormalizePhone(string phone)
+        {
+            return phone.Trim()
+                .Replace(" ", "")
+                .Replace(".", "")
+                .Replace("-", "");
+        }
+    }
+
+    public sealed class BookingNotificationMarkRequest
+    {
+        public List<int> RequestIds { get; set; } = new();
     }
 }
