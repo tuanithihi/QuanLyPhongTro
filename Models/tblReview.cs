@@ -9,6 +9,9 @@ namespace QuanLyPhongTro.Models
         [Key]
         public int ReviewId { get; set; }
 
+        [Display(Name = "Hợp đồng thuê")]
+        public int? ContractId { get; set; }
+
         [Required]
         [StringLength(100)]
         public string FullName { get; set; } = string.Empty;
@@ -32,5 +35,9 @@ namespace QuanLyPhongTro.Models
         public bool IsApproved { get; set; } = true;
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        // Navigation
+        [ForeignKey(nameof(ContractId))]
+        public virtual tblContract? Contract { get; set; }
     }
 }

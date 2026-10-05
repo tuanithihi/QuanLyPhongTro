@@ -22,6 +22,10 @@ namespace QuanLyPhongTro.Models
         [Display(Name = "Số hóa đơn")]
         public string InvoiceCode { get; set; } = string.Empty;
 
+        // ── LIÊN KẾT CHỦ TRỌ ──────────────────────────────────────────
+        [Display(Name = "Chủ trọ")]
+        public int? LandlordId { get; set; }
+
         // ── LIÊN KẾT ─────────────────────────────────────────────────
         [Required]
         [Display(Name = "Phòng")]
@@ -94,6 +98,9 @@ namespace QuanLyPhongTro.Models
         public DateTime? UpdatedAt { get; set; }
 
         // ── NAVIGATION PROPERTIES ─────────────────────────────────────
+        [ForeignKey(nameof(LandlordId))]
+        public virtual tblLandlord? Landlord { get; set; }
+
         [ForeignKey(nameof(RoomId))]
         public virtual tblRoom? Room { get; set; }
 

@@ -1,222 +1,200 @@
-  <!DOCTYPE html>
-  <html lang="vi">
-
-  <head>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    
+
     <!-- SEO Meta Tags -->
-    <title>@(ViewData["Title"] ?? "Phòng Trọ Mới - Nền tảng tìm phòng trọ an toàn")</title>
-    <meta name="description" content="@(ViewData["Description"] ?? "Phòng Trọ Mới - Nền tảng tìm phòng trọ uy tín, minh bạch, phù hợp cho gia đình và người đi làm.")">
-    <meta name="keywords" content="@(ViewData["Keywords"] ?? "phòng trọ mới, tìm phòng trọ, thuê phòng, phòng trọ gia đình, phòng trọ an toàn")">
-    <meta name="author" content="Group 12">
-    
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="@(Context.Request.Scheme)://@(Context.Request.Host)@(Context.Request.Path)">
-    <meta property="og:title" content="@(ViewData["Title"] ?? "Phòng Trọ Mới - Nền tảng tìm phòng trọ an toàn")">
-    <meta property="og:description" content="@(ViewData["Description"] ?? "Phòng Trọ Mới - Tìm phòng trọ nhanh, minh bạch và dễ dàng")">
-    <meta property="og:image" content="@(Context.Request.Scheme)://@(Context.Request.Host)/assets/img/logo.webp">
-    
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="@(Context.Request.Scheme)://@(Context.Request.Host)@(Context.Request.Path)">
-    <meta property="twitter:title" content="@(ViewData["Title"] ?? "Phòng Trọ Mới - Nền tảng tìm phòng trọ an toàn")">
-    <meta property="twitter:description" content="@(ViewData["Description"] ?? "Phòng Trọ Mới - Tìm phòng trọ nhanh, minh bạch và dễ dàng")">
-    <meta property="twitter:image" content="@(Context.Request.Scheme)://@(Context.Request.Host)/assets/img/logo.webp">
+    <title>@(ViewData["Title"] ?? "Phòng Trọ Mới - Nền tảng tìm kiếm và cho thuê phòng trọ uy tín")</title>
+    <meta name="description" content="@(ViewData["Description"] ?? "Phòng Trọ Mới - Sàn giao dịch phòng trọ, căn hộ mini, nhà nguyên căn minh bạch, an toàn tại Việt Nam.")">
+    <meta name="keywords" content="@(ViewData["Keywords"] ?? "thuê phòng trọ, tìm phòng trọ, phòng trọ giá rẻ, căn hộ mini, phòng trọ hà nội, phòng trọ tphcm")">
+    <meta name="author" content="PhongTroMoi">
 
-    <!-- Favicons -->
-    <link href="~/assets/img/logo.png" rel="icon">
-    <link href="~/assets/img/logo.png" rel="apple-touch-icon">
+    <!-- Canonical & Open Graph -->
+    <link rel="canonical" href="@(ViewData["CanonicalUrl"] ?? $"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.Path}")" />
+    <meta property="og:type" content="@(ViewData["OgType"] ?? "website")">
+    <meta property="og:site_name" content="Phòng Trọ Mới">
+    <meta property="og:url" content="@(ViewData["CanonicalUrl"] ?? $"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.Path}")">
+    <meta property="og:title" content="@(ViewData["Title"] ?? "Phòng Trọ Mới - Sàn phòng trọ uy tín")">
+    <meta property="og:description" content="@(ViewData["Description"] ?? "Tìm phòng trọ nhanh chóng, an toàn, minh bạch.")">
+    <meta property="og:image" content="@(ViewData["OgImage"] ?? $"{Context.Request.Scheme}://{Context.Request.Host}/images/og-default.jpg")">
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Raleway:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap" rel="stylesheet">
+    @await RenderSectionAsync("SeoHead", required: false)
 
-    <!-- Vendor CSS Files -->
+    <!-- Vendor CSS -->
     <link href="~/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="~/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
-    <link href="~/assets/vendor/aos/aos.css" rel="stylesheet">
-    <link href="~/assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
 
-    <!-- Main CSS File -->
-    <link href="~/assets/css/main.css" rel="stylesheet">
-    
+    <!-- Design System CSS (Tách biệt chuẩn chỉ) -->
+    <link href="~/css/variables.css" rel="stylesheet">
+    <link href="~/css/base.css" rel="stylesheet">
+    <link href="~/css/components.css" rel="stylesheet">
+
     <!-- Chatbot CSS -->
     <link href="~/css/chatbot.css" rel="stylesheet">
 
+    @await RenderSectionAsync("Styles", required: false)
+
     <style>
-        .btn-auth-modal { background: linear-gradient(135deg,#27AE60,#2ECC71); border: none; color: #fff; }
-        .btn-auth-modal:hover { background: linear-gradient(135deg,#1E8449,#27AE60); color: #fff; }
-        #authTabList .nav-link { font-size: .9rem; }
-        #authTabList .nav-link.active { background: linear-gradient(135deg,#27AE60,#2ECC71); color: #fff; }
+        .btn-auth-modal {
+            background-color: var(--brand-primary);
+            border: 1px solid var(--brand-primary);
+            color: #ffffff;
+            font-weight: var(--font-semibold);
+            border-radius: var(--radius-md);
+            transition: all var(--transition-fast);
+        }
+        .btn-auth-modal:hover {
+            background-color: var(--brand-primary-hover);
+            border-color: var(--brand-primary-hover);
+            color: #ffffff;
+        }
+        #authTabList .nav-link {
+            font-size: var(--text-sm);
+            color: var(--color-text-secondary);
+            border-radius: var(--radius-md);
+            padding: 6px 16px;
+            font-weight: var(--font-medium);
+        }
+        #authTabList .nav-link.active {
+            background-color: var(--brand-primary);
+            color: #ffffff;
+        }
     </style>
+</head>
 
-    <!-- Structured Data for SEO -->
-    <script type="application/ld+json">
-    {
-      "@@context": "https://schema.org",
-      "@@type": "Library",
-      "name": "Phòng Trọ Mới",
-      "description": "Nền tảng tìm phòng trọ uy tín, minh bạch và hỗ trợ khách thuê hiệu quả",
-      "url": "@(Context.Request.Scheme)://@(Context.Request.Host)",
-      "logo": "@(Context.Request.Scheme)://@(Context.Request.Host)/assets/img/logo.webp",
-      "address": {
-        "@@type": "PostalAddress",
-        "addressLocality": "Vinh",
-        "addressRegion": "Nghệ An",
-        "addressCountry": "VN"
-      }
-    }
-    </script>
-  </head>
+<body style="display:flex; flex-direction:column; min-height:100vh;">
 
-  <body class="index-page" style="display:flex;flex-direction:column;min-height:100vh;">
+    <!-- ── Site Header & Navigation ───────────────────────────────── -->
+    @await Component.InvokeAsync("MenuView")
 
-   @await Component.InvokeAsync("MenuView")
-
-    @* Toast thông báo toàn cục — hiện TempData từ bất kỳ action nào *@
+    <!-- ── Global Toast Notifications ────────────────────────────── -->
     @if (TempData["Success"] != null || TempData["Error"] != null)
     {
-        <div style="position:fixed;top:80px;right:20px;z-index:9999;min-width:280px;max-width:380px;">
+        <div style="position:fixed; top:80px; right:20px; z-index:9999; min-width:300px; max-width:400px;">
             @if (TempData["Success"] != null)
             {
-                <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
-                    <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <div class="alert alert-success alert-dismissible fade show shadow-sm border" role="alert" style="border-radius:var(--radius-md);">
+                    <i class="bi bi-check-circle-fill me-2 text-success"></i>@TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             }
             @if (TempData["Error"] != null)
             {
-                <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
-                    <i class="bi bi-exclamation-triangle me-2"></i>@TempData["Error"]
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <div class="alert alert-danger alert-dismissible fade show shadow-sm border" role="alert" style="border-radius:var(--radius-md);">
+                    <i class="bi bi-exclamation-triangle-fill me-2 text-danger"></i>@TempData["Error"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             }
         </div>
     }
 
+    <!-- ── Main Content Area ──────────────────────────────────────── -->
     <main id="main" style="flex:1;">
-      @RenderBody()
+        @RenderBody()
     </main>
 
-    <footer id="footer" class="footer accent-background">
+    <!-- ── Structured Site Footer ─────────────────────────────────── -->
+    <footer class="site-footer">
+        <div class="container-xl footer-top">
+            <div class="row gy-4">
+                <!-- Col 1: Brand Info -->
+                <div class="col-lg-4 col-md-12">
+                    <a href="/" class="d-flex align-items-center gap-2 mb-3 text-decoration-none">
+                        <span class="brand-icon" style="width:30px; height:30px; font-size:0.95rem;">
+                            <i class="bi bi-buildings"></i>
+                        </span>
+                        <span class="fw-bold" style="font-size:1.1rem; color:var(--gray-900); letter-spacing:-0.3px;">PHONGTRO<span style="color:var(--brand-primary);">MOI</span></span>
+                    </a>
+                    <p class="small text-muted mb-3" style="line-height:1.6;">
+                        Nền tảng tìm kiếm và cho thuê phòng trọ hàng đầu Việt Nam. Kết nối trực tiếp khách thuê và chủ nhà với thông tin xác thực, bản đồ vị trí trực quan, hợp đồng minh bạch và thanh toán an toàn qua VietQR.
+                    </p>
+                    <div class="d-flex align-items-center gap-3 text-muted small">
+                        <span><i class="bi bi-shield-check text-success me-1"></i>Tin thật - Phòng thật</span>
+                        <span><i class="bi bi-check2-circle text-primary me-1"></i>Hỗ trợ 24/7</span>
+                    </div>
+                </div>
 
-      <div class="container footer-top">
-        <div class="row gy-4">
-          <div class="col-lg-5 col-md-12 footer-about">
-            <a asp-controller="Home" asp-action="Index" class="logo d-flex align-items-center">
-              <img src="~/assets/img/logo.png" alt="Phòng Trọ Mới Logo" class="me-2" style="height: 40px;">
-              <span class="sitename">Phòng Trọ Mới</span>
-            </a>
-            <p>Nền tảng quản lý phòng trọ hiện đại, giúp chủ nhà quản lý phòng và người thuê đặt lịch xem phòng dễ dàng. Cung cấp hệ thống quản lý hợp đồng, hóa đơn, dịch vụ và giao tiếp trực tiếp giữa chủ và khách thuê một cách hiệu quả.</p>
-            <div class="social-links d-flex mt-4">
-              <a href="#" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
-                <i class="bi bi-facebook"></i>
-              </a>
-              <a href="#" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
-                <i class="bi bi-twitter-x"></i>
-              </a>
-              <a href="#" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-                <i class="bi bi-instagram"></i>
-              </a>
-              <a href="#" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
-                <i class="bi bi-linkedin"></i>
-              </a>
+                <!-- Col 2: Popular Locations -->
+                <div class="col-lg-2 col-6">
+                    <h5 class="footer-col-title">Khu vực thuê</h5>
+                    <ul class="footer-links-list">
+                        <li><a href="/phong-tro/ha-noi">Phòng trọ Hà Nội</a></li>
+                        <li><a href="/phong-tro/ho-chi-minh">Phòng trọ TP.HCM</a></li>
+                        <li><a href="/phong-tro/da-nang">Phòng trọ Đà Nẵng</a></li>
+                        <li><a href="/phong-tro/nghe-an">Phòng trọ Nghệ An</a></li>
+                        <li><a href="/phong-tro/can-tho">Phòng trọ Cần Thơ</a></li>
+                        <li><a href="/phong-tro">Tất cả khu vực</a></li>
+                    </ul>
+                </div>
+
+                <!-- Col 3: Guidelines & Policies -->
+                <div class="col-lg-3 col-6">
+                    <h5 class="footer-col-title">Quy chế &amp; Hướng dẫn</h5>
+                    <ul class="footer-links-list">
+                        <li><a href="/Home/Privacy">Chính sách bảo mật</a></li>
+                        <li><a href="/Blog">Kinh nghiệm thuê phòng</a></li>
+                        <li><a href="/Contact">Quy chế hoạt động sàn</a></li>
+                        <li><a href="/dang-tin">Đăng ký chủ trọ &amp; Đăng tin</a></li>
+                        <li><a href="/Account/Invoices">Hướng dẫn thanh toán</a></li>
+                        <li><a href="/Admin/Account/Login">Kênh Quản lý Chủ trọ / Admin</a></li>
+                    </ul>
+                </div>
+
+                <!-- Col 4: Contact -->
+                <div class="col-lg-3 col-md-12">
+                    <h5 class="footer-col-title">Liên hệ &amp; Hỗ trợ</h5>
+                    <p class="small text-muted mb-2">
+                        <i class="bi bi-geo-alt me-2 text-danger"></i>Trụ sở: TP. Vinh, Tỉnh Nghệ An, Việt Nam
+                    </p>
+                    <p class="small text-muted mb-2">
+                        <i class="bi bi-telephone me-2 text-primary"></i>Hotline: <strong>1900 8888</strong> (8h00 - 21h00)
+                    </p>
+                    <p class="small text-muted mb-3">
+                        <i class="bi bi-envelope me-2 text-warning"></i>Email: <a href="mailto:support@phongtromoi.vn" class="text-decoration-none">support@phongtromoi.vn</a>
+                    </p>
+                    <div class="d-flex gap-2">
+                        <a href="#" class="btn btn-neutral btn-sm" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+                        <a href="#" class="btn btn-neutral btn-sm" aria-label="YouTube"><i class="bi bi-youtube"></i></a>
+                        <a href="#" class="btn btn-neutral btn-sm" aria-label="Zalo"><i class="bi bi-chat-dots"></i></a>
+                    </div>
+                </div>
             </div>
-          </div>
-
-          <div class="col-lg-2 col-6 footer-links">
-            <h4>Liên kết hữu ích</h4>
-            <ul>
-              <li><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
-              <li><a asp-controller="Blog" asp-action="Index">Tin tức</a></li>
-              <li><a asp-controller="Contact" asp-action="Index">Liên hệ</a></li>
-              <li><a asp-controller="Home" asp-action="Privacy">Chính sách bảo mật</a></li>
-              <li><a asp-area="Admin" asp-controller="Account" asp-action="Login">Đăng nhập</a></li>
-            </ul>
-          </div>
-
-          <div class="col-lg-2 col-6 footer-links">
-            <h4>Dịch vụ</h4>
-            <ul>
-              <li><a asp-controller="Home" asp-action="Index">Tìm phòng trọ</a></li>
-              <li><a asp-controller="Account" asp-action="Info">Hóa đơn & Thanh toán</a></li>
-              <li><a href="#faq">Câu hỏi thường gặp</a></li>
-              <li><a href="#support">Hỗ trợ kỹ thuật</a></li>
-              <li><a asp-area="Admin" asp-controller="Home" asp-action="Index">Quản trị</a></li>
-            </ul>
-          </div>
-
-          <div class="col-lg-3 col-md-12 footer-contact text-center text-md-start">
-            <h4>Liên hệ</h4>
-            <p>
-              <i class="bi bi-geo-alt-fill me-2"></i>
-              <strong>Địa chỉ:</strong><br>
-              Vinh, Nghệ An<br>
-              Việt Nam
-            </p>
-            <p class="mt-3">
-              <i class="bi bi-telephone-fill me-2"></i>
-              <strong>Điện thoại:</strong> 
-              <span>+84 XXX XXX XXX</span>
-            </p>
-            <p>
-              <i class="bi bi-envelope-fill me-2"></i>
-              <strong>Email:</strong>
-              <a href="mailto:hoductuan4@gmail.com">hoductuan4@gmail.com</a>
-            </p>
-          </div>
-
         </div>
-      </div>
 
-      <div class="copyright text-center mt-4">
-        <div class="container">
-          <p class="mb-0">
-            &copy; @DateTime.Now.Year. All Rights Reserved | Designed by <a href="#" target="_blank" rel="noopener noreferrer">Hồ Đức Tuấn</a>
-          </p>
+        <div class="footer-bottom">
+            <div class="container-xl footer-bottom-content">
+                <div>
+                    &copy; @DateTime.Now.Year Phòng Trọ Mới. Giữ toàn quyền bản quyền nội dung và thiết kế.
+                </div>
+                <div class="d-flex gap-3">
+                    <a href="/Home/Privacy" class="text-muted text-decoration-none">Bảo mật</a>
+                    <a href="/Contact" class="text-muted text-decoration-none">Điều khoản</a>
+                    <a href="/Contact" class="text-muted text-decoration-none">Trợ giúp</a>
+                </div>
+            </div>
         </div>
-      </div>
-
     </footer>
 
-    <!-- Scroll Top -->
-    <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center" aria-label="Scroll to top">
-      <i class="bi bi-arrow-up-short"></i>
-    </a>
-
-    <!-- Preloader -->
-    <div id="preloader"></div>
-
-    <!-- Vendor JS Files -->
+    <!-- ── Scripts ────────────────────────────────────────────────── -->
     <script src="~/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="~/assets/vendor/php-email-form/validate.js"></script>
-    <script src="~/assets/vendor/aos/aos.js"></script>
-    <script src="~/assets/vendor/purecounter/purecounter_vanilla.js"></script>
-    <script src="~/assets/vendor/swiper/swiper-bundle.min.js"></script>
-
-    <!-- Main JS File -->
-    <script src="~/assets/js/main.js"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
 
-    <!-- ── Auth Modal ─────────────────────────────────────────────── -->
+    <!-- ── Auth Modal (Đăng nhập / Đăng ký) ───────────────────────── -->
     <div class="modal fade" id="authModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" style="max-width:440px;">
-            <div class="modal-content" style="border-radius:16px;border:none;box-shadow:0 20px 60px rgba(0,0,0,.25);">
-
+        <div class="modal-dialog modal-dialog-centered" style="max-width:420px;">
+            <div class="modal-content" style="border-radius:var(--radius-lg); border:1px solid var(--border-color); box-shadow:var(--shadow-drawer);">
                 <div class="modal-header border-0 pb-1 px-4 pt-4">
                     <ul class="nav nav-pills gap-1 me-auto" id="authTabList">
                         <li class="nav-item">
-                            <button class="nav-link active px-3 py-1" data-auth-tab="login">
+                            <button class="nav-link active" data-auth-tab="login">
                                 <i class="bi bi-box-arrow-in-right me-1"></i>Đăng nhập
                             </button>
                         </li>
                         <li class="nav-item">
-                            <button class="nav-link px-3 py-1" data-auth-tab="register">
+                            <button class="nav-link" data-auth-tab="register">
                                 <i class="bi bi-person-plus me-1"></i>Đăng ký
                             </button>
                         </li>
@@ -227,14 +205,14 @@
                 <div class="modal-body px-4 pb-4 pt-2">
                     <div id="authAlert" class="d-none alert py-2 small mb-3"></div>
 
-                    <!-- ── Login Form ── -->
+                    <!-- Login Form -->
                     <div id="loginPane">
                         <form id="loginForm" novalidate>
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="returnUrl" id="loginReturnUrl" value="" />
 
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Tên đăng nhập / Email</label>
+                                <label class="form-label">Tên đăng nhập hoặc Email</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="bi bi-person"></i></span>
                                     <input type="text" name="UsernameOrEmail" class="form-control"
@@ -244,7 +222,7 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-semibold">Mật khẩu</label>
+                                <label class="form-label">Mật khẩu</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="bi bi-lock"></i></span>
                                     <input type="password" name="Password" class="form-control"
@@ -256,79 +234,70 @@
                                 </div>
                             </div>
 
-                            <div class="d-grid">
-                                <button type="submit" id="loginSubmitBtn" class="btn btn-auth-modal btn-lg">
+                            <div class="d-grid mt-4">
+                                <button type="submit" id="loginSubmitBtn" class="btn btn-brand">
                                     <i class="bi bi-box-arrow-in-right me-1"></i>Đăng nhập
                                 </button>
                             </div>
                         </form>
                     </div>
 
-                    <!-- ── Register Form ── -->
+                    <!-- Register Form -->
                     <div id="registerPane" class="d-none">
-                        <p class="text-muted small mb-3">Đăng ký để xem phòng, gửi yêu cầu thuê</p>
+                        <p class="text-muted small mb-3">Tạo tài khoản để gửi yêu cầu thuê phòng và nhận thông báo</p>
                         <form id="registerForm" novalidate>
                             @Html.AntiForgeryToken()
-
                             <div class="row g-2">
                                 <div class="col-12">
-                                    <label class="form-label fw-semibold">Tên đăng nhập <span class="text-danger">*</span></label>
+                                    <label class="form-label">Tên đăng nhập <span class="text-danger">*</span></label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="bi bi-person"></i></span>
                                         <input type="text" name="Username" class="form-control"
-                                               placeholder="Ví dụ: nguyen_van_a" autocomplete="username" required />
+                                               placeholder="nguyen_van_a" autocomplete="username" required />
                                     </div>
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
+                                    <label class="form-label">Email <span class="text-danger">*</span></label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="bi bi-envelope"></i></span>
                                         <input type="email" name="Email" class="form-control"
-                                               placeholder="email@example.com" autocomplete="email" required />
+                                               placeholder="email@domain.com" autocomplete="email" required />
                                     </div>
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label fw-semibold">Họ và tên</label>
+                                    <label class="form-label">Họ và tên</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="bi bi-person-badge"></i></span>
                                         <input type="text" name="FullName" class="form-control" placeholder="Họ và tên đầy đủ" />
                                     </div>
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label fw-semibold">Số điện thoại</label>
+                                    <label class="form-label">Số điện thoại</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="bi bi-telephone"></i></span>
-                                        <input type="tel" name="Phone" class="form-control" placeholder="0xxx xxx xxx" />
+                                        <input type="tel" name="Phone" class="form-control" placeholder="09xxxxxxxx" />
                                     </div>
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label fw-semibold">Mật khẩu <span class="text-danger">*</span></label>
+                                    <label class="form-label">Mật khẩu <span class="text-danger">*</span></label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="bi bi-lock"></i></span>
                                         <input type="password" name="Password" class="form-control"
                                                placeholder="Tối thiểu 6 ký tự" autocomplete="new-password" required />
-                                        <button type="button" class="btn btn-outline-secondary" onclick="authTogglePwd(this)">
-                                            <i class="bi bi-eye"></i>
-                                        </button>
                                     </div>
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label fw-semibold">Xác nhận mật khẩu <span class="text-danger">*</span></label>
+                                    <label class="form-label">Xác nhận mật khẩu <span class="text-danger">*</span></label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
                                         <input type="password" name="ConfirmPassword" class="form-control"
                                                placeholder="Nhập lại mật khẩu" autocomplete="new-password" required />
-                                        <button type="button" class="btn btn-outline-secondary" onclick="authTogglePwd(this)">
-                                            <i class="bi bi-eye"></i>
-                                        </button>
                                     </div>
                                 </div>
-                                <div class="col-12">
-                                    <div class="d-grid mt-1">
-                                        <button type="submit" id="registerSubmitBtn" class="btn btn-auth-modal btn-lg">
-                                            <i class="bi bi-person-plus me-1"></i>Đăng ký
-                                        </button>
-                                    </div>
+                                <div class="col-12 mt-3">
+                                    <button type="submit" id="registerSubmitBtn" class="btn btn-brand w-100">
+                                        <i class="bi bi-person-plus me-1"></i>Đăng ký tài khoản
+                                    </button>
                                 </div>
                             </div>
                         </form>
@@ -339,8 +308,159 @@
         </div>
     </div>
 
+    <!-- ── AI CHATBOT WIDGET (Sạch sẽ, chuẩn Brand, không emoji) ── -->
+    <div id="aiChatWidget" style="position:fixed; bottom:24px; left:24px; z-index:9998;">
+        <!-- Tooltip bubble -->
+        <div id="aiTooltip" style="display:none; position:absolute; bottom:64px; left:0; background:#ffffff; color:var(--gray-800); padding:8px 14px; border-radius:var(--radius-md); border:1px solid var(--border-color); box-shadow:var(--shadow-hover); font-size:var(--text-xs); font-weight:var(--font-medium); white-space:nowrap;">
+            <span><i class="bi bi-robot text-danger me-1"></i>Bạn cần tư vấn tìm phòng?</span>
+            <button onclick="document.getElementById('aiTooltip').style.display='none'" style="background:none; border:none; color:var(--gray-400); cursor:pointer; padding:0 0 0 6px;">&times;</button>
+        </div>
+        <!-- Toggle button -->
+        <button id="aiToggleBtn" onclick="aiChatToggle()" title="AI Tư vấn phòng trọ"
+                style="width:52px; height:52px; border-radius:50%; border:none; background-color:var(--brand-primary); color:#ffffff; font-size:1.4rem; cursor:pointer; box-shadow:var(--shadow-hover); display:flex; align-items:center; justify-content:center; transition:all var(--transition-fast);">
+            <i class="bi bi-robot" id="aiToggleIcon"></i>
+        </button>
+        <!-- Chat panel -->
+        <div id="aiPanel" class="d-none" style="position:absolute; bottom:64px; left:0; width:380px; max-width:calc(100vw - 32px); height:500px; border-radius:var(--radius-xl); overflow:hidden; border:1px solid var(--border-color); box-shadow:var(--shadow-drawer); background:#ffffff; flex-direction:column;">
+            <div id="aiHeader" style="background-color:var(--brand-primary); color:#ffffff; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0;">
+                <div class="d-flex align-items-center gap-2">
+                    <div style="width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:1rem;">
+                        <i class="bi bi-robot"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold" style="font-size:0.9rem;">AI Trợ Lý Tìm Phòng</div>
+                        <div style="font-size:0.7rem; opacity:0.9;"><i class="bi bi-circle-fill text-success" style="font-size:0.4rem;"></i> Sẵn sàng hỗ trợ</div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-1">
+                    <button onclick="aiNewChat()" title="Làm mới" style="background:rgba(255,255,255,0.15); border:none; color:#ffffff; font-size:0.75rem; cursor:pointer; border-radius:var(--radius-sm); padding:3px 8px;">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Làm mới
+                    </button>
+                    <button onclick="aiChatToggle()" style="background:none; border:none; color:#ffffff; font-size:1.1rem; cursor:pointer; padding:2px 4px;">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+            </div>
+            <!-- Message area -->
+            <div id="aiMsgArea" style="flex:1; overflow-y:auto; padding:14px; background-color:var(--color-bg-page); display:flex; flex-direction:column; gap:10px;">
+                <div id="aiWelcome" class="text-center p-3 my-auto">
+                    <div class="mb-2 text-danger fs-3"><i class="bi bi-buildings"></i></div>
+                    <div class="fw-bold mb-1" style="font-size:0.95rem; color:var(--gray-900);">Xin chào! Tôi có thể giúp gì cho bạn?</div>
+                    <p class="text-muted small mb-3">Tư vấn chọn khu vực, khoảng giá, tiện ích và giải đáp thắc mắc thuê phòng.</p>
+                    <div class="d-flex flex-wrap gap-1 justify-content-center">
+                        <button class="btn btn-neutral btn-sm" onclick="aiSendQuick('Có phòng trống nào tại Hà Nội không?')"><i class="bi bi-search me-1"></i>Phòng trống</button>
+                        <button class="btn btn-neutral btn-sm" onclick="aiSendQuick('Tìm phòng giá rẻ dưới 3 triệu')"><i class="bi bi-cash me-1"></i>Dưới 3 triệu</button>
+                        <button class="btn btn-neutral btn-sm" onclick="aiSendQuick('Phòng có ban công và máy lạnh')"><i class="bi bi-wind me-1"></i>Có máy lạnh</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Input area -->
+            <div id="aiInputArea" style="padding:10px 12px; background:#ffffff; border-top:1px solid var(--border-color); flex-shrink:0;">
+                <div class="d-flex gap-2 align-items-center">
+                    <input type="text" id="aiInput" class="form-control" placeholder="Nhập câu hỏi tìm phòng..." autocomplete="off"
+                           style="border-radius:var(--radius-pill); font-size:0.85rem;"
+                           onkeydown="if(event.key==='Enter'){event.preventDefault();aiSend();}">
+                    <button id="aiSendBtn" onclick="aiSend()" class="btn btn-brand" style="border-radius:50%; width:36px; height:36px; padding:0; flex-shrink:0;">
+                        <i class="bi bi-send-fill" style="font-size:0.85rem;"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── JavaScript Helpers ────────────────────────────────────── -->
     <script>
-        // ── Helpers ──────────────────────────────────────────────────────
+        // ── Favorite Toggle & LocalStorage Sync ────────────────────────
+        async function toggleFavorite(roomId, btn) {
+            try {
+                const res = await fetch('/api/favorites/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ roomId: roomId })
+                });
+                const data = await res.json();
+                const icon = btn.querySelector('i');
+
+                if (data.requireLogin) {
+                    // Xử lý tạm bằng localStorage cho khách vãng lai
+                    let localFavs = JSON.parse(localStorage.getItem('saved_rooms') || '[]');
+                    const idx = localFavs.indexOf(roomId);
+                    let isNowFav = false;
+                    if (idx >= 0) {
+                        localFavs.splice(idx, 1);
+                    } else {
+                        localFavs.push(roomId);
+                        isNowFav = true;
+                    }
+                    localStorage.setItem('saved_rooms', JSON.stringify(localFavs));
+
+                    if (isNowFav) {
+                        icon.className = 'bi bi-heart-fill text-danger';
+                        btn.classList.add('active');
+                        alertToast('Đã lưu phòng vào thiết bị này! Đăng nhập để đồng bộ vĩnh viễn.');
+                    } else {
+                        icon.className = 'bi bi-heart';
+                        btn.classList.remove('active');
+                        alertToast('Đã bỏ lưu phòng trên thiết bị.');
+                    }
+                    return;
+                }
+
+                if (data.success) {
+                    if (data.isFavorite) {
+                        icon.className = 'bi bi-heart-fill text-danger';
+                        btn.classList.add('active');
+                    } else {
+                        icon.className = 'bi bi-heart';
+                        btn.classList.remove('active');
+                    }
+                    alertToast(data.message);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function alertToast(msg) {
+            let container = document.getElementById('toast-container-global');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container-global';
+                container.style.cssText = 'position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:9999; display:flex; flex-direction:column; gap:8px; pointer-events:none;';
+                document.body.appendChild(container);
+            }
+            const toast = document.createElement('div');
+            toast.className = 'shadow border rounded-pill px-3 py-2 text-white bg-dark small';
+            toast.style.cssText = 'pointer-events:auto; transition:opacity 200ms ease; opacity:0;';
+            toast.textContent = msg;
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.style.opacity = '1');
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 200);
+            }, 2500);
+        }
+
+        // Tự động kiểm tra localStorage để hiển thị trạng thái tim cho khách
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                const localFavs = JSON.parse(localStorage.getItem('saved_rooms') || '[]');
+                if (localFavs.length > 0) {
+                    localFavs.forEach(function(rId) {
+                        const card = document.querySelector('.room-card[data-room-id="' + rId + '"]');
+                        if (card) {
+                            const btn = card.querySelector('.room-card-favorite-btn');
+                            if (btn && !btn.classList.contains('active')) {
+                                btn.classList.add('active');
+                                const i = btn.querySelector('i');
+                                if (i) i.className = 'bi bi-heart-fill text-danger';
+                            }
+                        }
+                    });
+                }
+            } catch(e) {}
+        });
+
         function authTogglePwd(btn) {
             var input = btn.previousElementSibling;
             var icon  = btn.querySelector('i');
@@ -369,12 +489,10 @@
             authClearAlert();
         }
 
-        // ── Tab switching ─────────────────────────────────────────────────
         document.querySelectorAll('[data-auth-tab]').forEach(function(btn) {
             btn.addEventListener('click', function() { authSwitchTab(this.dataset.authTab); });
         });
 
-        // Mở đúng tab khi modal show
         document.getElementById('authModal').addEventListener('show.bs.modal', function(e) {
             var tab = e.relatedTarget && e.relatedTarget.dataset.openTab;
             authSwitchTab(tab === 'register' ? 'register' : 'login');
@@ -382,813 +500,175 @@
             document.getElementById('registerForm').reset();
         });
 
-        // ── Login submit ──────────────────────────────────────────────────
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             authClearAlert();
             var btn = document.getElementById('loginSubmitBtn');
             btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang xử lý…';
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang xử lý...';
 
             try {
-                var res  = await fetch('/Account/LoginModal', { method: 'POST', body: new FormData(this) });
+                var res = await fetch('/Account/LoginModal', { method: 'POST', body: new FormData(this) });
                 var data = await res.json();
                 if (data.success) {
-                    window.location.href = data.redirectUrl;
+                    window.location.href = data.redirectUrl || window.location.href;
                 } else {
-                    authShowAlert('danger', data.message);
+                    authShowAlert('danger', data.message || 'Đăng nhập không thành công.');
                     btn.disabled = false;
                     btn.innerHTML = '<i class="bi bi-box-arrow-in-right me-1"></i>Đăng nhập';
                 }
             } catch {
-                authShowAlert('danger', 'Có lỗi xảy ra, vui lòng thử lại.');
+                authShowAlert('danger', 'Đã xảy ra lỗi kết nối.');
                 btn.disabled = false;
                 btn.innerHTML = '<i class="bi bi-box-arrow-in-right me-1"></i>Đăng nhập';
             }
         });
 
-        // ── Register submit ───────────────────────────────────────────────
         document.getElementById('registerForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             authClearAlert();
             var btn = document.getElementById('registerSubmitBtn');
             btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang xử lý…';
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang xử lý...';
 
             try {
-                var res  = await fetch('/Account/RegisterModal', { method: 'POST', body: new FormData(this) });
+                var res = await fetch('/Account/RegisterModal', { method: 'POST', body: new FormData(this) });
                 var data = await res.json();
                 if (data.success) {
-                    authShowAlert('success', data.message);
-                    setTimeout(function() { authSwitchTab('login'); }, 1500);
+                    authShowAlert('success', data.message || 'Đăng ký thành công!');
+                    setTimeout(function() { authSwitchTab('login'); }, 1200);
                 } else {
-                    authShowAlert('danger', data.message);
+                    authShowAlert('danger', data.message || 'Đăng ký không thành công.');
                 }
             } catch {
-                authShowAlert('danger', 'Có lỗi xảy ra, vui lòng thử lại.');
+                authShowAlert('danger', 'Đã xảy ra lỗi kết nối.');
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-person-plus me-1"></i>Đăng ký';
+                btn.innerHTML = '<i class="bi bi-person-plus me-1"></i>Đăng ký tài khoản';
             }
         });
-    </script>
 
-    @* ── Modal thông báo hóa đơn trễ hạn ── *@
-    @{
-        bool _isTenantLoggedIn = !string.IsNullOrEmpty(Context.Session.GetString("TenantUser"));
-        bool _isNormalUserLoggedIn = !string.IsNullOrEmpty(Context.Session.GetString("NormalUser"));
-        bool _isGuestLoggedIn = _isTenantLoggedIn || _isNormalUserLoggedIn;
-    }
-    @if (_isTenantLoggedIn)
-    {
-        <div class="modal fade" id="overdueModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content" style="border:none;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden;">
-                    <div class="modal-header border-0" style="background:linear-gradient(135deg,#E74C3C,#C0392B);color:#fff;padding:1.25rem 1.5rem;">
-                        <h5 class="modal-title fw-bold">
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i>Thông báo hóa đơn chưa thanh toán
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
-                    </div>
-                    <div class="modal-body p-4">
-                        <div class="alert alert-warning d-flex align-items-start gap-2 mb-3" style="border-radius:10px;">
-                            <i class="bi bi-info-circle-fill fs-5 mt-1" style="color:#E67E22;"></i>
-                            <div class="small">
-                                Bạn có <strong id="overdueCount">0</strong> hóa đơn chưa thanh toán.
-                                Vui lòng thanh toán trước hạn để tránh phí phạt trễ hạn.
-                            </div>
-                        </div>
-                        <div class="table-responsive" style="max-height:320px;overflow-y:auto;">
-                            <table class="table table-hover table-sm align-middle mb-0" style="font-size:.88rem;">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Mã HĐ</th>
-                                        <th>Phòng</th>
-                                        <th>Kỳ</th>
-                                        <th>Hạn thanh toán</th>
-                                        <th class="text-end">Số tiền</th>
-                                        <th class="text-center">Trạng thái</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="overdueTableBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="modal-footer border-0 bg-light" style="border-radius:0 0 16px 16px;">
-                        <a href="/Account/Invoices" class="btn fw-semibold" style="background:#27AE60;color:#fff;border:none;">
-                            <i class="bi bi-receipt me-1"></i>Xem hóa đơn & Thanh toán
-                        </a>
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Để sau</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        // ── AI Chat Script ──────────────────────────────────────────
+        (function(){
+            let _aiOpen = false, _aiWaiting = false;
 
-        <script>
-            document.addEventListener('DOMContentLoaded', async function () {
-                // Chỉ hiện 1 lần mỗi phiên đăng nhập
-                if (sessionStorage.getItem('overdueShown')) return;
+            window.aiChatToggle = function(){
+                const panel = document.getElementById('aiPanel');
+                _aiOpen = !_aiOpen;
+                panel.classList.toggle('d-none', !_aiOpen);
+                panel.style.display = _aiOpen ? 'flex' : 'none';
+                document.getElementById('aiToggleIcon').className = _aiOpen ? 'bi bi-x-lg' : 'bi bi-robot';
+                document.getElementById('aiTooltip').style.display = 'none';
+                if(_aiOpen) document.getElementById('aiInput').focus();
+            };
 
-                try {
-                    const res = await fetch('/Account/GetOverdueInvoices');
-                    const data = await res.json();
-                    if (!data.invoices || data.invoices.length === 0) return;
+            window.aiSendQuick = function(text){
+                document.getElementById('aiInput').value = text;
+                aiSend();
+            };
 
-                    // Đánh dấu đã hiện
-                    sessionStorage.setItem('overdueShown', '1');
+            window.aiNewChat = function(){
+                const area = document.getElementById('aiMsgArea');
+                area.innerHTML = '';
+                const welcome = document.createElement('div');
+                welcome.id = 'aiWelcome';
+                welcome.className = 'text-center p-3 my-auto';
+                welcome.innerHTML =
+                    '<div class="mb-2 text-danger fs-3"><i class="bi bi-buildings"></i></div>' +
+                    '<div class="fw-bold mb-1" style="font-size:0.95rem; color:var(--gray-900);">Xin chào! Tôi có thể giúp gì cho bạn?</div>' +
+                    '<p class="text-muted small mb-3">Tư vấn chọn khu vực, khoảng giá, tiện ích và giải đáp thắc mắc thuê phòng.</p>' +
+                    '<div class="d-flex flex-wrap gap-1 justify-content-center">' +
+                        '<button class="btn btn-neutral btn-sm" onclick="aiSendQuick(\'Có phòng trống nào tại Hà Nội không?\')"><i class="bi bi-search me-1"></i>Phòng trống</button>' +
+                        '<button class="btn btn-neutral btn-sm" onclick="aiSendQuick(\'Tìm phòng giá rẻ dưới 3 triệu\')"><i class="bi bi-cash me-1"></i>Dưới 3 triệu</button>' +
+                        '<button class="btn btn-neutral btn-sm" onclick="aiSendQuick(\'Phòng có ban công và máy lạnh\')"><i class="bi bi-wind me-1"></i>Có máy lạnh</button>' +
+                    '</div>';
+                area.appendChild(welcome);
+                _aiWaiting = false;
+                document.getElementById('aiSendBtn').disabled = false;
+                document.getElementById('aiInput').value = '';
+                document.getElementById('aiInput').focus();
+            };
 
-                    // Điền dữ liệu
-                    document.getElementById('overdueCount').textContent = data.invoices.length;
-                    const tbody = document.getElementById('overdueTableBody');
-                    data.invoices.forEach(function (inv) {
-                        const statusClass = inv.isOverdue ? 'bg-danger' : 'bg-warning text-dark';
-                        const row = document.createElement('tr');
-                        row.innerHTML =
-                            '<td class="fw-semibold">' + inv.invoiceCode + '</td>' +
-                            '<td>' + inv.roomName + '</td>' +
-                            '<td>' + ('0' + inv.billingMonth).slice(-2) + '/' + inv.billingYear + '</td>' +
-                            '<td>' + (inv.isOverdue ? '<span class="text-danger fw-bold">' + inv.dueDate + '</span>' : inv.dueDate) + '</td>' +
-                            '<td class="text-end fw-bold" style="color:#E74C3C;">' + inv.totalAmount + ' ₫</td>' +
-                            '<td class="text-center"><span class="badge ' + statusClass + ' rounded-pill">' + inv.status + '</span></td>';
-                        tbody.appendChild(row);
-                    });
+            window.aiSend = async function(){
+                const inp = document.getElementById('aiInput');
+                const text = inp.value.trim();
+                if(!text || _aiWaiting) return;
 
-                    // Hiện modal
-                    var modal = new bootstrap.Modal(document.getElementById('overdueModal'));
-                    modal.show();
-                } catch (e) { /* im lặng nếu lỗi */ }
-            });
-        </script>
-    }
+                const w = document.getElementById('aiWelcome');
+                if(w) w.remove();
 
-    @if (_isGuestLoggedIn)
-    {
-        <div class="modal fade" id="bookingNotifyModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content" style="border:none;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden;">
-                    <div class="modal-header border-0" style="background:linear-gradient(135deg,#34495E,#2C3E50);color:#fff;padding:1.25rem 1.5rem;">
-                        <h5 class="modal-title fw-bold">
-                            <i class="bi bi-calendar-check-fill me-2"></i>Thông báo lịch hẹn xem phòng
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
-                    </div>
-                    <div class="modal-body p-4">
-                        <div class="alert alert-info d-flex align-items-start gap-2 mb-3" style="border-radius:10px;">
-                            <i class="bi bi-info-circle-fill fs-5 mt-1" style="color:#3498DB;"></i>
-                            <div class="small">
-                                Chủ trọ đã phản hồi <strong id="bookingNotifyCount">0</strong> yêu cầu đặt lịch xem phòng của bạn.
-                            </div>
-                        </div>
-                        <div class="table-responsive" style="max-height:320px;overflow-y:auto;">
-                            <table class="table table-hover table-sm align-middle mb-0" style="font-size:.88rem;">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Phòng</th>
-                                        <th>Ngày muốn xem</th>
-                                        <th class="text-center">Trạng thái</th>
-                                        <th>Ghi chú của chủ trọ</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="bookingNotifyTableBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="modal-footer border-0 bg-light" style="border-radius:0 0 16px 16px;">
-                        <button type="button" id="bookingNotifyOkBtn" class="btn fw-semibold" style="background:#27AE60;color:#fff;border:none;">
-                            <i class="bi bi-check-circle me-1"></i>Đã hiểu
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Để sau</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+                aiAppend('user', text);
+                inp.value = '';
+                inp.focus();
 
-        <script>
-            document.addEventListener('DOMContentLoaded', async function () {
-                const shownKey = 'bookingNotifyShownIds';
-                const shownIds = JSON.parse(sessionStorage.getItem(shownKey) || '[]');
+                const typing = aiShowTyping();
+                _aiWaiting = true;
+                document.getElementById('aiSendBtn').disabled = true;
+
+                // Lấy ngữ cảnh phòng nếu khách đang xem chi tiết phòng
+                const roomCtx = document.getElementById('room-detail-context');
+                const currentRoomId = roomCtx && roomCtx.dataset.roomId ? parseInt(roomCtx.dataset.roomId) : null;
 
                 try {
-                    const res = await fetch('/Account/GetBookingNotifications');
+                    const res = await fetch('/api/chat/ask', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: text, currentRoomId: currentRoomId })
+                    });
                     const data = await res.json();
-                    if (!data.bookings || data.bookings.length === 0) return;
+                    typing.remove();
+                    aiAppend('bot', data.success ? data.reply : (data.reply || 'Xin lỗi, tôi chưa hiểu yêu cầu của bạn.'));
+                } catch(err) {
+                    typing.remove();
+                    aiAppend('bot', 'Không thể kết nối tới máy chủ AI. Vui lòng thử lại sau.');
+                } finally {
+                    _aiWaiting = false;
+                    document.getElementById('aiSendBtn').disabled = false;
+                }
+            };
 
-                    const bookings = data.bookings.filter(function (booking) {
-                        return !shownIds.includes(booking.requestId);
-                    });
-                    if (bookings.length === 0) return;
+            function aiAppend(role, text) {
+                const area = document.getElementById('aiMsgArea');
+                const div = document.createElement('div');
+                div.className = 'd-flex gap-2 ' + (role === 'user' ? 'justify-content-end' : 'justify-content-start');
+                const bubbleStyle = role === 'user' 
+                    ? 'background-color:var(--brand-primary); color:#ffffff; border-radius:14px 14px 2px 14px;' 
+                    : 'background-color:#ffffff; color:var(--gray-900); border:1px solid var(--border-color); border-radius:14px 14px 14px 2px;';
+                
+                // Parse markdown link [text](url) -> <a href="url">text</a>
+                let formatted = escapeHtml(text).replace(/\n/g, '<br>');
+                if (role !== 'user') {
+                    formatted = formatted.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" class="fw-semibold text-decoration-underline" style="color:var(--brand-primary);">$1</a>');
+                }
 
-                    const bookingIds = bookings.map(function (booking) { return booking.requestId; });
-                    sessionStorage.setItem(shownKey, JSON.stringify(Array.from(new Set(shownIds.concat(bookingIds)))));
-
-                    document.getElementById('bookingNotifyCount').textContent = bookings.length;
-                    const tbody = document.getElementById('bookingNotifyTableBody');
-                    tbody.innerHTML = '';
-
-                    bookings.forEach(function (booking) {
-                        const row = document.createElement('tr');
-                        const roomCell = document.createElement('td');
-                        const dateCell = document.createElement('td');
-                        const statusCell = document.createElement('td');
-                        const noteCell = document.createElement('td');
-                        const badge = document.createElement('span');
-
-                        roomCell.className = 'fw-semibold';
-                        roomCell.textContent = booking.roomName;
-                        dateCell.textContent = booking.preferredDate;
-                        statusCell.className = 'text-center';
-                        badge.className = 'badge rounded-pill ' + (booking.status === 'Accepted' ? 'bg-success' : 'bg-danger');
-                        badge.textContent = booking.statusText;
-                        statusCell.appendChild(badge);
-                        noteCell.textContent = booking.adminNote || 'Không có ghi chú';
-
-                        row.appendChild(roomCell);
-                        row.appendChild(dateCell);
-                        row.appendChild(statusCell);
-                        row.appendChild(noteCell);
-                        tbody.appendChild(row);
-                    });
-
-                    const modalEl = document.getElementById('bookingNotifyModal');
-                    const modal = new bootstrap.Modal(modalEl);
-                    document.getElementById('bookingNotifyOkBtn').onclick = async function () {
-                        try {
-                            await fetch('/Account/MarkBookingNotified', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ requestIds: bookingIds })
-                            });
-                        } finally {
-                            modal.hide();
-                        }
-                    };
-
-                    modal.show();
-                } catch (e) { /* im lặng nếu lỗi */ }
-            });
-        </script>
-    }
-
-  <!-- ══════════════ FLOATING CHAT WIDGET ══════════════ -->
-  <div id="chatWidget">
-    <button id="chatToggleBtn" onclick="chatToggle()" title="Nhắn tin với chúng tôi">
-      <i class="bi bi-chat-dots-fill" id="chatToggleIcon"></i>
-      <span id="chatUnreadDot" class="d-none"></span>
-    </button>
-    <div id="chatPanel" class="d-none">
-      <div id="chatHeader">
-        <div class="d-flex align-items-center gap-2">
-          <i class="bi bi-headset fs-5"></i>
-          <div>
-            <div class="fw-semibold" style="font-size:.9rem;">Liên hệ &amp; Hỗ trợ</div>
-            <div style="font-size:.72rem;opacity:.85;">Phản hồi trong thời gian sớm nhất</div>
-          </div>
-        </div>
-        <button onclick="chatToggle()" style="background:none;border:none;color:#fff;font-size:1.1rem;line-height:1;cursor:pointer;">
-          <i class="bi bi-x-lg"></i>
-        </button>
-      </div>
-      <div id="chatIntro">
-        <p class="text-muted small mb-3 px-3 pt-3">Để nhắn tin, vui lòng cho chúng tôi biết thông tin của bạn.</p>
-        <div id="chatIntroAlert" class="d-none alert alert-danger py-2 small mx-3 mb-2"></div>
-        <div class="px-3 pb-3">
-          <div class="mb-2">
-            <input type="text" id="introName" class="form-control form-control-sm" placeholder="Họ và tên *" />
-          </div>
-          <div class="mb-3">
-            <input type="tel" id="introPhone" class="form-control form-control-sm" placeholder="Số điện thoại *" />
-          </div>
-          <button class="btn btn-primary w-100 btn-sm fw-semibold" onclick="chatStart()">
-            <i class="bi bi-arrow-right-circle me-1"></i>Bắt đầu nhắn tin
-          </button>
-        </div>
-      </div>
-      <div id="chatWindow" class="d-none flex-column" style="height:380px;">
-        <div id="chatMsgArea" class="flex-fill overflow-auto p-3" style="background:#f8fafc;font-size:.88rem;"></div>
-        <div class="p-2 border-top d-flex gap-2 bg-white">
-          <input type="text" id="chatInput" class="form-control form-control-sm rounded-pill"
-                 placeholder="Nhắn tin…" autocomplete="off"
-                 onkeydown="if(event.key==='Enter')chatSend()" />
-          <button class="btn btn-primary btn-sm rounded-circle px-2" onclick="chatSend()"
-                  style="width:34px;height:34px;flex-shrink:0;">
-            <i class="bi bi-send"></i>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <style>
-    #chatWidget { position:fixed; bottom:80px; right:24px; z-index:9999; font-family:inherit; }
-    #chatToggleBtn {
-      width:56px;height:56px;border-radius:50%;border:none;
-      background:linear-gradient(135deg,#27AE60,#2ECC71);
-      color:#fff;font-size:1.5rem;cursor:pointer;
-      box-shadow:0 4px 16px rgba(39,174,96,.45);
-      display:flex;align-items:center;justify-content:center;
-      position:relative;transition:transform .2s;
-    }
-    #chatToggleBtn:hover { transform:scale(1.08); }
-    #chatUnreadDot {
-      position:absolute;top:6px;right:6px;
-      width:12px;height:12px;border-radius:50%;
-      background:#dc3545;border:2px solid #fff;
-    }
-    #chatPanel {
-      position:absolute;bottom:68px;right:0;
-      width:320px;border-radius:16px;overflow:hidden;
-      box-shadow:0 8px 32px rgba(0,0,0,.18);
-      background:#fff;
-    }
-    #chatHeader {
-      background:linear-gradient(135deg,#27AE60,#2ECC71);
-      color:#fff;padding:.75rem 1rem;
-      display:flex;align-items:center;justify-content:space-between;
-    }
-    .chat-bubble { max-width:78%;padding:.45rem .75rem;border-radius:.9rem;line-height:1.5;word-break:break-word; }
-    .chat-guest  { background:#e9ecef;color:#333;border-bottom-left-radius:.2rem; }
-    .chat-admin  { background:#27AE60;color:#fff;border-bottom-right-radius:.2rem; }
-    .chat-system { background:#fff3cd;color:#856404;font-size:.78rem;border-radius:.5rem;padding:.3rem .65rem;text-align:center; }
-    .chat-time   { font-size:.68rem;opacity:.6;margin-top:.15rem; }
-
-    /* ── Mobile responsive for contact chat ── */
-    @@media (max-width: 576px) {
-      #chatWidget { bottom:70px; right:16px; }
-      #chatToggleBtn { width:48px; height:48px; font-size:1.3rem; }
-      #chatPanel { width: calc(100vw - 32px); right: -16px; bottom: 60px; }
-    }
-  </style>
-
-  @{
-    bool _chatLoggedIn = !string.IsNullOrEmpty(Context.Session.GetString("TenantUser"))
-                      || !string.IsNullOrEmpty(Context.Session.GetString("NormalUser"));
-  }
-  <script>
-    (function(){
-      const COOKIE    = 'chat_session';
-      const _autoStart = @(_chatLoggedIn ? "true" : "false");
-      let _sk='', _lastId=0, _timer=null;
-
-      function getCookie(n){ const m=document.cookie.match('(^|;)\\s*'+n+'\\s*=\\s*([^;]+)'); return m?m.pop():''; }
-
-      document.addEventListener('DOMContentLoaded', function(){
-        _sk = getCookie(COOKIE);
-        if(_sk) showWindow();
-      });
-
-      window.chatToggle = async function(){
-        const p=document.getElementById('chatPanel');
-        const opening=p.classList.contains('d-none');
-        p.classList.toggle('d-none',!opening);
-        document.getElementById('chatToggleIcon').className = opening?'bi bi-x-lg':'bi bi-chat-dots-fill';
-        if(opening){
-          document.getElementById('chatUnreadDot').classList.add('d-none');
-          if(_sk){ if(!_timer) startPoll(); fetchMsgs(); }
-          else if(_autoStart){ await _autoCreateSession(); }
-        }
-        // Không gọi stopPoll() khi đóng — poll tiếp tục chạy ngầm để phát hiện tin mới
-      };
-
-      async function _autoCreateSession(){
-        // Người thuê / người dùng đã đăng nhập — tự tạo/tiếp nối phiên, không cần nhập tên/SĐT
-        try{
-          document.getElementById('chatIntro').classList.add('d-none');
-          const r=await fetch('/Chat/Start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({guestName:'',guestPhone:''})});
-          const d=await r.json();
-          if(d.success){ _sk=d.sessionKey; showWindow(); }
-          else { document.getElementById('chatIntro').classList.remove('d-none'); }
-        }catch{ document.getElementById('chatIntro').classList.remove('d-none'); }
-      }
-
-      window.chatStart = async function(){
-        const name=document.getElementById('introName').value.trim();
-        const phone=document.getElementById('introPhone').value.trim();
-        const al=document.getElementById('chatIntroAlert');
-        if(!name||!phone){ al.className='alert alert-danger py-2 small mx-3 mb-2'; al.textContent='Vui lòng nhập họ tên và số điện thoại.'; return; }
-        al.className='d-none';
-        try{
-          const r=await fetch('/Chat/Start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({guestName:name,guestPhone:phone})});
-          const d=await r.json();
-          if(d.success){ _sk=d.sessionKey; showWindow(); }
-          else{ al.className='alert alert-danger py-2 small mx-3 mb-2'; al.textContent=d.message||'Có lỗi xảy ra.'; }
-        }catch{ al.className='alert alert-danger py-2 small mx-3 mb-2'; al.textContent='Có lỗi xảy ra, vui lòng thử lại.'; }
-      };
-
-      function showWindow(){
-        document.getElementById('chatIntro').classList.add('d-none');
-        const w=document.getElementById('chatWindow');
-        w.classList.remove('d-none'); w.style.display='flex';
-        fetchMsgs(); startPoll();
-      }
-
-      window.chatSend = async function(){
-        const inp=document.getElementById('chatInput');
-        const txt=inp.value.trim();
-        if(!txt||!_sk) return;
-        inp.value='';
-        appendBubble({content:txt,senderType:0,createdAt:new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}),isSystem:false});
-        scrollBot();
-        try{ await fetch('/Chat/Send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionKey:_sk,content:txt})}); }catch{}
-      };
-
-      async function fetchMsgs(){
-        if(!_sk) return;
-        try{
-          const r=await fetch('/Chat/Poll?sessionKey='+encodeURIComponent(_sk)+'&after='+_lastId);
-          const d=await r.json();
-          if(d.messages&&d.messages.length){
-            d.messages.forEach(m=>appendBubble(m));
-            _lastId=d.messages[d.messages.length-1].id;
-            scrollBot();
-            // Hiện dot nếu panel đang đóng và có tin từ admin/hệ thống
-            const panelOpen = !document.getElementById('chatPanel').classList.contains('d-none');
-            if(panelOpen){
-              document.getElementById('chatUnreadDot').classList.add('d-none');
-            } else if(d.messages.some(m => m.senderType !== 0)){
-              document.getElementById('chatUnreadDot').classList.remove('d-none');
+                div.innerHTML = '<div style="max-width:85%; padding:8px 12px; font-size:0.85rem; line-height:1.5; ' + bubbleStyle + '">' +
+                                    formatted +
+                                '</div>';
+                area.appendChild(div);
+                area.scrollTop = area.scrollHeight;
             }
-          }
-        }catch{}
-      }
 
-      function appendBubble(m){
-        const a=document.getElementById('chatMsgArea');
-        if(!a) return;
-        const w=document.createElement('div');
-        if(m.isSystem){
-          w.className='d-flex justify-content-center my-2';
-          w.innerHTML='<div class="chat-system">'+esc(m.content)+'</div>';
-        } else if(m.senderType===0){
-          w.className='d-flex flex-column align-items-end mb-2';
-          w.innerHTML='<div class="chat-bubble chat-guest">'+esc(m.content)+'</div><div class="chat-time pe-1">'+m.createdAt+'</div>';
-        } else {
-          w.className='d-flex flex-column align-items-start mb-2';
-          w.innerHTML='<div class="chat-bubble chat-admin">'+esc(m.content)+'</div><div class="chat-time ps-1">'+m.createdAt+'</div>';
-        }
-        a.appendChild(w);
-      }
+            function aiShowTyping() {
+                const area = document.getElementById('aiMsgArea');
+                const div = document.createElement('div');
+                div.className = 'd-flex justify-content-start';
+                div.innerHTML = '<div style="background:#ffffff; border:1px solid var(--border-color); padding:6px 12px; border-radius:12px; font-size:0.75rem; color:var(--gray-500);">' +
+                                    '<i class="bi bi-three-dots"></i> Đang tìm câu trả lời...' +
+                                '</div>';
+                area.appendChild(div);
+                area.scrollTop = area.scrollHeight;
+                return div;
+            }
 
-      function scrollBot(){ const a=document.getElementById('chatMsgArea'); if(a) a.scrollTop=a.scrollHeight; }
-      function startPoll(){ stopPoll(); _timer=setInterval(fetchMsgs,4000); }
-      function stopPoll(){ if(_timer){clearInterval(_timer);_timer=null;} }
-      function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-    })();
-  </script>
+            function escapeHtml(s) {
+                return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            }
 
-  <!-- ══════════════ AI CHATBOT WIDGET (BOTTOM-LEFT) ══════════════ -->
-  <div id="aiChatWidget">
-    <!-- Tooltip bubble -->
-    <div id="aiTooltip">
-      <span>Bạn cần giúp gì? 🏠</span>
-      <button onclick="document.getElementById('aiTooltip').style.display='none'" style="background:none;border:none;color:#999;font-size:.8rem;cursor:pointer;padding:0 0 0 6px;">&times;</button>
-    </div>
-    <!-- Toggle button -->
-    <button id="aiToggleBtn" onclick="aiChatToggle()" title="AI Tư vấn phòng trọ">
-      <i class="bi bi-robot" id="aiToggleIcon"></i>
-    </button>
-    <!-- Chat panel -->
-    <div id="aiPanel" class="d-none">
-      <div id="aiHeader">
-        <div class="d-flex align-items-center gap-2">
-          <div class="ai-avatar"><i class="bi bi-robot"></i></div>
-          <div>
-            <div class="fw-semibold" style="font-size:.95rem;">AI Tư Vấn Phòng Trọ</div>
-            <div style="font-size:.72rem;opacity:.85;"><i class="bi bi-circle-fill text-white" style="font-size:.4rem;"></i> Trực tuyến — Phản hồi tức thì</div>
-          </div>
-        </div>
-        <div class="d-flex align-items-center gap-1">
-          <button onclick="aiNewChat()" title="Đoạn chat mới" style="background:rgba(255,255,255,.15);border:none;color:#fff;font-size:.85rem;cursor:pointer;border-radius:8px;padding:4px 10px;transition:background .2s;">
-            <i class="bi bi-plus-lg me-1"></i>Mới
-          </button>
-          <button onclick="aiChatToggle()" style="background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;padding:4px 6px;">
-            <i class="bi bi-x-lg"></i>
-          </button>
-        </div>
-      </div>
-      <!-- Welcome + messages -->
-      <div id="aiMsgArea">
-        <div id="aiWelcome" class="ai-welcome">
-          <div style="font-size:2.5rem;">🏠</div>
-          <div class="fw-bold" style="color:#1E8449;font-size:1.05rem;">Xin chào! Tôi là trợ lý AI</div>
-          <p class="text-muted small mb-3" style="line-height:1.6;">
-            Tôi giúp bạn tìm phòng trọ phù hợp, tư vấn giá cả, diện tích và tiện ích. Hãy hỏi bất cứ điều gì!
-          </p>
-          <div class="ai-quick-actions">
-            <button onclick="aiSendQuick('Có phòng trống nào không?')">🔍 Phòng trống</button>
-            <button onclick="aiSendQuick('Phòng giá rẻ nhất?')">💰 Giá rẻ nhất</button>
-            <button onclick="aiSendQuick('Phòng cho 2 người')">👥 Phòng 2 người</button>
-            <button onclick="aiSendQuick('Phòng diện tích lớn nhất')">📐 Phòng rộng</button>
-          </div>
-        </div>
-      </div>
-      <!-- Input -->
-      <div id="aiInputArea">
-        <div class="ai-input-wrap">
-          <input type="text" id="aiInput" placeholder="Hỏi về phòng trọ..." autocomplete="off"
-                 onkeydown="if(event.key==='Enter'){event.preventDefault();aiSend();}">
-          <button id="aiSendBtn" onclick="aiSend()" title="Gửi">
-            <i class="bi bi-send-fill"></i>
-          </button>
-        </div>
-        <div class="text-center" style="font-size:.65rem;color:#aaa;margin-top:6px;">
-          <i class="bi bi-shield-check"></i> AI tư vấn dựa trên dữ liệu phòng thực tế
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <style>
-    /* ── AI Widget Container (BOTTOM-LEFT) ──────────────────── */
-    #aiChatWidget {
-      position: fixed; bottom: 80px; left: 24px; z-index: 9998;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    }
-
-    /* ── Tooltip bubble ─────────────────────────────────────── */
-    #aiTooltip {
-      position: absolute; bottom: 68px; left: 0;
-      background: #fff; color: #333;
-      padding: 8px 14px; border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,.15);
-      font-size: .85rem; font-weight: 500;
-      white-space: nowrap;
-      display: flex; align-items: center; gap: 4px;
-      animation: aiBounceIn .5s ease;
-    }
-    #aiTooltip::after {
-      content: ''; position: absolute; bottom: -6px; left: 20px;
-      border-left: 6px solid transparent;
-      border-right: 6px solid transparent;
-      border-top: 6px solid #fff;
-    }
-
-    /* ── Toggle Button ──────────────────────────────────────── */
-    #aiToggleBtn {
-      width: 60px; height: 60px; border-radius: 50%; border: none;
-      background: linear-gradient(135deg, #8E44AD, #9B59B6);
-      color: #fff; font-size: 1.7rem; cursor: pointer;
-      box-shadow: 0 4px 20px rgba(142, 68, 173, .45);
-      display: flex; align-items: center; justify-content: center;
-      transition: transform .2s, box-shadow .2s;
-      position: relative;
-    }
-    #aiToggleBtn:hover {
-      transform: scale(1.1);
-      box-shadow: 0 6px 28px rgba(142, 68, 173, .55);
-    }
-
-    /* ── Chat Panel ─────────────────────────────────────────── */
-    #aiPanel {
-      position: absolute; bottom: 72px; left: 0;
-      width: 400px; height: 540px;
-      border-radius: 20px; overflow: hidden;
-      box-shadow: 0 12px 48px rgba(0,0,0,.2);
-      background: #fff;
-      display: flex; flex-direction: column;
-      animation: aiSlideUp .3s ease;
-    }
-
-    /* ── Header ─────────────────────────────────────────────── */
-    #aiHeader {
-      background: linear-gradient(135deg, #8E44AD, #9B59B6);
-      color: #fff; padding: .85rem 1.1rem;
-      display: flex; align-items: center; justify-content: space-between;
-      flex-shrink: 0;
-    }
-    .ai-avatar {
-      width: 38px; height: 38px; border-radius: 50%;
-      background: rgba(255,255,255,.2);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.2rem; flex-shrink: 0;
-    }
-
-    /* ── Message Area ───────────────────────────────────────── */
-    #aiMsgArea {
-      flex: 1; overflow-y: auto; padding: 1rem;
-      background: #f8f9fa;
-      display: flex; flex-direction: column; gap: .75rem;
-    }
-
-    /* ── Welcome ────────────────────────────────────────────── */
-    .ai-welcome {
-      text-align: center; padding: 1.5rem .5rem;
-      margin: auto 0;
-    }
-    .ai-quick-actions {
-      display: flex; flex-wrap: wrap; gap: .4rem; justify-content: center; margin-top: .5rem;
-    }
-    .ai-quick-actions button {
-      background: #fff; border: 1.5px solid #8E44AD; color: #6C3483;
-      border-radius: 18px; padding: .3rem .75rem; font-size: .78rem;
-      cursor: pointer; transition: all .2s; font-weight: 500;
-    }
-    .ai-quick-actions button:hover {
-      background: #8E44AD; color: #fff;
-      transform: translateY(-1px);
-      box-shadow: 0 3px 10px rgba(142,68,173,.3);
-    }
-
-    /* ── Message bubbles ────────────────────────────────────── */
-    .ai-msg { display: flex; gap: .5rem; max-width: 88%; animation: aiFadeIn .3s ease; }
-    .ai-msg.user { align-self: flex-end; flex-direction: row-reverse; }
-    .ai-msg.bot  { align-self: flex-start; }
-
-    .ai-msg .ai-bubble {
-      padding: .6rem .85rem; border-radius: 16px;
-      line-height: 1.65; font-size: .85rem; word-break: break-word;
-      white-space: pre-wrap;
-    }
-    .ai-msg.user .ai-bubble {
-      background: linear-gradient(135deg, #8E44AD, #9B59B6);
-      color: #fff; border-bottom-right-radius: 4px;
-    }
-    .ai-msg.bot .ai-bubble {
-      background: #fff; color: #333;
-      border: 1px solid #e0e0e0;
-      border-bottom-left-radius: 4px;
-    }
-    .ai-msg .ai-icon {
-      width: 28px; height: 28px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: .75rem; flex-shrink: 0; margin-top: 2px;
-    }
-    .ai-msg.bot .ai-icon  { background: #8E44AD; color: #fff; }
-    .ai-msg.user .ai-icon { background: #3498DB; color: #fff; }
-
-    /* ── Typing indicator ───────────────────────────────────── */
-    .ai-typing { display: flex; gap: 4px; padding: .5rem .75rem; }
-    .ai-typing span {
-      width: 7px; height: 7px; border-radius: 50%; background: #aaa;
-      animation: aiTypingBounce 1.4s infinite;
-    }
-    .ai-typing span:nth-child(2) { animation-delay: .2s; }
-    .ai-typing span:nth-child(3) { animation-delay: .4s; }
-
-    /* ── Input area ─────────────────────────────────────────── */
-    #aiInputArea {
-      padding: .75rem 1rem; background: #fff;
-      border-top: 1px solid #eee; flex-shrink: 0;
-    }
-    .ai-input-wrap {
-      display: flex; gap: .4rem; align-items: center;
-      background: #f5f5f5; border-radius: 22px;
-      padding: 4px 4px 4px 14px;
-      border: 2px solid transparent; transition: border-color .3s;
-    }
-    .ai-input-wrap:focus-within { border-color: #8E44AD; background: #fff; }
-    .ai-input-wrap input {
-      flex: 1; border: none; background: transparent; outline: none;
-      font-size: .88rem; padding: .4rem 0;
-    }
-    .ai-input-wrap input::placeholder { color: #bbb; }
-    #aiSendBtn {
-      width: 38px; height: 38px; border-radius: 50%; border: none;
-      background: #8E44AD; color: #fff; font-size: .9rem;
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-      transition: all .2s; flex-shrink: 0;
-    }
-    #aiSendBtn:hover { background: #6C3483; transform: scale(1.05); }
-    #aiSendBtn:disabled { opacity: .5; cursor: not-allowed; }
-
-    /* ── Animations ─────────────────────────────────────────── */
-    @@keyframes aiSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    @@keyframes aiFadeIn  { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-    @@keyframes aiBounceIn { 0% { opacity:0; transform:scale(.8); } 60% { transform:scale(1.05); } 100% { opacity:1; transform:scale(1); } }
-    @@keyframes aiTypingBounce {
-      0%, 60%, 100% { transform: translateY(0); opacity: .4; }
-      30% { transform: translateY(-6px); opacity: 1; }
-    }
-
-    /* ── Responsive ─────────────────────────────────────────── */
-    @@media (max-width: 576px) {
-      #aiChatWidget { left: 16px; bottom: 140px; }
-      #aiToggleBtn { width: 48px; height: 48px; font-size: 1.4rem; }
-      #aiPanel { width: calc(100vw - 32px); left: -8px; height: 65vh; bottom: 60px; }
-      #aiTooltip { display: none !important; }
-    }
-  </style>
-
-  <script>
-    (function(){
-      let _aiOpen = false, _aiWaiting = false;
-
-      // ── Toggle panel ────────────────────────────────────────
-      window.aiChatToggle = function(){
-        const panel = document.getElementById('aiPanel');
-        _aiOpen = !_aiOpen;
-        panel.classList.toggle('d-none', !_aiOpen);
-        // Ẩn panel thì hiển thị flex, ẩn thì d-none
-        if(_aiOpen) { panel.style.display = 'flex'; }
-        document.getElementById('aiToggleIcon').className = _aiOpen ? 'bi bi-x-lg' : 'bi bi-robot';
-        document.getElementById('aiTooltip').style.display = 'none';
-        if(_aiOpen) document.getElementById('aiInput').focus();
-      };
-
-      // ── Quick action ────────────────────────────────────────
-      window.aiSendQuick = function(text){
-        document.getElementById('aiInput').value = text;
-        aiSend();
-      };
-
-      // ── New chat (reset) ────────────────────────────────────
-      window.aiNewChat = function(){
-        const area = document.getElementById('aiMsgArea');
-        area.innerHTML = '';
-        // Tạo lại welcome
-        const welcome = document.createElement('div');
-        welcome.id = 'aiWelcome';
-        welcome.className = 'ai-welcome';
-        welcome.innerHTML =
-          '<div style="font-size:2.5rem;">🏠</div>' +
-          '<div class="fw-bold" style="color:#1E8449;font-size:1.05rem;">Xin chào! Tôi là trợ lý AI</div>' +
-          '<p class="text-muted small mb-3" style="line-height:1.6;">Tôi giúp bạn tìm phòng trọ phù hợp, tư vấn giá cả, diện tích và tiện ích. Hãy hỏi bất cứ điều gì!</p>' +
-          '<div class="ai-quick-actions">' +
-            '<button onclick="aiSendQuick(\'Có phòng trống nào không?\')">🔍 Phòng trống</button>' +
-            '<button onclick="aiSendQuick(\'Phòng giá rẻ nhất?\')">💰 Giá rẻ nhất</button>' +
-            '<button onclick="aiSendQuick(\'Phòng cho 2 người\')">👥 Phòng 2 người</button>' +
-            '<button onclick="aiSendQuick(\'Phòng diện tích lớn nhất\')">📐 Phòng rộng</button>' +
-          '</div>';
-        area.appendChild(welcome);
-        _aiWaiting = false;
-        document.getElementById('aiSendBtn').disabled = false;
-        document.getElementById('aiInput').value = '';
-        document.getElementById('aiInput').focus();
-      };
-
-      // ── Send message ────────────────────────────────────────
-      window.aiSend = async function(){
-        const inp = document.getElementById('aiInput');
-        const text = inp.value.trim();
-        if(!text || _aiWaiting) return;
-
-        // Ẩn welcome
-        const w = document.getElementById('aiWelcome');
-        if(w) w.remove();
-
-        // Hiện tin user
-        aiAppend('user', text);
-        inp.value = '';
-        inp.focus();
-
-        // Hiện typing
-        const typing = aiShowTyping();
-        _aiWaiting = true;
-        document.getElementById('aiSendBtn').disabled = true;
-
-        try {
-          const res = await fetch('/api/chat/ask', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: text })
-          });
-          const data = await res.json();
-          typing.remove();
-          aiAppend('bot', data.success ? data.reply : (data.reply || 'Xin lỗi, có lỗi xảy ra.'));
-        } catch(err) {
-          typing.remove();
-          aiAppend('bot', '⚠️ Không thể kết nối. Vui lòng thử lại.');
-        } finally {
-          _aiWaiting = false;
-          document.getElementById('aiSendBtn').disabled = false;
-        }
-      };
-
-      // ── Append bubble ───────────────────────────────────────
-      function aiAppend(role, text) {
-        const area = document.getElementById('aiMsgArea');
-        const div = document.createElement('div');
-        div.className = 'ai-msg ' + role;
-        const icon = role === 'bot' ? 'bi-robot' : 'bi-person-fill';
-        let html = esc(text)
-          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-          .replace(/^\s*[-•]\s+(.+)/gm, '&bull; $1')
-          .replace(/\n/g, '<br>');
-        div.innerHTML = '<div class="ai-icon"><i class="bi '+icon+'"></i></div><div class="ai-bubble">'+html+'</div>';
-        area.appendChild(div);
-        area.scrollTop = area.scrollHeight;
-      }
-
-      // ── Typing indicator ────────────────────────────────────
-      function aiShowTyping() {
-        const area = document.getElementById('aiMsgArea');
-        const div = document.createElement('div');
-        div.className = 'ai-msg bot';
-        div.innerHTML = '<div class="ai-icon"><i class="bi bi-robot"></i></div><div class="ai-bubble"><div class="ai-typing"><span></span><span></span><span></span></div></div>';
-        area.appendChild(div);
-        area.scrollTop = area.scrollHeight;
-        return div;
-      }
-
-      function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-      // ── Auto-show tooltip after 3s ──────────────────────────
-      setTimeout(function(){
-        const tip = document.getElementById('aiTooltip');
-        if(tip) tip.style.display = 'flex';
-      }, 3000);
-    })();
-  </script>
-
-  </body>
-
-  </html>
+            setTimeout(function(){
+                const tip = document.getElementById('aiTooltip');
+                if(tip && !_aiOpen) tip.style.display = 'block';
+            }, 3000);
+        })();
+    </script>
+</body>
+</html>

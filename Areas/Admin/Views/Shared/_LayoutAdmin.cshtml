@@ -1,4 +1,5 @@
 @inject QuanLyPhongTro.Areas.Admin.Data.DataContext _db
+@inject QuanLyPhongTro.Services.ICurrentLandlordService _currentLandlord
 @using QuanLyPhongTro.Models
 @{
     var adminUser = Context.Session.GetString("AdminUser");
@@ -7,8 +8,16 @@
         Context.Response.Redirect("/");
         return;
     }
+    bool isSuperAdmin = _currentLandlord.IsSuperAdmin();
     int pendingBookings = _db.BookingRequests.Count(r => r.Status == BookingRequestStatus.Pending);
     int unreadChats     = _db.ChatMessages.Count(m => !m.IsReadByAdmin && m.SenderType == ChatSenderType.Guest);
+
+    int? currentLandlordId = _currentLandlord.GetCurrentLandlordId();
+    var currentLandlord = currentLandlordId.HasValue ? _db.Landlords.FirstOrDefault(l => l.LandlordId == currentLandlordId.Value) : null;
+    var currentUser = _db.Users.FirstOrDefault(u => u.Username == adminUser);
+    string userAvatar = !string.IsNullOrEmpty(currentLandlord?.Avatar) ? currentLandlord.Avatar 
+                      : (!string.IsNullOrEmpty(currentUser?.Avatar) ? currentUser.Avatar : "/admin/assets/img/profile-img.jpg");
+    string userDisplayName = currentLandlord?.FullName ?? currentUser?.FullName ?? adminUser ?? "Admin";
 }
 <!DOCTYPE html>
 <html lang="vi">
@@ -38,6 +47,8 @@
 
   <!-- Template Main CSS File -->
   <link href="~/admin/assets/css/style.css" rel="stylesheet">
+  <link href="~/css/variables.css" rel="stylesheet">
+  <link href="~/css/admin-theme.css" rel="stylesheet">
 
   @RenderSection("Styles", required: false)
 </head>
@@ -50,9 +61,12 @@
     <div class="d-flex align-items-center justify-content-between">
       <a asp-area="Admin" asp-controller="Home" asp-action="Index" class="logo d-flex align-items-center">
         <img src="~/admin/assets/img/logo.png" alt="">
-        <span class="d-none d-lg-block">Quản Lý Phòng Trọ</span>
+        <span class="d-none d-lg-block">@(isSuperAdmin ? "PHONGTRO • ADMIN" : "PHONGTRO • CHỦ TRỌ")</span>
       </a>
-      <i class="bi bi-list toggle-sidebar-btn"></i>
+      <span class="badge ms-2 px-2 py-1 small d-none d-md-inline-block" style="background-color: var(--brand-primary-light, #fef2f2); color: var(--brand-primary, #e03c31); border: 1px solid var(--brand-primary-border, #fecaca);">
+        <i class="bi @(isSuperAdmin ? "bi-shield-check" : "bi-building-gear") me-1"></i>@(isSuperAdmin ? "Quản trị sàn" : "Kênh Chủ trọ")
+      </span>
+      <i class="bi bi-list toggle-sidebar-btn ms-2"></i>
     </div>
 
     <nav class="header-nav ms-auto">
@@ -60,25 +74,32 @@
 
         <li class="nav-item dropdown pe-3">
           <a class="nav-link nav-profile d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">
-            <img src="~/admin/assets/img/profile-img.jpg" alt="Profile" class="rounded-circle">
-            <span class="d-none d-md-block dropdown-toggle ps-2">@adminUser</span>
+            <img src="@userAvatar" alt="Profile" class="rounded-circle" style="width: 36px; height: 36px; object-fit: cover;">
+            <span class="d-none d-md-block dropdown-toggle ps-2">@userDisplayName</span>
           </a>
 
           <ul class="dropdown-menu dropdown-menu-end dropdown-menu-arrow profile">
             <li class="dropdown-header">
-              <h6>@adminUser</h6>
-              <span>Quản trị viên</span>
+              <h6>@userDisplayName</h6>
+              <span>@(isSuperAdmin ? "Quản trị viên Super Admin" : "Đối tác Chủ trọ")</span>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item d-flex align-items-center" asp-area="Admin" asp-controller="Profile" asp-action="Index">
+                <i class="bi bi-person-gear"></i>
+                <span>@(isSuperAdmin ? "Hồ sơ cá nhân & Đổi ảnh" : "Hồ sơ & Tài khoản VietQR")</span>
+              </a>
             </li>
             <li><hr class="dropdown-divider"></li>
             <li>
               <a class="dropdown-item d-flex align-items-center" asp-area="" asp-controller="Home" asp-action="Index">
                 <i class="bi bi-house"></i>
-                <span>Về trang chủ</span>
+                <span>Xem trang chủ khách thuê</span>
               </a>
             </li>
             <li><hr class="dropdown-divider"></li>
             <li>
-              <a class="dropdown-item d-flex align-items-center" asp-area="Admin" asp-controller="Account" asp-action="Logout">
+              <a class="dropdown-item d-flex align-items-center text-danger" asp-area="Admin" asp-controller="Account" asp-action="Logout">
                 <i class="bi bi-box-arrow-right"></i>
                 <span>Đăng xuất</span>
               </a>
@@ -95,100 +116,231 @@
   <aside id="sidebar" class="sidebar">
     <ul class="sidebar-nav" id="sidebar-nav">
 
-      <li class="nav-item">
-        <a class="nav-link" asp-area="Admin" asp-controller="Home" asp-action="Index">
-          <i class="bi bi-grid"></i>
-          <span>Tổng quan</span>
-        </a>
-      </li>
+      @if (isSuperAdmin)
+      {
+          <!-- ═══════════════════════════════════════════════════════════════ -->
+          <!-- ── MENU SUPER ADMIN: QUẢN TRỊ VIÊN TOÀN QUYỀN SÀN PHÒNG TRỌ ───── -->
+          <!-- ═══════════════════════════════════════════════════════════════ -->
+          <li class="nav-heading">Điều hành sàn toàn hệ thống</li>
 
-      <li class="nav-item">
-        <a class="nav-link collapsed" data-bs-target="#room-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-building"></i><span>Quản lý phòng</span><i class="bi bi-chevron-down ms-auto"></i>
-        </a>
-        <ul id="room-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
-          <li>
-            <a asp-area="Admin" asp-controller="Room" asp-action="Index">
-              <i class="bi bi-circle"></i><span>Danh sách phòng</span>
+          <li class="nav-item">
+            <a class="nav-link" asp-area="Admin" asp-controller="Home" asp-action="Index">
+              <i class="bi bi-speedometer2"></i>
+              <span>Tổng quan sàn</span>
             </a>
           </li>
-          <li>
-            <a asp-area="Admin" asp-controller="Room" asp-action="Create">
-              <i class="bi bi-circle"></i><span>Thêm phòng mới</span>
+
+          <!-- Quản lý duyệt chủ trọ -->
+          <li class="nav-item">
+            <a class="nav-link collapsed" asp-area="Admin" asp-controller="Landlord" asp-action="Index">
+              <i class="bi bi-shield-check"></i>
+              <span>Duyệt đối tác chủ trọ</span>
+              @{
+                  int pendingLandlords = _db.Landlords.Count(l => l.Status == LandlordStatus.Pending);
+                  if (pendingLandlords > 0)
+                  {
+                      <span class="sidebar-badge-count ms-auto">@pendingLandlords</span>
+                  }
+              }
             </a>
           </li>
-        </ul>
-      </li>
 
-      <li class="nav-item">
-        <a class="nav-link collapsed" data-bs-target="#user-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-people"></i><span>Người dùng</span><i class="bi bi-chevron-down ms-auto"></i>
-        </a>
-        <ul id="user-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
-          <li><a asp-area="Admin" asp-controller="User" asp-action="Index"><i class="bi bi-circle"></i><span>Người dùng</span></a></li>
-          <li><a asp-area="Admin" asp-controller="Tenant" asp-action="Index"><i class="bi bi-circle"></i><span>Người thuê</span></a></li>
-          <li><a asp-area="Admin" asp-controller="Tenant" asp-action="Create"><i class="bi bi-circle"></i><span>Thêm mới</span></a></li>
-        </ul>
-      </li>
+          <!-- Kiểm duyệt tin đăng phòng -->
+          <li class="nav-item">
+            <a class="nav-link collapsed" asp-area="Admin" asp-controller="Room" asp-action="Index">
+              <i class="bi bi-clipboard-check"></i>
+              <span>Kiểm duyệt tin đăng</span>
+              @{
+                  int pendingRooms = _db.Rooms.Count(r => r.ApprovalStatus == RoomApprovalStatus.Pending);
+                  if (pendingRooms > 0)
+                  {
+                      <span class="sidebar-badge-count ms-auto">@pendingRooms</span>
+                  }
+              }
+            </a>
+          </li>
 
-      <li class="nav-item">
-        <a class="nav-link collapsed" data-bs-target="#contract-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-file-text"></i><span>Hợp đồng</span><i class="bi bi-chevron-down ms-auto"></i>
-        </a>
-        <ul id="contract-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
-          <li><a asp-area="Admin" asp-controller="Contract" asp-action="Index"><i class="bi bi-circle"></i><span>Danh sách</span></a></li>
-          <li><a asp-area="Admin" asp-controller="Contract" asp-action="Create"><i class="bi bi-circle"></i><span>Thêm hợp đồng</span></a></li>
-        </ul>
-      </li>
+          <!-- Quản lý khu trọ toàn sàn -->
+          <li class="nav-item">
+            <a class="nav-link collapsed" asp-area="Admin" asp-controller="Property" asp-action="Index">
+              <i class="bi bi-buildings"></i>
+              <span>Khu trọ toàn sàn</span>
+            </a>
+          </li>
 
-      <li class="nav-item">
-        <a class="nav-link collapsed" data-bs-target="#invoice-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-receipt"></i><span>Hóa đơn</span><i class="bi bi-chevron-down ms-auto"></i>
-        </a>
-        <ul id="invoice-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
-          <li><a asp-area="Admin" asp-controller="Invoice" asp-action="DueThisMonth"><i class="bi bi-circle"></i><span>Cần lập tháng này</span></a></li>
-          <li><a asp-area="Admin" asp-controller="Invoice" asp-action="Index"><i class="bi bi-circle"></i><span>Danh sách hóa đơn</span></a></li>
-        </ul>
-      </li>
+          <!-- Quản trị người dùng sàn -->
+          <li class="nav-item">
+            <a class="nav-link collapsed" asp-area="Admin" asp-controller="User" asp-action="Index">
+              <i class="bi bi-people"></i>
+              <span>Quản trị tài khoản</span>
+            </a>
+          </li>
 
-      <li class="nav-item">
-        <a class="nav-link collapsed" data-bs-target="#service-nav" data-bs-toggle="collapse" href="#">
-          <i class="bi bi-gear"></i><span>Dịch vụ</span><i class="bi bi-chevron-down ms-auto"></i>
-        </a>
-        <ul id="service-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
-          <li><a asp-area="Admin" asp-controller="Service" asp-action="Index"><i class="bi bi-circle"></i><span>Danh sách dịch vụ</span></a></li>
-          <li><a asp-area="Admin" asp-controller="Service" asp-action="Create"><i class="bi bi-circle"></i><span>Thêm dịch vụ mới</span></a></li>
-        </ul>
-      </li>
+          <li class="nav-heading">Cấu hình danh mục & Nội dung sàn</li>
 
-      <li class="nav-item">
-        <a class="nav-link" asp-area="Admin" asp-controller="BookingRequest" asp-action="Index">
-          <i class="bi bi-calendar2-check"></i>
-          <span>Yêu cầu đặt lịch</span>
-          @if (pendingBookings > 0)
-          {
-            <span class="badge bg-danger ms-auto">@pendingBookings</span>
-          }
-        </a>
-      </li>
+          <!-- Quản lý danh mục sàn -->
+          <li class="nav-item">
+            <a class="nav-link collapsed" data-bs-target="#categories-nav" data-bs-toggle="collapse" href="#">
+              <i class="bi bi-tags"></i><span>Danh mục sàn</span><i class="bi bi-chevron-down ms-auto"></i>
+            </a>
+            <ul id="categories-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
+              <li><a asp-area="Admin" asp-controller="Amenity" asp-action="Index"><i class="bi bi-circle"></i><span>Tiện ích phòng</span></a></li>
+              <li><a asp-area="Admin" asp-controller="RoomType" asp-action="Index"><i class="bi bi-circle"></i><span>Loại phòng</span></a></li>
+              <li><a asp-area="Admin" asp-controller="Location" asp-action="Index"><i class="bi bi-circle"></i><span>Đơn vị hành chính</span></a></li>
+            </ul>
+          </li>
 
-      <li class="nav-item">
-        <a class="nav-link" asp-area="Admin" asp-controller="Chat" asp-action="Index">
-          <i class="bi bi-chat-dots"></i>
-          <span>Hộp thư Chat</span>
-          @if (unreadChats > 0)
-          {
-            <span class="badge bg-danger ms-auto">@unreadChats</span>
-          }
-        </a>
-      </li>
+          <!-- Quản lý Blog tin tức -->
+          <li class="nav-item">
+            <a class="nav-link collapsed" asp-area="Admin" asp-controller="Post" asp-action="Index">
+              <i class="bi bi-newspaper"></i>
+              <span>Cẩm nang & Tin tức</span>
+            </a>
+          </li>
 
-      <li class="nav-item">
-        <a class="nav-link" asp-area="Admin" asp-controller="Post" asp-action="Index">
-          <i class="bi bi-newspaper"></i>
-          <span>Bài viết</span>
-        </a>
-      </li>
+          <!-- Chat sàn -->
+          <li class="nav-item">
+            <a class="nav-link collapsed" asp-area="Admin" asp-controller="Chat" asp-action="Index">
+              <i class="bi bi-chat-dots"></i>
+              <span>Hộp thư Chat sàn</span>
+              @if (unreadChats > 0)
+              {
+                <span class="sidebar-badge-count ms-auto">@unreadChats</span>
+              }
+            </a>
+          </li>
+      }
+      else
+      {
+          <!-- ═══════════════════════════════════════════════════════════════ -->
+          <!-- ── MENU CHỦ TRỌ: KÊNH QUẢN LÝ RIÊNG BIỆT DÀNH CHO CHỦ TRỌ ───── -->
+          <!-- ── TUYỆT ĐỐI KHÔNG CÓ CÁC CHỨC NĂNG TOÀN NĂNG CỦA ADMIN ──────── -->
+          <!-- ═══════════════════════════════════════════════════════════════ -->
+          <li class="nav-heading">Kênh Quản Lý Nhà Trọ</li>
+
+          <li class="nav-item">
+            <a class="nav-link" asp-area="Admin" asp-controller="Home" asp-action="Index">
+              <i class="bi bi-speedometer2"></i>
+              <span>Bảng điều khiển kinh doanh</span>
+            </a>
+          </li>
+
+          <!-- Khu trọ / Tòa nhà của chủ trọ -->
+          <li class="nav-item">
+            <a class="nav-link collapsed" data-bs-target="#property-nav" data-bs-toggle="collapse" href="#">
+              <i class="bi bi-buildings"></i><span>Khu trọ của tôi</span><i class="bi bi-chevron-down ms-auto"></i>
+            </a>
+            <ul id="property-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
+              <li>
+                <a asp-area="Admin" asp-controller="Property" asp-action="Index">
+                  <i class="bi bi-circle"></i><span>Danh sách khu trọ</span>
+                </a>
+              </li>
+              <li>
+                <a asp-area="Admin" asp-controller="Property" asp-action="Create">
+                  <i class="bi bi-circle"></i><span>Thêm khu trọ mới</span>
+                </a>
+              </li>
+            </ul>
+          </li>
+
+          <!-- Quản lý phòng & Đăng tin -->
+          <li class="nav-item">
+            <a class="nav-link collapsed" data-bs-target="#room-nav" data-bs-toggle="collapse" href="#">
+              <i class="bi bi-door-open"></i><span>Phòng trọ & Đăng tin</span><i class="bi bi-chevron-down ms-auto"></i>
+            </a>
+            <ul id="room-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
+              <li>
+                <a asp-area="Admin" asp-controller="Room" asp-action="Index">
+                  <i class="bi bi-circle"></i><span>Danh sách phòng trọ</span>
+                </a>
+              </li>
+              <li>
+                <a asp-area="Admin" asp-controller="Room" asp-action="Create">
+                  <i class="bi bi-circle"></i><span>Đăng tin phòng mới</span>
+                </a>
+              </li>
+            </ul>
+          </li>
+
+          <!-- Khách thuê phòng -->
+          <li class="nav-item">
+            <a class="nav-link collapsed" data-bs-target="#tenant-nav" data-bs-toggle="collapse" href="#">
+              <i class="bi bi-people"></i><span>Khách thuê phòng</span><i class="bi bi-chevron-down ms-auto"></i>
+            </a>
+            <ul id="tenant-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
+              <li><a asp-area="Admin" asp-controller="Tenant" asp-action="Index"><i class="bi bi-circle"></i><span>Danh sách khách thuê</span></a></li>
+              <li><a asp-area="Admin" asp-controller="Tenant" asp-action="Create"><i class="bi bi-circle"></i><span>Thêm khách thuê</span></a></li>
+            </ul>
+          </li>
+
+          <!-- Hợp đồng thuê -->
+          <li class="nav-item">
+            <a class="nav-link collapsed" data-bs-target="#contract-nav" data-bs-toggle="collapse" href="#">
+              <i class="bi bi-file-earmark-text"></i><span>Hợp đồng thuê</span><i class="bi bi-chevron-down ms-auto"></i>
+            </a>
+            <ul id="contract-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
+              <li><a asp-area="Admin" asp-controller="Contract" asp-action="Index"><i class="bi bi-circle"></i><span>Danh sách hợp đồng</span></a></li>
+              <li><a asp-area="Admin" asp-controller="Contract" asp-action="Create"><i class="bi bi-circle"></i><span>Lập hợp đồng mới</span></a></li>
+            </ul>
+          </li>
+
+          <!-- Hóa đơn & Tiền phòng -->
+          <li class="nav-item">
+            <a class="nav-link collapsed" data-bs-target="#invoice-nav" data-bs-toggle="collapse" href="#">
+              <i class="bi bi-receipt"></i><span>Hóa đơn tiền phòng</span><i class="bi bi-chevron-down ms-auto"></i>
+            </a>
+            <ul id="invoice-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
+              <li><a asp-area="Admin" asp-controller="Invoice" asp-action="DueThisMonth"><i class="bi bi-circle"></i><span>Cần thu tháng này</span></a></li>
+              <li><a asp-area="Admin" asp-controller="Invoice" asp-action="Index"><i class="bi bi-circle"></i><span>Danh sách hóa đơn</span></a></li>
+            </ul>
+          </li>
+
+          <!-- Đơn giá dịch vụ Điện / Nước -->
+          <li class="nav-item">
+            <a class="nav-link collapsed" data-bs-target="#service-nav" data-bs-toggle="collapse" href="#">
+              <i class="bi bi-gear"></i><span>Đơn giá dịch vụ</span><i class="bi bi-chevron-down ms-auto"></i>
+            </a>
+            <ul id="service-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
+              <li><a asp-area="Admin" asp-controller="Service" asp-action="Index"><i class="bi bi-circle"></i><span>Bảng giá dịch vụ</span></a></li>
+              <li><a asp-area="Admin" asp-controller="Service" asp-action="Create"><i class="bi bi-circle"></i><span>Thêm dịch vụ mới</span></a></li>
+            </ul>
+          </li>
+
+          <li class="nav-heading">Tương tác khách thuê & Tài khoản</li>
+
+          <!-- Yêu cầu đặt lịch xem phòng -->
+          <li class="nav-item">
+            <a class="nav-link collapsed" asp-area="Admin" asp-controller="BookingRequest" asp-action="Index">
+              <i class="bi bi-calendar2-check"></i>
+              <span>Lịch hẹn xem phòng</span>
+              @if (pendingBookings > 0)
+              {
+                <span class="sidebar-badge-count ms-auto">@pendingBookings</span>
+              }
+            </a>
+          </li>
+
+          <!-- Hộp thư Chat với khách -->
+          <li class="nav-item">
+            <a class="nav-link collapsed" asp-area="Admin" asp-controller="Chat" asp-action="Index">
+              <i class="bi bi-chat-dots"></i>
+              <span>Tin nhắn khách thuê</span>
+              @if (unreadChats > 0)
+              {
+                <span class="sidebar-badge-count ms-auto">@unreadChats</span>
+              }
+            </a>
+          </li>
+
+          <!-- Cài đặt VietQR & Ngân hàng -->
+          <li class="nav-item">
+            <a class="nav-link collapsed" asp-area="Admin" asp-controller="Profile" asp-action="Index">
+              <i class="bi bi-bank"></i>
+              <span>Cài đặt VietQR & Ngân hàng</span>
+            </a>
+          </li>
+      }
 
     </ul>
   </aside><!-- End Sidebar -->

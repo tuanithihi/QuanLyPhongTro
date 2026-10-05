@@ -6,7 +6,7 @@ using QuanLyPhongTro.Models;
 namespace QuanLyPhongTro.Controllers
 {
     /// <summary>
-    /// Xử lý chat phía khách (guest) — không cần đăng nhập.
+    /// Xử lý chat phía khách (guest) gắn theo từng chủ trọ cụ thể.
     /// </summary>
     public class ChatController : Controller
     {
@@ -20,21 +20,32 @@ namespace QuanLyPhongTro.Controllers
 
         // ─────────────────────────────────────────────────────────────────
         // POST /Chat/Start
-        // Bắt đầu hoặc tiếp tục phiên chat. Trả về { sessionKey, sessionId }.
-        // · Nếu đang đăng nhập (Tenant/User): tự lấy tên/SĐT từ DB, tìm lại phiên cũ theo tài khoản.
-        // · Nếu ẩn danh: kiểm tra cookie, yêu cầu nhập tên/SĐT.
+        // Bắt đầu hoặc tiếp tục phiên chat với chủ trọ.
         // ─────────────────────────────────────────────────────────────────
         [HttpPost]
         public async Task<IActionResult> Start([FromBody] StartChatRequest req)
         {
-            // ── Nhận dạng tài khoản đang đăng nhập (server-side session) ──
+            req ??= new StartChatRequest();
+
+            // Xác định chủ trọ nhận chat
+            int? targetLandlordId = req.LandlordId;
+            if (!targetLandlordId.HasValue && req.RoomId.HasValue && req.RoomId > 0)
+            {
+                var room = await _db.Rooms
+                    .AsNoTracking()
+                    .Include(r => r.Property)
+                    .FirstOrDefaultAsync(r => r.RoomId == req.RoomId.Value);
+                targetLandlordId = room?.Property?.LandlordId;
+            }
+
+            // Nhận dạng tài khoản đang đăng nhập
             int? tenantId = int.TryParse(HttpContext.Session.GetString("TenantUser"), out var tid) ? tid : null;
             int? userId   = int.TryParse(HttpContext.Session.GetString("NormalUser"), out var uid) ? uid : null;
 
             string resolvedName  = req.GuestName?.Trim()  ?? "";
             string resolvedPhone = req.GuestPhone?.Trim() ?? "";
 
-            // ── Tenant đã đăng nhập ────────────────────────────────────────
+            // 1. Tenant đã đăng nhập
             if (tenantId.HasValue)
             {
                 var tenant = await _db.Tenants.FindAsync(tenantId.Value);
@@ -44,19 +55,19 @@ namespace QuanLyPhongTro.Controllers
                     resolvedPhone = tenant.Phone ?? resolvedPhone;
                 }
 
-                // Tìm phiên đang mở của tenant này
+                // Tìm phiên đang mở của tenant này với đúng chủ trọ
                 var existing = await _db.ChatSessions
-                    .Where(s => s.TenantId == tenantId && s.IsOpen)
+                    .Where(s => s.TenantId == tenantId && s.IsOpen && s.LandlordId == targetLandlordId)
                     .OrderByDescending(s => s.LastMsgAt)
                     .FirstOrDefaultAsync();
 
                 if (existing != null)
                 {
                     SetCookie(existing.SessionKey);
-                    return Json(new { success = true, sessionKey = existing.SessionKey, sessionId = existing.SessionId });
+                    return Json(new { success = true, sessionKey = existing.SessionKey, sessionId = existing.SessionId, landlordId = existing.LandlordId });
                 }
             }
-            // ── Người dùng website đã đăng nhập ───────────────────────────
+            // 2. Người dùng website đã đăng nhập
             else if (userId.HasValue)
             {
                 var user = await _db.Users.FindAsync(userId.Value);
@@ -67,47 +78,53 @@ namespace QuanLyPhongTro.Controllers
                 }
 
                 var existing = await _db.ChatSessions
-                    .Where(s => s.UserId == userId && s.IsOpen)
+                    .Where(s => s.UserId == userId && s.IsOpen && s.LandlordId == targetLandlordId)
                     .OrderByDescending(s => s.LastMsgAt)
                     .FirstOrDefaultAsync();
 
                 if (existing != null)
                 {
                     SetCookie(existing.SessionKey);
-                    return Json(new { success = true, sessionKey = existing.SessionKey, sessionId = existing.SessionId });
+                    return Json(new { success = true, sessionKey = existing.SessionKey, sessionId = existing.SessionId, landlordId = existing.LandlordId });
                 }
             }
-            // ── Khách ẩn danh ──────────────────────────────────────────────
+            // 3. Khách vãng lai
             else
             {
                 var existingKey = Request.Cookies[CookieName];
                 if (!string.IsNullOrEmpty(existingKey))
                 {
-                    var existing = await _db.ChatSessions.FirstOrDefaultAsync(s => s.SessionKey == existingKey && s.IsOpen);
+                    var existing = await _db.ChatSessions.FirstOrDefaultAsync(s => s.SessionKey == existingKey && s.IsOpen && s.LandlordId == targetLandlordId);
                     if (existing != null)
-                        return Json(new { success = true, sessionKey = existing.SessionKey, sessionId = existing.SessionId });
+                    {
+                        return Json(new { success = true, sessionKey = existing.SessionKey, sessionId = existing.SessionId, landlordId = existing.LandlordId });
+                    }
                 }
 
                 if (string.IsNullOrWhiteSpace(resolvedName) || string.IsNullOrWhiteSpace(resolvedPhone))
+                {
                     return Json(new { success = false, message = "Vui lòng nhập họ tên và số điện thoại." });
+                }
             }
 
-            // ── Tạo phiên mới ──────────────────────────────────────────────
+            // Tạo phiên mới gắn với chủ trọ
             var session = new tblChatSession
             {
                 SessionKey = Guid.NewGuid().ToString(),
+                LandlordId = targetLandlordId,
                 GuestName  = string.IsNullOrEmpty(resolvedName) ? "Khách" : resolvedName,
                 GuestPhone = resolvedPhone,
                 TenantId   = tenantId,
                 UserId     = userId,
                 CreatedAt  = DateTime.Now,
-                LastMsgAt  = DateTime.Now
+                LastMsgAt  = DateTime.Now,
+                IsOpen     = true
             };
             _db.ChatSessions.Add(session);
             await _db.SaveChangesAsync();
 
             SetCookie(session.SessionKey);
-            return Json(new { success = true, sessionKey = session.SessionKey, sessionId = session.SessionId });
+            return Json(new { success = true, sessionKey = session.SessionKey, sessionId = session.SessionId, landlordId = session.LandlordId });
 
             void SetCookie(string key) => Response.Cookies.Append(CookieName, key, new CookieOptions
             {
@@ -132,12 +149,12 @@ namespace QuanLyPhongTro.Controllers
 
             var msg = new tblChatMessage
             {
-                SessionId    = session.SessionId,
-                Content      = req.Content.Trim(),
-                SenderType   = ChatSenderType.Guest,
+                SessionId     = session.SessionId,
+                Content       = req.Content.Trim(),
+                SenderType    = ChatSenderType.Guest,
                 IsReadByAdmin = false,
                 IsReadByGuest = true,
-                CreatedAt    = DateTime.Now
+                CreatedAt     = DateTime.Now
             };
             _db.ChatMessages.Add(msg);
 
@@ -154,7 +171,6 @@ namespace QuanLyPhongTro.Controllers
 
         // ─────────────────────────────────────────────────────────────────
         // GET /Chat/Poll?sessionKey=xxx&after=123
-        // Lấy tin nhắn mới hơn messageId = after (polling 4s).
         // ─────────────────────────────────────────────────────────────────
         [HttpGet]
         public async Task<IActionResult> Poll(string sessionKey, int after = 0)
@@ -195,11 +211,12 @@ namespace QuanLyPhongTro.Controllers
         }
     }
 
-    // ── DTOs ──────────────────────────────────────────────────────────────
     public sealed class StartChatRequest
     {
         public string GuestName  { get; set; } = string.Empty;
         public string GuestPhone { get; set; } = string.Empty;
+        public int? RoomId       { get; set; }
+        public int? LandlordId   { get; set; }
     }
 
     public sealed class SendChatRequest

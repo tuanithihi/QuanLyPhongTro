@@ -1,13 +1,21 @@
+using QuanLyPhongTro.Models.ViewModels;
+
 namespace QuanLyPhongTro.Models
 {
     /// <summary>
-    /// ViewModel cho trang chủ người dùng — danh sách phòng trống + bộ lọc.
+    /// ViewModel cho trang chủ người dùng — tìm kiếm nhanh, phòng nổi bật, khu vực, chủ trọ uy tín.
     /// </summary>
     public class HomeIndexViewModel
     {
-        // ── Dữ liệu hiển thị ─────────────────────────────────────────────
-        public List<tblRoom>     AvailableRooms { get; set; } = new(); // Search results
-        public List<tblRoom>     FeaturedRooms  { get; set; } = new(); // Featured/Top rooms
+        // ── Dữ liệu hiển thị mới (Card ViewModels) ───────────────────────
+        public List<RoomCardViewModel> FeaturedCardRooms { get; set; } = new();
+        public List<RoomCardViewModel> RecentCardRooms   { get; set; } = new();
+        public List<tblProvince>       PopularProvinces  { get; set; } = new();
+        public List<tblLandlord>       FeaturedLandlords { get; set; } = new();
+
+        // ── Dữ liệu tương thích cũ ──────────────────────────────────────
+        public List<tblRoom>     AvailableRooms { get; set; } = new();
+        public List<tblRoom>     FeaturedRooms  { get; set; } = new();
         public List<tblRoomType> RoomTypes      { get; set; } = new();
         public List<tblPost>     RecentPosts    { get; set; } = new();
         public List<tblReview>   RecentReviews  { get; set; } = new();

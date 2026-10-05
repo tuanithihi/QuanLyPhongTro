@@ -14,6 +14,9 @@ namespace QuanLyPhongTro.Models
         [StringLength(36)]
         public string SessionKey { get; set; } = Guid.NewGuid().ToString();
 
+        [Display(Name = "Chủ trọ tiếp nhận")]
+        public int? LandlordId { get; set; }
+
         [Required]
         [StringLength(100)]
         [Display(Name = "Họ và tên")]
@@ -36,6 +39,9 @@ namespace QuanLyPhongTro.Models
         public int? UserId { get; set; }
 
         // Navigation
+        [ForeignKey(nameof(LandlordId))]
+        public virtual tblLandlord? Landlord { get; set; }
+
         public virtual ICollection<tblChatMessage> Messages { get; set; } = new List<tblChatMessage>();
         public virtual tblTenant? Tenant { get; set; }
         public virtual tblUser?   User   { get; set; }

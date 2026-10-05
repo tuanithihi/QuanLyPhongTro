@@ -191,11 +191,19 @@
                                                     {
                                                         <div class="text-muted small fst-italic mt-1">@inv.Notes</div>
                                                     }
-                                                    @if (needPay && hasBankInfo)
+                                                    @{
+                                                        var invLandlord = inv.Landlord ?? inv.Contract?.Landlord ?? inv.Room?.Property?.Landlord;
+                                                        var invBankId = !string.IsNullOrEmpty(invLandlord?.BankId) ? invLandlord.BankId : bankId;
+                                                        var invAccount = !string.IsNullOrEmpty(invLandlord?.AccountNumber) ? invLandlord.AccountNumber : bankAccount;
+                                                        var invOwner = !string.IsNullOrEmpty(invLandlord?.AccountName) ? invLandlord.AccountName : bankOwner;
+                                                        var invBankName = !string.IsNullOrEmpty(invLandlord?.BankName) ? invLandlord.BankName : bankName;
+                                                        bool canPayThisInvoice = needPay && !string.IsNullOrEmpty(invAccount);
+                                                    }
+                                                    @if (canPayThisInvoice)
                                                     {
                                                         <button type="button"
                                                                 class="btn btn-primary btn-sm mt-3 w-100"
-                                                                onclick="showPayment('@inv.InvoiceCode', @inv.TotalAmount, '@System.Net.WebUtility.UrlEncode("Thanh toan " + inv.InvoiceCode)')">
+                                                                onclick="showPayment('@inv.InvoiceCode', @inv.TotalAmount, '@System.Net.WebUtility.UrlEncode("Thanh toan " + inv.InvoiceCode)', '@invBankId', '@invAccount', '@invOwner', '@invBankName')">
                                                             <i class="bi bi-qr-code me-1"></i>Thanh toán trực tuyến
                                                         </button>
                                                     }
@@ -215,8 +223,6 @@
 </div>
 
 @* ── Modal VietQR ── *@
-@if (hasBankInfo)
-{
 <div class="modal fade" id="paymentModal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content">
@@ -236,15 +242,15 @@
                         <table class="table table-borderless mb-3" style="font-size:1.05rem;">
                             <tr>
                                 <td class="text-muted fw-semibold py-2" style="width:42%">Ngân hàng</td>
-                                <td class="fw-bold py-2">@bankName</td>
+                                <td class="fw-bold py-2" id="modalBankName">@bankName</td>
                             </tr>
                             <tr class="border-top">
                                 <td class="text-muted fw-semibold py-2">Số tài khoản</td>
-                                <td class="font-monospace fw-bold fs-5 py-2">@bankAccount</td>
+                                <td class="font-monospace fw-bold fs-5 py-2" id="modalAccount">@bankAccount</td>
                             </tr>
                             <tr class="border-top">
                                 <td class="text-muted fw-semibold py-2">Chủ tài khoản</td>
-                                <td class="fw-bold py-2">@bankOwner</td>
+                                <td class="fw-bold py-2" id="modalOwner">@bankOwner</td>
                             </tr>
                             <tr class="border-top">
                                 <td class="text-muted fw-semibold py-2">Số tiền</td>
@@ -269,18 +275,23 @@
         </div>
     </div>
 </div>
-}
 
 @section Scripts {
 <script>
-function showPayment(invoiceCode, amount, addInfo) {
-    const bankId  = '@bankId';
-    const account = '@bankAccount';
-    const owner   = encodeURIComponent('@bankOwner');
-    const qrUrl   = `https://img.vietqr.io/image/${bankId}-${account}-compact2.png?amount=${amount}&addInfo=${addInfo}&accountName=${owner}`;
+function showPayment(invoiceCode, amount, addInfo, bankId, account, owner, bankName) {
+    const bId  = bankId || '@bankId';
+    const acc = account || '@bankAccount';
+    const own = encodeURIComponent(owner || '@bankOwner');
+    const bName = bankName || '@bankName';
+
+    const qrUrl   = `https://img.vietqr.io/image/${bId}-${acc}-compact2.png?amount=${amount}&addInfo=${addInfo}&accountName=${own}`;
     document.getElementById('qrImg').src = qrUrl;
     document.getElementById('payAmount').textContent = new Intl.NumberFormat('vi-VN').format(amount) + ' đ';
     document.getElementById('payDesc').textContent   = decodeURIComponent(addInfo);
+    document.getElementById('modalBankName').textContent = bName;
+    document.getElementById('modalAccount').textContent  = acc;
+    document.getElementById('modalOwner').textContent    = owner || '@bankOwner';
+
     new bootstrap.Modal(document.getElementById('paymentModal')).show();
 }
 </script>

@@ -1,0 +1,170 @@
+@model List<QuanLyPhongTro.Models.ViewModels.PropertyListItemViewModel>
+@{
+    ViewData["Title"] = "Quản lý khu trọ";
+    Layout = "_LayoutAdmin";
+}
+
+<main id="main" class="main">
+
+  <div class="pagetitle d-flex justify-content-between align-items-center">
+    <div>
+      <h1>Danh sách khu trọ / Tòa nhà</h1>
+      <nav>
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+          <li class="breadcrumb-item active">Khu trọ</li>
+        </ol>
+      </nav>
+    </div>
+    <a asp-action="Create" class="btn btn-primary px-3 py-2 fw-semibold">
+      <i class="bi bi-plus-lg me-1"></i> Thêm khu trọ mới
+    </a>
+  </div>
+
+  @if (TempData["Success"] != null)
+  {
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+          <i class="bi bi-check-circle me-1"></i> @TempData["Success"]
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+  }
+  @if (TempData["Error"] != null)
+  {
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <i class="bi bi-exclamation-octagon me-1"></i> @TempData["Error"]
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+  }
+
+  <section class="section">
+    <div class="card shadow-sm border-0">
+      <div class="card-body pt-3">
+        <!-- Form tìm kiếm -->
+        <form method="get" class="row g-2 mb-3">
+          <div class="col-md-5">
+            <div class="input-group">
+              <input type="text" name="search" class="form-control" placeholder="Tìm tên khu trọ, địa chỉ..." value="@ViewBag.Search" />
+              <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+            </div>
+          </div>
+          @if (!string.IsNullOrEmpty(ViewBag.Search))
+          {
+              <div class="col-md-2">
+                <a asp-action="Index" class="btn btn-light"><i class="bi bi-x-circle me-1"></i>Xóa lọc</a>
+              </div>
+          }
+        </form>
+
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Tên khu trọ</th>
+                <th scope="col">Địa chỉ</th>
+                <th scope="col" class="text-center">Số phòng</th>
+                <th scope="col" class="text-center">Trạng thái</th>
+                <th scope="col" class="text-end">Hành động</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (Model.Any())
+              {
+                  int stt = 1;
+                  foreach (var item in Model)
+                  {
+                      <tr>
+                        <td>@stt</td>
+                        <td>
+                          <a asp-action="Details" asp-route-id="@item.PropertyId" class="fw-bold text-decoration-none">
+                            @item.Name
+                          </a>
+                          <div class="text-muted small">Slug: @item.Slug</div>
+                        </td>
+                        <td>
+                          <div>@item.Address</div>
+                          <div class="text-muted small">
+                            @string.Join(", ", new[] { item.WardName, item.DistrictName, item.ProvinceName }.Where(x => !string.IsNullOrEmpty(x)))
+                          </div>
+                        </td>
+                        <td class="text-center">
+                          <span class="badge bg-primary">@item.TotalRooms phòng</span>
+                          <div class="small text-muted mt-1">
+                            <span class="text-success fw-bold">@item.AvailableRooms trống</span> |
+                            <span class="text-danger fw-bold">@item.OccupiedRooms đã thuê</span>
+                          </div>
+                        </td>
+                        <td class="text-center">
+                          @if (item.Status == QuanLyPhongTro.Models.PropertyStatus.Active)
+                          {
+                              <span class="badge bg-success-light text-success border border-success">Đang hoạt động</span>
+                          }
+                          else
+                          {
+                              <span class="badge bg-secondary">Tạm ngưng</span>
+                          }
+                        </td>
+                        <td class="text-end">
+                          <div class="btn-group">
+                            <a asp-action="Details" asp-route-id="@item.PropertyId" class="btn btn-sm btn-outline-info" title="Xem chi tiết">
+                              <i class="bi bi-eye"></i>
+                            </a>
+                            <a asp-action="Edit" asp-route-id="@item.PropertyId" class="btn btn-sm btn-outline-primary" title="Chỉnh sửa">
+                              <i class="bi bi-pencil"></i>
+                            </a>
+                            <button type="button" class="btn btn-sm btn-outline-danger" title="Xóa"
+                                    data-bs-toggle="modal" data-bs-target="#deleteModal-@item.PropertyId">
+                              <i class="bi bi-trash"></i>
+                            </button>
+                          </div>
+
+                          <!-- Delete Confirmation Modal -->
+                          <div class="modal fade" id="deleteModal-@item.PropertyId" tabindex="-1">
+                            <div class="modal-dialog modal-dialog-centered">
+                              <div class="modal-content text-start">
+                                <div class="modal-header border-0 pb-0">
+                                  <h5 class="modal-title fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Xác nhận xóa khu trọ</h5>
+                                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body py-3">
+                                  Bạn có chắc chắn muốn xóa khu trọ <strong>@item.Name</strong> không?
+                                  @if (item.TotalRooms > 0)
+                                  {
+                                      <div class="alert alert-warning mt-2 mb-0 small">
+                                        <i class="bi bi-info-circle me-1"></i> Khu trọ này đang có <strong>@item.TotalRooms phòng</strong>. Bạn cần xóa các phòng trước khi xóa khu trọ.
+                                      </div>
+                                  }
+                                </div>
+                                <div class="modal-footer border-0 pt-0">
+                                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                  <form asp-action="Delete" asp-route-id="@item.PropertyId" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-danger">Xác nhận xóa</button>
+                                  </form>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                      stt++;
+                  }
+              }
+              else
+              {
+                  <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">
+                      <i class="bi bi-building-slash fs-1 d-block mb-2 text-secondary"></i>
+                      Chưa có khu trọ nào. Hãy bấm "Thêm khu trọ mới" để bắt đầu!
+                    </td>
+                  </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+</main>

@@ -25,6 +25,10 @@ namespace QuanLyPhongTro.Models
         [Display(Name = "Mã hợp đồng")]
         public string ContractCode { get; set; } = string.Empty;
 
+        // ── LIÊN KẾT CHỦ TRỌ ──────────────────────────────────────────
+        [Display(Name = "Chủ trọ")]
+        public int? LandlordId { get; set; }
+
         // ── LIÊN KẾT PHÒNG & NGƯỜI THUÊ ──────────────────────────────
         [Required(ErrorMessage = "Vui lòng chọn phòng.")]
         [Display(Name = "Phòng")]
@@ -92,6 +96,9 @@ namespace QuanLyPhongTro.Models
         public DateTime? UpdatedAt { get; set; }
 
         // ── NAVIGATION PROPERTIES ─────────────────────────────────────
+        [ForeignKey(nameof(LandlordId))]
+        public virtual tblLandlord? Landlord { get; set; }
+
         [ForeignKey(nameof(RoomId))]
         public virtual tblRoom? Room { get; set; }
 
@@ -99,5 +106,6 @@ namespace QuanLyPhongTro.Models
         public virtual tblTenant? Tenant { get; set; }
 
         public virtual ICollection<tblInvoice> Invoices { get; set; } = new List<tblInvoice>();
+        public virtual ICollection<tblReview> Reviews { get; set; } = new List<tblReview>();
     }
 }

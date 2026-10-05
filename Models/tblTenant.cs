@@ -9,6 +9,9 @@ namespace QuanLyPhongTro.Models
         [Key]
         public int TenantId { get; set; }
 
+        [Display(Name = "Chủ trọ quản lý")]
+        public int? LandlordId { get; set; }
+
         [Required(ErrorMessage = "Họ tên không được để trống.")]
         [StringLength(100)]
         [Display(Name = "Họ và tên")]
@@ -66,6 +69,10 @@ namespace QuanLyPhongTro.Models
         public DateTime? UpdatedAt { get; set; }
 
         // Navigation properties
+        [ForeignKey(nameof(LandlordId))]
+        public virtual tblLandlord? Landlord { get; set; }
+
         public virtual ICollection<tblContract> Contracts { get; set; } = new List<tblContract>();
+        public virtual ICollection<tblFavorite> Favorites { get; set; } = new List<tblFavorite>();
     }
 }

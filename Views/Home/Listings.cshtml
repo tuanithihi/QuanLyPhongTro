@@ -1,0 +1,586 @@
+@model QuanLyPhongTro.Models.ViewModels.RoomSearchResultViewModel
+@{
+    string pageTitle = "Cho Thuê Phòng Trọ";
+    if (!string.IsNullOrEmpty(Model.SelectedDistrictName) && !string.IsNullOrEmpty(Model.SelectedProvinceName))
+    {
+        pageTitle = $"Cho Thuê Phòng Trọ tại {Model.SelectedDistrictName}, {Model.SelectedProvinceName}";
+    }
+    else if (!string.IsNullOrEmpty(Model.SelectedProvinceName))
+    {
+        pageTitle = $"Cho Thuê Phòng Trọ tại {Model.SelectedProvinceName}";
+    }
+
+    ViewData["Title"] = $"{pageTitle} - Giá Rẻ, Mới Nhất";
+    ViewData["Description"] = $"Danh sách {Model.TotalItems} phòng trọ, căn hộ cho thuê còn trống, xác thực trực tiếp tại {Model.SelectedProvinceName ?? "Việt Nam"}.";
+
+    string currentViewMode = Model.Criteria.ViewMode ?? "grid";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/pages/listing.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+}
+
+<div class="listing-page">
+    <!-- Breadcrumb -->
+    <div class="breadcrumb-wrap bg-white border-bottom">
+        <div class="container-xl">
+            <ul class="breadcrumb-list">
+                <li class="breadcrumb-item"><a href="/"><i class="bi bi-house me-1"></i>Trang chủ</a></li>
+                <li class="breadcrumb-separator">/</li>
+                <li class="breadcrumb-item"><a href="/phong-tro">Cho thuê phòng trọ</a></li>
+                @if (!string.IsNullOrEmpty(Model.SelectedProvinceName))
+                {
+                    <li class="breadcrumb-separator">/</li>
+                    <li class="breadcrumb-item"><a href="/phong-tro/@Model.Criteria.ProvinceSlug">@Model.SelectedProvinceName</a></li>
+                }
+                @if (!string.IsNullOrEmpty(Model.SelectedDistrictName))
+                {
+                    <li class="breadcrumb-separator">/</li>
+                    <li class="breadcrumb-item active">@Model.SelectedDistrictName</li>
+                }
+            </ul>
+        </div>
+    </div>
+
+    <!-- Header info -->
+    <div class="listing-header">
+        <div class="container-xl">
+            <h1 class="listing-title-main">@pageTitle</h1>
+            <p class="listing-count-text">
+                Tìm thấy <strong>@Model.TotalItems</strong> phòng trọ phù hợp tiêu chí tìm kiếm của bạn
+            </p>
+        </div>
+    </div>
+
+    <!-- Main Listing Layout: Left Filter + Right Content -->
+    <div class="container-xl mt-4">
+        <div class="row g-4">
+
+            <!-- ── LEFT FILTER (Desktop Sidebar) ────────────────── -->
+            <div class="col-lg-3 d-none d-lg-block">
+                <form id="desktopFilterForm" method="get" action="/phong-tro" class="filter-sidebar">
+                    <input type="hidden" name="viewMode" value="@currentViewMode" />
+                    <input type="hidden" name="sortBy" value="@Model.Criteria.SortBy" />
+
+                    <!-- Header -->
+                    <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
+                        <span class="fw-bold fs-6"><i class="bi bi-funnel me-1 text-danger"></i>Bộ lọc tìm kiếm</span>
+                        <a href="/phong-tro" class="small text-danger text-decoration-none">Xóa tất cả</a>
+                    </div>
+
+                    <!-- Từ khóa -->
+                    <div class="filter-group">
+                        <div class="filter-group-title">Từ khóa / Đường</div>
+                        <input type="text" name="Keyword" class="form-control form-control-sm"
+                               placeholder="Tên phòng, tên đường..." value="@Model.Criteria.Keyword" />
+                    </div>
+
+                    <!-- Tỉnh / Thành -->
+                    <div class="filter-group">
+                        <div class="filter-group-title">Tỉnh / Thành phố</div>
+                        <select name="ProvinceId" id="desktopProvinceSelect" class="form-select form-select-sm">
+                            <option value="">-- Toàn quốc --</option>
+                            @foreach (var p in Model.AvailableProvinces)
+                            {
+                                <option value="@p.ProvinceId" selected="@(Model.Criteria.ProvinceId == p.ProvinceId)">@p.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Quận / Huyện -->
+                    <div class="filter-group">
+                        <div class="filter-group-title">Quận / Huyện</div>
+                        <select name="DistrictId" id="desktopDistrictSelect" class="form-select form-select-sm">
+                            <option value="">-- Tất cả quận/huyện --</option>
+                            @foreach (var d in Model.AvailableDistricts)
+                            {
+                                <option value="@d.DistrictId" selected="@(Model.Criteria.DistrictId == d.DistrictId)">@d.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Phường / Xã -->
+                    <div class="filter-group">
+                        <div class="filter-group-title">Phường / Xã</div>
+                        <select name="WardId" id="desktopWardSelect" class="form-select form-select-sm">
+                            <option value="">-- Tất cả phường/xã --</option>
+                            @foreach (var w in Model.AvailableWards)
+                            {
+                                <option value="@w.WardId" selected="@(Model.Criteria.WardId == w.WardId)">@w.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Khoảng giá -->
+                    <div class="filter-group">
+                        <div class="filter-group-title">Khoảng giá (VNĐ)</div>
+                        <div class="d-flex gap-2 mb-2">
+                            <input type="number" name="MinPrice" class="form-control form-control-sm" placeholder="Từ" value="@(Model.Criteria.MinPrice > 0 ? Model.Criteria.MinPrice : "")" />
+                            <input type="number" name="MaxPrice" class="form-control form-control-sm" placeholder="Đến" value="@(Model.Criteria.MaxPrice > 0 ? Model.Criteria.MaxPrice : "")" />
+                        </div>
+                        <div class="filter-shortcuts-grid">
+                            <button type="button" class="filter-chip-btn" onclick="setPriceRange(0, 2000000)">Dưới 2tr</button>
+                            <button type="button" class="filter-chip-btn" onclick="setPriceRange(2000000, 3500000)">2 - 3.5tr</button>
+                            <button type="button" class="filter-chip-btn" onclick="setPriceRange(3500000, 5000000)">3.5 - 5tr</button>
+                            <button type="button" class="filter-chip-btn" onclick="setPriceRange(5000000, 8000000)">5 - 8tr</button>
+                            <button type="button" class="filter-chip-btn" onclick="setPriceRange(8000000, 0)">Trên 8tr</button>
+                        </div>
+                    </div>
+
+                    <!-- Diện tích -->
+                    <div class="filter-group">
+                        <div class="filter-group-title">Diện tích (m²)</div>
+                        <div class="d-flex gap-2 mb-2">
+                            <input type="number" name="MinArea" class="form-control form-control-sm" placeholder="Từ" value="@(Model.Criteria.MinArea > 0 ? Model.Criteria.MinArea : "")" />
+                            <input type="number" name="MaxArea" class="form-control form-control-sm" placeholder="Đến" value="@(Model.Criteria.MaxArea > 0 ? Model.Criteria.MaxArea : "")" />
+                        </div>
+                        <div class="filter-shortcuts-grid">
+                            <button type="button" class="filter-chip-btn" onclick="setAreaRange(0, 20)">Dưới 20m²</button>
+                            <button type="button" class="filter-chip-btn" onclick="setAreaRange(20, 30)">20 - 30m²</button>
+                            <button type="button" class="filter-chip-btn" onclick="setAreaRange(30, 45)">30 - 45m²</button>
+                            <button type="button" class="filter-chip-btn" onclick="setAreaRange(45, 0)">Trên 45m²</button>
+                        </div>
+                    </div>
+
+                    <!-- Loại phòng -->
+                    <div class="filter-group">
+                        <div class="filter-group-title">Loại phòng</div>
+                        <select name="RoomTypeId" class="form-select form-select-sm">
+                            <option value="">-- Tất cả loại phòng --</option>
+                            @foreach (var rt in Model.AvailableRoomTypes)
+                            {
+                                <option value="@rt.RoomTypeId" selected="@(Model.Criteria.RoomTypeId == rt.RoomTypeId)">@rt.RoomTypeName</option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Tiện ích -->
+                    <div class="filter-group">
+                        <div class="filter-group-title">Tiện ích</div>
+                        <div style="max-height: 200px; overflow-y: auto;">
+                            @foreach (var am in Model.AvailableAmenities)
+                            {
+                                bool isChecked = Model.Criteria.AmenityIds != null && Model.Criteria.AmenityIds.Contains(am.AmenityId);
+                                <label class="amenity-checkbox-label">
+                                    <input type="checkbox" name="AmenityIds" value="@am.AmenityId" checked="@isChecked" />
+                                    <span>@am.Name</span>
+                                </label>
+                            }
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-brand w-100 mt-3">
+                        <i class="bi bi-funnel-fill me-1"></i>Áp dụng bộ lọc
+                    </button>
+                </form>
+            </div>
+
+            <!-- ── RIGHT CONTENT (Listings, Controls, Map) ──────── -->
+            <div class="col-lg-9">
+
+                <!-- Control Bar -->
+                <div class="listing-control-bar">
+                    <!-- Mobile Filter Trigger -->
+                    <button type="button" class="btn btn-neutral btn-sm d-lg-none" onclick="toggleMobileFilter(true)">
+                        <i class="bi bi-funnel text-danger me-1"></i>Bộ lọc
+                    </button>
+
+                    <!-- View Mode Toggle (Grid / List / Map) -->
+                    <div class="view-mode-buttons">
+                        <button type="button" class="btn-view-mode @(currentViewMode == "grid" ? "active" : "")" onclick="switchViewMode('grid')">
+                            <i class="bi bi-grid-fill"></i>
+                            <span class="d-none d-sm-inline">Lưới</span>
+                        </button>
+                        <button type="button" class="btn-view-mode @(currentViewMode == "list" ? "active" : "")" onclick="switchViewMode('list')">
+                            <i class="bi bi-list-ul"></i>
+                            <span class="d-none d-sm-inline">Danh sách</span>
+                        </button>
+                        <button type="button" class="btn-view-mode @(currentViewMode == "map" ? "active" : "")" onclick="switchViewMode('map')">
+                            <i class="bi bi-map-fill"></i>
+                            <span class="d-none d-sm-inline">Bản đồ</span>
+                        </button>
+                    </div>
+
+                    <!-- Sort Select -->
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="small text-muted mb-0 d-none d-sm-inline">Sắp xếp:</label>
+                        <select id="sortSelect" class="form-select form-select-sm" style="width: 170px;" onchange="onSortChange(this.value)">
+                            <option value="newest" selected="@(Model.Criteria.SortBy == "newest")">Mới nhất</option>
+                            <option value="price_asc" selected="@(Model.Criteria.SortBy == "price_asc")">Giá tăng dần</option>
+                            <option value="price_desc" selected="@(Model.Criteria.SortBy == "price_desc")">Giá giảm dần</option>
+                            <option value="area_desc" selected="@(Model.Criteria.SortBy == "area_desc")">Diện tích lớn nhất</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- ── VIEW MODE 1: MAP VIEW ── -->
+                <div id="mapViewContainer" class="@(currentViewMode == "map" ? "" : "d-none") mb-4">
+                    <div class="listing-map-container">
+                        <div id="listingLeafletMap"></div>
+                    </div>
+                </div>
+
+                <!-- ── VIEW MODE 2: GRID / LIST VIEW ── -->
+                <div id="cardsViewContainer" class="@(currentViewMode == "map" ? "d-none" : "")">
+                    @if (Model.Items != null && Model.Items.Any())
+                    {
+                        if (currentViewMode == "list")
+                        {
+                            <div class="d-flex flex-column gap-3">
+                                @foreach (var room in Model.Items)
+                                {
+                                    <div class="room-card room-card-list">
+                                        <div class="room-card-img-wrap">
+                                            <a href="/phong/@room.Slug-@room.RoomId">
+                                                <img src="@(room.ThumbnailUrl ?? "/images/no-image.png")" alt="@room.Title" class="room-card-img" loading="lazy" />
+                                            </a>
+                                            <div class="room-card-badge-top">
+                                                @if (room.IsFeatured)
+                                                {
+                                                    <span class="badge-status badge-status-featured">Nổi bật</span>
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="room-card-body">
+                                            <h3 class="room-card-title"><a href="/phong/@room.Slug-@room.RoomId">@room.Title</a></h3>
+                                            <div class="room-card-meta">
+                                                <span class="room-card-price">@room.FormattedPrice</span>
+                                                <span class="room-card-area">&bull; @room.FormattedArea</span>
+                                            </div>
+                                            <div class="room-card-location">
+                                                <i class="bi bi-geo-alt text-danger"></i>
+                                                <span>@room.FullAddress</span>
+                                            </div>
+                                            @if (room.AmenityNames != null && room.AmenityNames.Any())
+                                            {
+                                                <div class="room-card-amenities">
+                                                    @foreach (var a in room.AmenityNames.Take(4))
+                                                    {
+                                                        <span class="room-card-amenity-pill">@a</span>
+                                                    }
+                                                </div>
+                                            }
+                                            <div class="room-card-footer mt-auto pt-2">
+                                                <span class="text-muted"><i class="bi bi-person me-1"></i>@room.LandlordName</span>
+                                                <a href="/phong/@room.Slug-@room.RoomId" class="btn btn-brand btn-sm">Xem chi tiết</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="row g-3">
+                                @foreach (var room in Model.Items)
+                                {
+                                    <div class="col-12 col-md-6 col-xl-4">
+                                        @await Html.PartialAsync("_RoomCard", room)
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        <!-- Pagination -->
+                        @if (Model.TotalPages > 1)
+                        {
+                            <ul class="custom-pagination">
+                                @if (Model.HasPreviousPage)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@GetPageUrl(Model.Page - 1)">
+                                            <i class="bi bi-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                }
+
+                                @for (int p = 1; p <= Model.TotalPages; p++)
+                                {
+                                    if (p == Model.Page)
+                                    {
+                                        <li class="page-item active"><span class="page-link">@p</span></li>
+                                    }
+                                    else if (p == 1 || p == Model.TotalPages || (p >= Model.Page - 2 && p <= Model.Page + 2))
+                                    {
+                                        <li class="page-item"><a class="page-link" href="@GetPageUrl(p)">@p</a></li>
+                                    }
+                                    else if (p == Model.Page - 3 || p == Model.Page + 3)
+                                    {
+                                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                                    }
+                                }
+
+                                @if (Model.HasNextPage)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@GetPageUrl(Model.Page + 1)">
+                                            <i class="bi bi-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <i class="bi bi-search"></i>
+                            </div>
+                            <h2 class="empty-state-title">Không tìm thấy phòng trọ phù hợp</h2>
+                            <p class="empty-state-desc">
+                                Rất tiếc, hiện không có phòng nào thỏa mãn toàn bộ các bộ lọc mà bạn đã chọn. Hãy thử nới rộng khoảng giá, diện tích hoặc chọn khu vực lân cận.
+                            </p>
+                            <a href="/phong-tro" class="btn btn-brand">
+                                <i class="bi bi-arrow-clockwise me-1"></i>Đặt lại tất cả bộ lọc
+                            </a>
+                        </div>
+                    }
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── MOBILE FILTER DRAWER & BACKDROP ───────────────────────────── -->
+<div id="filterDrawerBackdrop" class="filter-drawer-backdrop" onclick="toggleMobileFilter(false)"></div>
+<div id="filterDrawer" class="filter-drawer">
+    <div class="filter-drawer-header">
+        <span class="fw-bold"><i class="bi bi-funnel text-danger me-1"></i>Bộ lọc tìm kiếm</span>
+        <button type="button" class="btn-close" onclick="toggleMobileFilter(false)" aria-label="Đóng"></button>
+    </div>
+    <div class="filter-drawer-body">
+        <!-- Render mobile form cloning elements -->
+        <form id="mobileFilterForm" method="get" action="/phong-tro">
+            <input type="hidden" name="viewMode" value="@currentViewMode" />
+            <input type="hidden" name="sortBy" value="@Model.Criteria.SortBy" />
+
+            <div class="mb-3">
+                <label class="form-label">Tỉnh / Thành</label>
+                <select name="ProvinceId" id="mobileProvinceSelect" class="form-select form-select-sm">
+                    <option value="">-- Toàn quốc --</option>
+                    @foreach (var p in Model.AvailableProvinces)
+                    {
+                        <option value="@p.ProvinceId" selected="@(Model.Criteria.ProvinceId == p.ProvinceId)">@p.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Quận / Huyện</label>
+                <select name="DistrictId" id="mobileDistrictSelect" class="form-select form-select-sm">
+                    <option value="">-- Tất cả quận/huyện --</option>
+                    @foreach (var d in Model.AvailableDistricts)
+                    {
+                        <option value="@d.DistrictId" selected="@(Model.Criteria.DistrictId == d.DistrictId)">@d.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Khoảng giá (VNĐ)</label>
+                <div class="d-flex gap-2">
+                    <input type="number" name="MinPrice" class="form-control form-control-sm" placeholder="Từ" value="@(Model.Criteria.MinPrice > 0 ? Model.Criteria.MinPrice : "")" />
+                    <input type="number" name="MaxPrice" class="form-control form-control-sm" placeholder="Đến" value="@(Model.Criteria.MaxPrice > 0 ? Model.Criteria.MaxPrice : "")" />
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Diện tích (m²)</label>
+                <div class="d-flex gap-2">
+                    <input type="number" name="MinArea" class="form-control form-control-sm" placeholder="Từ" value="@(Model.Criteria.MinArea > 0 ? Model.Criteria.MinArea : "")" />
+                    <input type="number" name="MaxArea" class="form-control form-control-sm" placeholder="Đến" value="@(Model.Criteria.MaxArea > 0 ? Model.Criteria.MaxArea : "")" />
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Loại phòng</label>
+                <select name="RoomTypeId" class="form-select form-select-sm">
+                    <option value="">-- Tất cả loại phòng --</option>
+                    @foreach (var rt in Model.AvailableRoomTypes)
+                    {
+                        <option value="@rt.RoomTypeId" selected="@(Model.Criteria.RoomTypeId == rt.RoomTypeId)">@rt.RoomTypeName</option>
+                    }
+                </select>
+            </div>
+
+            <div class="d-grid mt-4">
+                <button type="submit" class="btn btn-brand">Áp dụng bộ lọc</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@functions {
+    string GetPageUrl(int pageNum)
+    {
+        var query = new Dictionary<string, string>();
+        if (!string.IsNullOrEmpty(Model.Criteria.Keyword)) query["keyword"] = Model.Criteria.Keyword;
+        if (Model.Criteria.ProvinceId.HasValue) query["provinceId"] = Model.Criteria.ProvinceId.Value.ToString();
+        if (Model.Criteria.DistrictId.HasValue) query["districtId"] = Model.Criteria.DistrictId.Value.ToString();
+        if (Model.Criteria.WardId.HasValue) query["wardId"] = Model.Criteria.WardId.Value.ToString();
+        if (Model.Criteria.MinPrice.HasValue) query["minPrice"] = Model.Criteria.MinPrice.Value.ToString();
+        if (Model.Criteria.MaxPrice.HasValue) query["maxPrice"] = Model.Criteria.MaxPrice.Value.ToString();
+        if (Model.Criteria.MinArea.HasValue) query["minArea"] = Model.Criteria.MinArea.Value.ToString();
+        if (Model.Criteria.MaxArea.HasValue) query["maxArea"] = Model.Criteria.MaxArea.Value.ToString();
+        if (Model.Criteria.RoomTypeId.HasValue) query["roomTypeId"] = Model.Criteria.RoomTypeId.Value.ToString();
+        if (!string.IsNullOrEmpty(Model.Criteria.SortBy)) query["sortBy"] = Model.Criteria.SortBy;
+        if (!string.IsNullOrEmpty(Model.Criteria.ViewMode)) query["viewMode"] = Model.Criteria.ViewMode;
+        query["page"] = pageNum.ToString();
+
+        string basePath = "/phong-tro";
+        if (!string.IsNullOrEmpty(Model.Criteria.ProvinceSlug) && !string.IsNullOrEmpty(Model.Criteria.DistrictSlug))
+        {
+            basePath = $"/phong-tro/{Model.Criteria.ProvinceSlug}/{Model.Criteria.DistrictSlug}";
+        }
+        else if (!string.IsNullOrEmpty(Model.Criteria.ProvinceSlug))
+        {
+            basePath = $"/phong-tro/{Model.Criteria.ProvinceSlug}";
+        }
+
+        string qs = string.Join("&", query.Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value)}"));
+        return $"{basePath}?{qs}";
+    }
+}
+
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script>
+        var mapInstance = null;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Cascading dropdowns AJAX
+            setupCascadingDropdown('desktopProvinceSelect', 'desktopDistrictSelect', 'desktopWardSelect');
+            setupCascadingDropdown('mobileProvinceSelect', 'mobileDistrictSelect', null);
+
+            // Initialize map if viewMode == 'map'
+            var currentMode = '@currentViewMode';
+            if (currentMode === 'map') {
+                initLeafletListingMap();
+            }
+        });
+
+        function setupCascadingDropdown(provId, distId, wardId) {
+            var prov = document.getElementById(provId);
+            var dist = document.getElementById(distId);
+            if (!prov || !dist) return;
+
+            prov.addEventListener('change', async function () {
+                var pId = this.value;
+                dist.innerHTML = '<option value="">-- Tất cả quận/huyện --</option>';
+                if (wardId) {
+                    var w = document.getElementById(wardId);
+                    if (w) w.innerHTML = '<option value="">-- Tất cả phường/xã --</option>';
+                }
+                if (!pId) return;
+
+                try {
+                    var res = await fetch('/Home/GetDistricts?provinceId=' + pId);
+                    var data = await res.json();
+                    data.forEach(function (d) {
+                        var opt = document.createElement('option');
+                        opt.value = d.id;
+                        opt.textContent = d.name;
+                        dist.appendChild(opt);
+                    });
+                } catch (e) { }
+            });
+
+            if (wardId) {
+                var w = document.getElementById(wardId);
+                dist.addEventListener('change', async function () {
+                    var dId = this.value;
+                    w.innerHTML = '<option value="">-- Tất cả phường/xã --</option>';
+                    if (!dId) return;
+
+                    try {
+                        var res = await fetch('/Home/GetWards?districtId=' + dId);
+                        var data = await res.json();
+                        data.forEach(function (ward) {
+                            var opt = document.createElement('option');
+                            opt.value = ward.id;
+                            opt.textContent = ward.name;
+                            w.appendChild(opt);
+                        });
+                    } catch (e) { }
+                });
+            }
+        }
+
+        function switchViewMode(mode) {
+            var url = new URL(window.location.href);
+            url.searchParams.set('viewMode', mode);
+            window.location.href = url.toString();
+        }
+
+        function onSortChange(sortVal) {
+            var url = new URL(window.location.href);
+            url.searchParams.set('sortBy', sortVal);
+            url.searchParams.set('page', '1');
+            window.location.href = url.toString();
+        }
+
+        function toggleMobileFilter(show) {
+            document.getElementById('filterDrawerBackdrop').classList.toggle('show', show);
+            document.getElementById('filterDrawer').classList.toggle('show', show);
+        }
+
+        function setPriceRange(min, max) {
+            var f = document.getElementById('desktopFilterForm');
+            f.querySelector('input[name="MinPrice"]').value = min > 0 ? min : '';
+            f.querySelector('input[name="MaxPrice"]').value = max > 0 ? max : '';
+            f.submit();
+        }
+
+        function setAreaRange(min, max) {
+            var f = document.getElementById('desktopFilterForm');
+            f.querySelector('input[name="MinArea"]').value = min > 0 ? min : '';
+            f.querySelector('input[name="MaxArea"]').value = max > 0 ? max : '';
+            f.submit();
+        }
+
+        function initLeafletListingMap() {
+            var mapEl = document.getElementById('listingLeafletMap');
+            if (!mapEl) return;
+
+            mapInstance = L.map('listingLeafletMap').setView([21.0285, 105.8542], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(mapInstance);
+
+            var bounds = [];
+
+            // Add markers from room cards
+            var roomCards = document.querySelectorAll('.room-card');
+            roomCards.forEach(function (card) {
+                var lat = parseFloat(card.getAttribute('data-lat'));
+                var lng = parseFloat(card.getAttribute('data-lng'));
+                if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+                    var title = card.querySelector('.room-card-title a').textContent.trim();
+                    var price = card.querySelector('.room-card-price').textContent.trim();
+                    var img = card.querySelector('.room-card-img').getAttribute('src');
+                    var link = card.querySelector('.room-card-title a').getAttribute('href');
+
+                    var popupContent = 
+                        '<div class="map-popup-card">' +
+                            '<img src="' + img + '" class="map-popup-img" />' +
+                            '<div class="map-popup-body">' +
+                                '<div class="map-popup-title">' + title + '</div>' +
+                                '<div class="map-popup-price">' + price + '</div>' +
+                                '<a href="' + link + '" class="btn btn-brand btn-sm w-100 mt-2">Xem phòng</a>' +
+                            '</div>' +
+                        '</div>';
+
+                    L.marker([lat, lng]).addTo(mapInstance).bindPopup(popupContent);
+                    bounds.push([lat, lng]);
+                }
+            });
+
+            if (bounds.length > 0) {
+                mapInstance.fitBounds(bounds, { padding: [40, 40] });
+            }
+        }
+    </script>
+}

@@ -13,11 +13,26 @@ namespace QuanLyPhongTro.Models
         Maintenance = 2     // Đang bảo trì / sửa chữa
     }
 
+    /// <summary>
+    /// Trạng thái phê duyệt tin đăng phòng
+    /// </summary>
+    public enum RoomApprovalStatus
+    {
+        Draft = 0,
+        Pending = 1,
+        Published = 2,
+        Rejected = 3
+    }
+
     [Table("tblRoom")]
     public class tblRoom
     {
         [Key]
         public int RoomId { get; set; }
+
+        // ── KHU TRỌ LIÊN KẾT ──────────────────────────────────────────
+        [Display(Name = "Khu trọ / Tòa nhà")]
+        public int? PropertyId { get; set; }
 
         // ── THÔNG TIN CƠ BẢN ──────────────────────────────────────────
         [Required(ErrorMessage = "Mã phòng không được để trống.")]
@@ -29,6 +44,15 @@ namespace QuanLyPhongTro.Models
         [StringLength(150)]
         [Display(Name = "Tên phòng")]
         public string RoomName { get; set; } = string.Empty;
+
+        [StringLength(250)]
+        [Display(Name = "Tiêu đề tin đăng")]
+        public string? Title { get; set; }
+
+        [Required(ErrorMessage = "Slug không được để trống.")]
+        [StringLength(200)]
+        [Display(Name = "Slug đường dẫn")]
+        public string Slug { get; set; } = string.Empty;
 
         // ── PHÂN LOẠI ─────────────────────────────────────────────────
         [Required(ErrorMessage = "Vui lòng chọn loại phòng.")]
@@ -58,6 +82,10 @@ namespace QuanLyPhongTro.Models
         [Range(1, 50)]
         [Display(Name = "Số người tối đa")]
         public int MaxOccupants { get; set; } = 2;
+
+        [Range(1, 50)]
+        [Display(Name = "Sức chứa")]
+        public int Capacity { get; set; } = 2;
 
         // ── MÔ TẢ & MEDIA ─────────────────────────────────────────────
         [Display(Name = "Mô tả chi tiết")]
@@ -96,12 +124,28 @@ namespace QuanLyPhongTro.Models
         [NotMapped]
         public int ReviewCount { get; set; }
 
-        // ── TRẠNG THÁI ────────────────────────────────────────────────
-        [Display(Name = "Trạng thái")]
+        // ── TRẠNG THÁI & HIỂN THỊ ─────────────────────────────────────
+        [Display(Name = "Trạng thái phòng")]
         public RoomStatus Status { get; set; } = RoomStatus.Available;
 
         [Display(Name = "Hiển thị trên website")]
         public bool IsPublished { get; set; } = true;
+
+        [Display(Name = "Trạng thái phê duyệt")]
+        public RoomApprovalStatus ApprovalStatus { get; set; } = RoomApprovalStatus.Published;
+
+        [Display(Name = "Tin nổi bật")]
+        public bool IsFeatured { get; set; } = false;
+
+        [Display(Name = "Lượt xem")]
+        public int ViewCount { get; set; } = 0;
+
+        [Display(Name = "Ngày xuất bản")]
+        public DateTime? PublishedAt { get; set; }
+
+        [StringLength(500)]
+        [Display(Name = "Lý do từ chối / Gỡ tin")]
+        public string? RejectReason { get; set; }
 
         // ── AUDIT ──────────────────────────────────────────────────────
         public DateTime CreatedAt { get; set; } = DateTime.Now;
@@ -111,8 +155,14 @@ namespace QuanLyPhongTro.Models
         [ForeignKey(nameof(RoomTypeId))]
         public virtual tblRoomType? RoomType { get; set; }
 
+        [ForeignKey(nameof(PropertyId))]
+        public virtual tblProperty? Property { get; set; }
+
         public virtual ICollection<tblContract> Contracts { get; set; } = new List<tblContract>();
         public virtual ICollection<tblInvoice> Invoices { get; set; } = new List<tblInvoice>();
         public virtual ICollection<tblRoomReview> RoomReviews { get; set; } = new List<tblRoomReview>();
+        public virtual ICollection<tblRoomImage> RoomImages { get; set; } = new List<tblRoomImage>();
+        public virtual ICollection<tblRoomAmenity> RoomAmenities { get; set; } = new List<tblRoomAmenity>();
+        public virtual ICollection<tblFavorite> Favorites { get; set; } = new List<tblFavorite>();
     }
 }

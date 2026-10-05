@@ -1,0 +1,198 @@
+@model QuanLyPhongTro.Models.ViewModels.PropertyCreateEditViewModel
+@{
+    ViewData["Title"] = "Thêm khu trọ mới";
+    Layout = "_LayoutAdmin";
+}
+
+@section Styles {
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    #map { height: 350px; border-radius: 8px; border: 1px solid #ced4da; }
+  </style>
+}
+
+<main id="main" class="main">
+
+  <div class="pagetitle">
+    <h1>Thêm khu trọ mới</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item"><a asp-action="Index">Khu trọ</a></li>
+        <li class="breadcrumb-item active">Thêm mới</li>
+      </ol>
+    </nav>
+  </div>
+
+  <section class="section">
+    <div class="card shadow-sm border-0">
+      <div class="card-body pt-3">
+        <form asp-action="Create" method="post">
+          @Html.AntiForgeryToken()
+          <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label asp-for="Name" class="form-label fw-bold">Tên khu trọ / Tòa nhà <span class="text-danger">*</span></label>
+              <input asp-for="Name" class="form-control" placeholder="Ví dụ: Tòa nhà Green House, Nhà trọ An Bình..." />
+              <span asp-validation-for="Name" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-4">
+              <label asp-for="Status" class="form-label fw-bold">Trạng thái</label>
+              <select asp-for="Status" class="form-select">
+                <option value="1">Đang hoạt động</option>
+                <option value="0">Tạm ngưng</option>
+              </select>
+            </div>
+
+            <div class="col-12">
+              <label asp-for="Address" class="form-label fw-bold">Địa chỉ chi tiết (Số nhà, ngõ/ngách, tên đường...) <span class="text-danger">*</span></label>
+              <input asp-for="Address" class="form-control" placeholder="Ví dụ: Số 12 Ngõ 45 Đường Cầu Giấy" />
+              <span asp-validation-for="Address" class="text-danger small"></span>
+            </div>
+
+            <!-- Cascading Dropdowns: Tỉnh -> Quận -> Phường -->
+            <div class="col-md-4">
+              <label asp-for="ProvinceId" class="form-label fw-bold">Tỉnh / Thành phố</label>
+              <select asp-for="ProvinceId" id="selectProvince" class="form-select" asp-items="ViewBag.Provinces">
+                <option value="">-- Chọn Tỉnh / Thành phố --</option>
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label asp-for="DistrictId" class="form-label fw-bold">Quận / Huyện</label>
+              <select asp-for="DistrictId" id="selectDistrict" class="form-select" asp-items="ViewBag.Districts">
+                <option value="">-- Chọn Quận / Huyện --</option>
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label asp-for="WardId" class="form-label fw-bold">Phường / Xã</label>
+              <select asp-for="WardId" id="selectWard" class="form-select" asp-items="ViewBag.Wards">
+                <option value="">-- Chọn Phường / Xã --</option>
+              </select>
+            </div>
+
+            <!-- Leaflet Map chọn tọa độ -->
+            <div class="col-12 mt-4">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="form-label fw-bold mb-0">
+                  <i class="bi bi-geo-alt-fill text-danger me-1"></i>Chọn vị trí tọa độ trên bản đồ (Click hoặc kéo ghim)
+                </label>
+                <span class="badge bg-light text-dark border">Bản đồ Leaflet OpenStreetMap</span>
+              </div>
+              <div id="map"></div>
+            </div>
+
+            <div class="col-md-6">
+              <label asp-for="Latitude" class="form-label fw-bold small text-muted">Vĩ độ (Latitude)</label>
+              <input asp-for="Latitude" id="Latitude" class="form-control font-monospace" readonly />
+            </div>
+
+            <div class="col-md-6">
+              <label asp-for="Longitude" class="form-label fw-bold small text-muted">Kinh độ (Longitude)</label>
+              <input asp-for="Longitude" id="Longitude" class="form-control font-monospace" readonly />
+            </div>
+
+            <div class="col-12">
+              <label asp-for="Description" class="form-label fw-bold">Mô tả / Tiện ích chung của khu trọ</label>
+              <textarea asp-for="Description" class="form-control" rows="3" placeholder="Ví dụ: Có bảo vệ 24/7, camera an ninh mọi tầng, thang máy tốc độ cao, bãi đỗ xe rộng rãi..."></textarea>
+            </div>
+          </div>
+
+          <div class="mt-4 pt-3 border-top d-flex justify-content-end gap-2">
+            <a asp-action="Index" class="btn btn-secondary px-3">Hủy bỏ</a>
+            <button type="submit" class="btn btn-primary px-4 fw-semibold">
+              <i class="bi bi-save me-1"></i> Lưu khu trọ
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+@section Scripts {
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // ── CASCADING DROPDOWNS ──
+    const selectProvince = document.getElementById('selectProvince');
+    const selectDistrict = document.getElementById('selectDistrict');
+    const selectWard = document.getElementById('selectWard');
+
+    selectProvince.addEventListener('change', async function() {
+        const provinceId = this.value;
+        selectDistrict.innerHTML = '<option value="">-- Đang tải... --</option>';
+        selectWard.innerHTML = '<option value="">-- Chọn Phường / Xã --</option>';
+
+        if (!provinceId) {
+            selectDistrict.innerHTML = '<option value="">-- Chọn Quận / Huyện --</option>';
+            return;
+        }
+
+        try {
+            const res = await fetch(`/Admin/Property/GetDistricts?provinceId=${provinceId}`);
+            const data = await res.json();
+            let html = '<option value="">-- Chọn Quận / Huyện --</option>';
+            data.forEach(item => {
+                html += `<option value="${item.id}">${item.name}</option>`;
+            });
+            selectDistrict.innerHTML = html;
+        } catch (e) {
+            console.error(e);
+            selectDistrict.innerHTML = '<option value="">-- Lỗi tải dữ liệu --</option>';
+        }
+    });
+
+    selectDistrict.addEventListener('change', async function() {
+        const districtId = this.value;
+        selectWard.innerHTML = '<option value="">-- Đang tải... --</option>';
+
+        if (!districtId) {
+            selectWard.innerHTML = '<option value="">-- Chọn Phường / Xã --</option>';
+            return;
+        }
+
+        try {
+            const res = await fetch(`/Admin/Property/GetWards?districtId=${districtId}`);
+            const data = await res.json();
+            let html = '<option value="">-- Chọn Phường / Xã --</option>';
+            data.forEach(item => {
+                html += `<option value="${item.id}">${item.name}</option>`;
+            });
+            selectWard.innerHTML = html;
+        } catch (e) {
+            console.error(e);
+            selectWard.innerHTML = '<option value="">-- Lỗi tải dữ liệu --</option>';
+        }
+    });
+
+    // ── LEAFLET MAP ──
+    let defaultLat = parseFloat(document.getElementById('Latitude').value) || 21.0285;
+    let defaultLng = parseFloat(document.getElementById('Longitude').value) || 105.8542;
+
+    const map = L.map('map').setView([defaultLat, defaultLng], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    let marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(map);
+
+    function updateCoordinates(lat, lng) {
+        document.getElementById('Latitude').value = lat.toFixed(6);
+        document.getElementById('Longitude').value = lng.toFixed(6);
+    }
+
+    marker.on('dragend', function(e) {
+        const pos = marker.getLatLng();
+        updateCoordinates(pos.lat, pos.lng);
+    });
+
+    map.on('click', function(e) {
+        marker.setLatLng(e.latlng);
+        updateCoordinates(e.latlng.lat, e.latlng.lng);
+    });
+  </script>
+}

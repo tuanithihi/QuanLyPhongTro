@@ -1,256 +1,697 @@
 @model QuanLyPhongTro.Areas.Admin.Models.DashboardViewModel
 @{
-    ViewData["Title"] = "Tổng quan";
+    ViewData["Title"] = Model.IsSuperAdmin ? "Tổng quan sàn - SuperAdmin" : "Tổng quan vận hành - Chủ trọ";
     Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+@section Styles {
+    <style>
+        /* ── Giao diện Dashboard Đồng Bộ Màu Thương Hiệu (Batdongsan Red-Orange #e03c31) ── */
+        .dashboard-header {
+            margin-bottom: 24px;
+        }
+
+        .role-pill {
+            background-color: var(--brand-primary-light, #fef2f2);
+            color: var(--brand-primary, #e03c31);
+            border: 1px solid var(--brand-primary-border, #fecaca);
+            font-weight: 600;
+            font-size: 0.875rem;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* ── Thẻ Card Tối Giản Cao Cấp ── */
+        .dash-card {
+            background: #ffffff;
+            border: 1px solid var(--gray-200, #e5e7eb);
+            border-radius: 8px;
+            padding: 20px;
+            height: 100%;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .dash-card:hover {
+            border-color: var(--brand-primary-border, #fecaca);
+            box-shadow: 0 4px 12px rgba(224, 60, 49, 0.06);
+        }
+
+        .dash-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .dash-card-label {
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--gray-500, #6b7280);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 0;
+        }
+
+        .dash-card-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            background-color: var(--brand-primary-light, #fef2f2);
+            color: var(--brand-primary, #e03c31);
+            border: 1px solid var(--brand-primary-border, #fecaca);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .dash-card-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--gray-900, #111827);
+            line-height: 1.2;
+            margin-bottom: 6px;
+        }
+
+        .dash-card-sub {
+            font-size: 0.8125rem;
+            color: var(--gray-500, #6b7280);
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        /* ── Badge Đồng Bộ ── */
+        .badge-brand-subtle {
+            background-color: var(--brand-primary-light, #fef2f2);
+            color: var(--brand-primary, #e03c31);
+            border: 1px solid var(--brand-primary-border, #fecaca);
+            font-weight: 600;
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
+        .badge-neutral {
+            background-color: var(--gray-100, #f3f4f6);
+            color: var(--gray-700, #374151);
+            border: 1px solid var(--gray-200, #e5e7eb);
+            font-weight: 500;
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
+        /* ── Bộ lọc kỳ thống kê ── */
+        .filter-panel {
+            background: #ffffff;
+            border: 1px solid var(--gray-200, #e5e7eb);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+        }
+
+        .filter-title {
+            font-size: 0.9375rem;
+            font-weight: 700;
+            color: var(--gray-900, #111827);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-title i {
+            color: var(--brand-primary, #e03c31);
+        }
+
+        .filter-period-tag {
+            color: var(--brand-primary, #e03c31);
+            font-weight: 700;
+        }
+
+        .btn-brand-primary {
+            background-color: var(--brand-primary, #e03c31);
+            border: 1px solid var(--brand-primary, #e03c31);
+            color: #ffffff;
+            font-weight: 600;
+            transition: all 0.15s ease;
+        }
+
+        .btn-brand-primary:hover {
+            background-color: var(--brand-primary-hover, #c93126);
+            border-color: var(--brand-primary-hover, #c93126);
+            color: #ffffff;
+        }
+
+        /* ── Bảng phân bố khu vực ── */
+        .section-box {
+            background: #ffffff;
+            border: 1px solid var(--gray-200, #e5e7eb);
+            border-radius: 8px;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .section-box-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--gray-200, #e5e7eb);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-box-title {
+            font-size: 0.9375rem;
+            font-weight: 700;
+            color: var(--gray-900, #111827);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-box-title i {
+            color: var(--brand-primary, #e03c31);
+        }
+
+        .progress-brand {
+            height: 6px;
+            background-color: var(--gray-100, #f3f4f6);
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+
+        .progress-brand-bar {
+            background-color: var(--brand-primary, #e03c31);
+            height: 100%;
+            border-radius: 9999px;
+        }
+
+        /* ── Danh sách nút tác vụ nhanh (Quick Actions) ── */
+        .quick-action-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 14px;
+            background: #ffffff;
+            border: 1px solid var(--gray-200, #e5e7eb);
+            border-radius: 6px;
+            color: var(--gray-700, #374151);
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.15s ease;
+        }
+
+        .quick-action-link:hover {
+            border-color: var(--brand-primary-border, #fecaca);
+            background-color: var(--brand-primary-light, #fef2f2);
+            color: var(--brand-primary, #e03c31);
+        }
+
+        .quick-action-link i.action-icon {
+            color: var(--brand-primary, #e03c31);
+            margin-right: 10px;
+            font-size: 1rem;
+        }
+
+        .clock-display {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--gray-900, #111827);
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            letter-spacing: 1px;
+        }
+    </style>
 }
 
 <main id="main" class="main">
 
-    <div class="pagetitle">
-        <h1>Tổng quan</h1>
-        <nav>
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
-                <li class="breadcrumb-item active">Tổng quan</li>
-            </ol>
-        </nav>
+    <!-- ── TIÊU ĐỀ TRANG & PHÂN QUYỀN ────────────────────────── -->
+    <div class="pagetitle dashboard-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="fw-bold fs-4 text-dark mb-1">@(Model.IsSuperAdmin ? "Bảng điều khiển SuperAdmin" : "Bảng điều khiển Chủ trọ")</h1>
+            <nav>
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index" class="text-muted">Quản trị</a></li>
+                    <li class="breadcrumb-item active text-dark fw-semibold">Tổng quan</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <span class="role-pill">
+                <i class="bi @(Model.IsSuperAdmin ? "bi-shield-check" : "bi-building")"></i>
+                @(Model.IsSuperAdmin ? "Quản trị viên sàn toàn quyền" : "Đối tác Chủ trọ")
+            </span>
+        </div>
     </div>
 
     @if (TempData["Success"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle me-1"></i> @TempData["Success"]
+        <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert">
+            <i class="bi bi-check-circle me-1 text-success"></i> @TempData["Success"]
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
 
     <section class="section dashboard">
-        <div class="row">
+        <div class="row g-3">
 
+            <!-- ── 1. BỘ LỌC KỲ THỐNG KÊ (ĐỒNG BỘ MÀU CHỦ ĐẠO) ────────── -->
             <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-                            <h5 class="card-title mb-0">Bộ lọc thống kê <span>| @Model.PeriodLabel</span></h5>
-                            <a asp-area="Admin" asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary btn-sm">
-                                <i class="bi bi-arrow-clockwise me-1"></i>Tháng hiện tại
-                            </a>
+                <div class="filter-panel">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                        <div class="filter-title">
+                            <i class="bi bi-funnel"></i>
+                            <span>Kỳ thống kê:</span>
+                            <span class="filter-period-tag">@Model.PeriodLabel</span>
+                        </div>
+                        <a asp-area="Admin" asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Tháng hiện tại
+                        </a>
+                    </div>
+
+                    <form method="get" asp-area="Admin" asp-controller="Home" asp-action="Index" class="row g-2 align-items-end" id="dashboardFilterForm">
+                        <div class="col-lg-2 col-md-4">
+                            <label class="form-label small fw-semibold text-muted">Kiểu thống kê</label>
+                            <select name="period" id="periodType" class="form-select form-select-sm">
+                                <option value="month" selected="@(Model.PeriodType == "month")">Theo tháng</option>
+                                <option value="quarter" selected="@(Model.PeriodType == "quarter")">Theo quý</option>
+                                <option value="year" selected="@(Model.PeriodType == "year")">Theo năm</option>
+                                <option value="custom" selected="@(Model.PeriodType == "custom")">Tùy chỉnh</option>
+                            </select>
                         </div>
 
-                        <form method="get" asp-area="Admin" asp-controller="Home" asp-action="Index" class="row g-3 align-items-end" id="dashboardFilterForm">
-                            <div class="col-lg-2 col-md-4">
-                                <label class="form-label small fw-semibold">Kiểu thống kê</label>
-                                <select name="period" id="periodType" class="form-select">
-                                    <option value="month" selected="@(Model.PeriodType == "month")">Theo tháng</option>
-                                    <option value="quarter" selected="@(Model.PeriodType == "quarter")">Theo quý</option>
-                                    <option value="year" selected="@(Model.PeriodType == "year")">Theo năm</option>
-                                    <option value="custom" selected="@(Model.PeriodType == "custom")">Tùy chỉnh</option>
-                                </select>
-                            </div>
+                        <div class="col-lg-2 col-md-4 filter-month">
+                            <label class="form-label small fw-semibold text-muted">Tháng</label>
+                            <select name="month" class="form-select form-select-sm">
+                                @for (int m = 1; m <= 12; m++)
+                                {
+                                    <option value="@m" selected="@(Model.SelectedMonth == m)">Tháng @m</option>
+                                }
+                            </select>
+                        </div>
 
-                            <div class="col-lg-2 col-md-4 filter-month">
-                                <label class="form-label small fw-semibold">Tháng</label>
-                                <select name="month" class="form-select">
-                                    @for (int m = 1; m <= 12; m++)
-                                    {
-                                        <option value="@m" selected="@(Model.SelectedMonth == m)">Tháng @m</option>
-                                    }
-                                </select>
-                            </div>
+                        <div class="col-lg-2 col-md-4 filter-quarter">
+                            <label class="form-label small fw-semibold text-muted">Quý</label>
+                            <select name="quarter" class="form-select form-select-sm">
+                                @for (int q = 1; q <= 4; q++)
+                                {
+                                    <option value="@q" selected="@(Model.SelectedQuarter == q)">Quý @q</option>
+                                }
+                            </select>
+                        </div>
 
-                            <div class="col-lg-2 col-md-4 filter-quarter">
-                                <label class="form-label small fw-semibold">Quý</label>
-                                <select name="quarter" class="form-select">
-                                    @for (int q = 1; q <= 4; q++)
-                                    {
-                                        <option value="@q" selected="@(Model.SelectedQuarter == q)">Quý @q</option>
-                                    }
-                                </select>
-                            </div>
+                        <div class="col-lg-2 col-md-4 filter-year">
+                            <label class="form-label small fw-semibold text-muted">Năm</label>
+                            <input type="number" name="year" class="form-control form-control-sm" min="2000" max="2100" value="@Model.SelectedYear" />
+                        </div>
 
-                            <div class="col-lg-2 col-md-4 filter-year">
-                                <label class="form-label small fw-semibold">Năm</label>
-                                <input type="number" name="year" class="form-control" min="2000" max="2100" value="@Model.SelectedYear" />
-                            </div>
+                        <div class="col-lg-2 col-md-4 filter-custom">
+                            <label class="form-label small fw-semibold text-muted">Từ ngày</label>
+                            <input type="date" name="fromDate" class="form-control form-control-sm" value="@Model.PeriodStart.ToString("yyyy-MM-dd")" />
+                        </div>
 
-                            <div class="col-lg-2 col-md-4 filter-custom">
-                                <label class="form-label small fw-semibold">Từ ngày</label>
-                                <input type="date" name="fromDate" class="form-control" value="@Model.PeriodStart.ToString("yyyy-MM-dd")" />
-                            </div>
+                        <div class="col-lg-2 col-md-4 filter-custom">
+                            <label class="form-label small fw-semibold text-muted">Đến ngày</label>
+                            <input type="date" name="toDate" class="form-control form-control-sm" value="@Model.PeriodEnd.ToString("yyyy-MM-dd")" />
+                        </div>
 
-                            <div class="col-lg-2 col-md-4 filter-custom">
-                                <label class="form-label small fw-semibold">Đến ngày</label>
-                                <input type="date" name="toDate" class="form-control" value="@Model.PeriodEnd.ToString("yyyy-MM-dd")" />
-                            </div>
-
-                            <div class="col-lg-2 col-md-4">
-                                <button type="submit" class="btn btn-primary w-100">
-                                    <i class="bi bi-funnel me-1"></i>Lọc
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                        <div class="col-lg-2 col-md-4">
+                            <button type="submit" class="btn btn-brand-primary btn-sm w-100">
+                                <i class="bi bi-search me-1"></i> Áp dụng
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
 
-            <!-- ── STATS CARDS ─────────────────────────── -->
-            <div class="col-12">
-                <div class="row">
+            @if (Model.IsSuperAdmin)
+            {
+                <!-- ═══════════════════════════════════════════════════════════════ -->
+                <!-- ── 2A. DASHBOARD SUPER ADMIN (ĐỒNG BỘ 1 TONE MÀU) ───────────── -->
+                <!-- ═══════════════════════════════════════════════════════════════ -->
+                <div class="col-12">
+                    <div class="row g-3">
 
-                    <div class="col-xxl-3 col-md-6">
-                        <div class="card info-card sales-card">
-                            <div class="card-body">
-                                <h5 class="card-title">Tổng phòng</h5>
-                                <div class="d-flex align-items-center">
-                                    <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                                        <i class="bi bi-building"></i>
+                        <!-- Tổng chủ trọ -->
+                        <div class="col-xxl-3 col-md-6">
+                            <div class="dash-card">
+                                <div class="dash-card-header">
+                                    <span class="dash-card-label">Đối tác chủ trọ</span>
+                                    <div class="dash-card-icon">
+                                        <i class="bi bi-person-badge"></i>
                                     </div>
-                                    <div class="ps-3">
-                                        <h6>@Model.TotalRooms</h6>
-                                        <div class="small">
-                                            <span class="text-success fw-bold">@Model.AvailableRooms trống</span> &middot;
-                                            <span class="text-primary fw-bold">@Model.OccupiedRooms thuê</span> &middot;
-                                            <span class="text-warning fw-bold">@Model.MaintenanceRooms bảo trì</span>
-                                        </div>
-                                    </div>
+                                </div>
+                                <div class="dash-card-value">@Model.TotalLandlords</div>
+                                <div class="dash-card-sub">
+                                    @if (Model.PendingLandlords > 0)
+                                    {
+                                        <a asp-area="Admin" asp-controller="Landlord" asp-action="Index" asp-route-status="0" class="badge-brand-subtle text-decoration-none">
+                                            <i class="bi bi-clock me-1"></i>@Model.PendingLandlords chờ duyệt
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-neutral"><i class="bi bi-check2 me-1"></i>Đã duyệt tất cả</span>
+                                    }
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="col-xxl-3 col-md-6">
-                        <div class="card info-card revenue-card">
-                            <div class="card-body">
-                                <h5 class="card-title">Hợp đồng <span>| Hiệu lực</span></h5>
-                                <div class="d-flex align-items-center">
-                                    <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                                        <i class="bi bi-file-text"></i>
+                        <!-- Tổng tin phòng -->
+                        <div class="col-xxl-3 col-md-6">
+                            <div class="dash-card">
+                                <div class="dash-card-header">
+                                    <span class="dash-card-label">Tin phòng toàn sàn</span>
+                                    <div class="dash-card-icon">
+                                        <i class="bi bi-door-open"></i>
                                     </div>
-                                    <div class="ps-3">
-                                        <h6>@Model.ActiveContracts</h6>
-                                        @if (Model.ExpiringContractsIn30Days > 0)
-                                        {
-                                            <span class="text-warning small fw-bold">@Model.ExpiringContractsIn30Days HĐ sắp hết hạn</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-success small fw-bold">hợp đồng đang hiệu lực</span>
-                                        }
-                                    </div>
+                                </div>
+                                <div class="dash-card-value">@Model.TotalRooms</div>
+                                <div class="dash-card-sub">
+                                    @if (Model.PendingRooms > 0)
+                                    {
+                                        <a asp-area="Admin" asp-controller="Room" asp-action="Index" asp-route-approvalStatus="1" class="badge-brand-subtle text-decoration-none">
+                                            <i class="bi bi-exclamation-circle me-1"></i>@Model.PendingRooms tin chờ duyệt
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-neutral">@Model.AvailableRooms phòng trống</span>
+                                    }
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="col-xxl-3 col-md-6">
-                        <div class="card info-card customers-card">
-                            <div class="card-body">
-                                <h5 class="card-title">Người thuê <span>| Đang thuê</span></h5>
-                                <div class="d-flex align-items-center">
-                                    <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
+                        <!-- Lượt xem tin -->
+                        <div class="col-xxl-3 col-md-6">
+                            <div class="dash-card">
+                                <div class="dash-card-header">
+                                    <span class="dash-card-label">Lượt xem tin sàn</span>
+                                    <div class="dash-card-icon">
+                                        <i class="bi bi-eye"></i>
+                                    </div>
+                                </div>
+                                <div class="dash-card-value">@Model.TotalRoomViews.ToString("N0")</div>
+                                <div class="dash-card-sub">
+                                    <span class="text-muted"><i class="bi bi-graph-up me-1"></i>Tổng tương tác khách thuê</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Doanh thu & Người dùng mới -->
+                        <div class="col-xxl-3 col-md-6">
+                            <div class="dash-card">
+                                <div class="dash-card-header">
+                                    <span class="dash-card-label">Người dùng mới</span>
+                                    <div class="dash-card-icon">
                                         <i class="bi bi-people"></i>
                                     </div>
-                                    <div class="ps-3">
-                                        <h6>@Model.TotalTenants</h6>
-                                        <span class="text-muted small fw-bold">người thuê đang hoạt động</span>
-                                    </div>
+                                </div>
+                                <div class="dash-card-value">+@Model.NewUsersThisWeek <span class="fs-6 text-muted fw-normal">/ 7 ngày</span></div>
+                                <div class="dash-card-sub">
+                                    <span class="text-muted">+@Model.NewUsersThisMonth người dùng trong 30 ngày</span>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="col-xxl-3 col-md-6">
-                        <div class="card info-card">
-                            <div class="card-body">
-                                <h5 class="card-title">Doanh thu <span>| @Model.PeriodLabel</span></h5>
-                                <div class="d-flex align-items-center">
-                                    <div class="card-icon rounded-circle d-flex align-items-center justify-content-center">
-                                        <i class="bi bi-currency-dollar"></i>
+                    </div>
+                </div>
+
+                <!-- ── PHÂN BỐ KHU VỰC & TÁC VỤ SUPERADMIN ──────────────────────── -->
+                <div class="col-lg-8">
+                    <div class="section-box">
+                        <div class="section-box-header">
+                            <h6 class="section-box-title">
+                                <i class="bi bi-geo-alt"></i> Phân bố phòng & khu trọ theo địa phương
+                            </h6>
+                            <span class="badge-neutral">Top tỉnh thành</span>
+                        </div>
+                        <div class="card-body p-0">
+                            @if (Model.RoomsByProvince != null && Model.RoomsByProvince.Any())
+                            {
+                                int maxRooms = Math.Max(1, Model.RoomsByProvince.Max(x => x.RoomCount));
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr class="small text-muted text-uppercase">
+                                                <th class="ps-3 py-3">Tỉnh / Thành phố</th>
+                                                <th class="text-center py-3">Số khu trọ</th>
+                                                <th class="text-center py-3">Số phòng</th>
+                                                <th class="py-3 pe-3" style="min-width: 140px;">Tỷ trọng</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var item in Model.RoomsByProvince)
+                                            {
+                                                int pct = (int)Math.Round((double)item.RoomCount * 100 / maxRooms);
+                                                <tr>
+                                                    <td class="ps-3 py-3 fw-semibold text-dark">
+                                                        <i class="bi bi-pin-map text-danger me-2" style="color: var(--brand-primary) !important;"></i>@item.ProvinceName
+                                                    </td>
+                                                    <td class="text-center py-3">
+                                                        <span class="badge-neutral">@item.PropertyCount khu</span>
+                                                    </td>
+                                                    <td class="text-center py-3 fw-bold text-dark">@item.RoomCount</td>
+                                                    <td class="pe-3 py-3">
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <div class="progress-brand flex-grow-1">
+                                                                <div class="progress-brand-bar" style="width: @pct%;"></div>
+                                                            </div>
+                                                            <span class="small text-muted font-monospace" style="min-width: 32px;">@pct%</span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="p-4 text-center text-muted">
+                                    <i class="bi bi-inbox fs-2"></i>
+                                    <p class="mt-2 mb-0">Chưa có dữ liệu phòng trọ theo tỉnh thành.</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="section-box">
+                        <div class="section-box-header">
+                            <h6 class="section-box-title">
+                                <i class="bi bi-shield-lock"></i> Tác vụ quản trị sàn
+                            </h6>
+                        </div>
+                        <div class="p-3">
+                            <div class="d-grid gap-2">
+                                <a asp-area="Admin" asp-controller="Landlord" asp-action="Index" class="quick-action-link">
+                                    <span><i class="bi bi-shield-check action-icon"></i>Duyệt đối tác chủ trọ</span>
+                                    @if (Model.PendingLandlords > 0)
+                                    {
+                                        <span class="badge-brand-subtle">@Model.PendingLandlords chờ</span>
+                                    }
+                                </a>
+                                <a asp-area="Admin" asp-controller="Room" asp-action="Index" asp-route-approvalStatus="1" class="quick-action-link">
+                                    <span><i class="bi bi-clipboard-check action-icon"></i>Kiểm duyệt tin đăng</span>
+                                    @if (Model.PendingRooms > 0)
+                                    {
+                                        <span class="badge-brand-subtle">@Model.PendingRooms mới</span>
+                                    }
+                                </a>
+                                <a asp-area="Admin" asp-controller="User" asp-action="Index" class="quick-action-link">
+                                    <span><i class="bi bi-people action-icon"></i>Quản lý tài khoản</span>
+                                    <i class="bi bi-chevron-right text-muted small"></i>
+                                </a>
+                                <a asp-area="Admin" asp-controller="Amenity" asp-action="Index" class="quick-action-link">
+                                    <span><i class="bi bi-stars action-icon"></i>Danh mục Tiện ích</span>
+                                    <i class="bi bi-chevron-right text-muted small"></i>
+                                </a>
+                                <a asp-area="Admin" asp-controller="RoomType" asp-action="Index" class="quick-action-link">
+                                    <span><i class="bi bi-tags action-icon"></i>Danh mục Loại phòng</span>
+                                    <i class="bi bi-chevron-right text-muted small"></i>
+                                </a>
+                                <a asp-area="Admin" asp-controller="Location" asp-action="Index" class="quick-action-link">
+                                    <span><i class="bi bi-map action-icon"></i>Danh mục Vị trí</span>
+                                    <i class="bi bi-chevron-right text-muted small"></i>
+                                </a>
+                                <a asp-area="Admin" asp-controller="Post" asp-action="Index" class="quick-action-link">
+                                    <span><i class="bi bi-journal-richtext action-icon"></i>Quản lý Blog tin tức</span>
+                                    <i class="bi bi-chevron-right text-muted small"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <!-- ═══════════════════════════════════════════════════════════════ -->
+                <!-- ── 2B. DASHBOARD CHỦ TRỌ (ĐỒNG BỘ 1 TONE MÀU CỦA SÀN) ────────── -->
+                <!-- ═══════════════════════════════════════════════════════════════ -->
+                <div class="col-12">
+                    <div class="row g-3">
+
+                        <!-- Tỷ lệ lấp đầy -->
+                        <div class="col-xxl-3 col-md-6">
+                            <div class="dash-card">
+                                <div class="dash-card-header">
+                                    <span class="dash-card-label">Tỷ lệ lấp đầy</span>
+                                    <div class="dash-card-icon">
+                                        <i class="bi bi-pie-chart"></i>
                                     </div>
-                                    <div class="ps-3">
-                                        <h6>@Model.TotalRevenueThisMonth.ToString("N0") đ</h6>
-                                        <span class="text-success small fw-bold">@Model.PaidInvoicesThisMonth đã TT</span>
-                                        &middot;
-                                        <span class="text-danger small fw-bold">
-                                            @(Model.UnpaidInvoicesThisMonth + Model.OverdueInvoicesThisMonth) chưa TT
+                                </div>
+                                <div class="dash-card-value">@Model.OccupancyRate%</div>
+                                <div class="dash-card-sub">
+                                    <span class="fw-semibold text-dark">@Model.OccupiedRooms/@Model.TotalRooms</span> đang thuê &middot;
+                                    <span class="text-muted">@Model.AvailableRooms phòng trống</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Doanh thu theo kỳ -->
+                        <div class="col-xxl-3 col-md-6">
+                            <div class="dash-card">
+                                <div class="dash-card-header">
+                                    <span class="dash-card-label">Doanh thu kỳ này</span>
+                                    <div class="dash-card-icon">
+                                        <i class="bi bi-cash-stack"></i>
+                                    </div>
+                                </div>
+                                <div class="dash-card-value">@Model.TotalRevenueThisMonth.ToString("N0") <span class="fs-6 fw-normal text-muted">đ</span></div>
+                                <div class="dash-card-sub">
+                                    <span>@Model.PaidInvoicesThisMonth đã thanh toán</span>
+                                    @if ((Model.UnpaidInvoicesThisMonth + Model.OverdueInvoicesThisMonth) > 0)
+                                    {
+                                        <span>&middot;</span>
+                                        <span class="badge-brand-subtle">@(Model.UnpaidInvoicesThisMonth + Model.OverdueInvoicesThisMonth) chưa TT</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Hợp đồng thuê -->
+                        <div class="col-xxl-3 col-md-6">
+                            <div class="dash-card">
+                                <div class="dash-card-header">
+                                    <span class="dash-card-label">Hợp đồng hiệu lực</span>
+                                    <div class="dash-card-icon">
+                                        <i class="bi bi-file-earmark-text"></i>
+                                    </div>
+                                </div>
+                                <div class="dash-card-value">@Model.ActiveContracts</div>
+                                <div class="dash-card-sub">
+                                    @if (Model.ExpiringContractsIn30Days > 0)
+                                    {
+                                        <span class="badge-brand-subtle">
+                                            <i class="bi bi-exclamation-circle me-1"></i>@Model.ExpiringContractsIn30Days hết hạn trong 30 ngày
                                         </span>
-                                        <div class="small text-muted mt-1">
-                                            @Model.TotalInvoicesInPeriod hóa đơn &middot; dự kiến @Model.ExpectedRevenueInPeriod.ToString("N0") đ
-                                        </div>
-                                    </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">@Model.TotalTenants khách đang thuê</span>
+                                    }
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Lượt xem & Yêu cầu -->
+                        <div class="col-xxl-3 col-md-6">
+                            <div class="dash-card">
+                                <div class="dash-card-header">
+                                    <span class="dash-card-label">Tương tác khách thuê</span>
+                                    <div class="dash-card-icon">
+                                        <i class="bi bi-bell"></i>
+                                    </div>
+                                </div>
+                                <div class="dash-card-value">@Model.TotalRoomViews.ToString("N0") <span class="fs-6 fw-normal text-muted">lượt xem</span></div>
+                                <div class="dash-card-sub">
+                                    @if (Model.PendingBookingRequests > 0)
+                                    {
+                                        <a asp-area="Admin" asp-controller="BookingRequest" asp-action="Index" class="badge-brand-subtle text-decoration-none">
+                                            @Model.PendingBookingRequests yêu cầu xem phòng mới
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Không có yêu cầu chờ xử lý</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
-
                 </div>
-            </div>
 
-            <!-- ── ĐỒNG HỒ ─────────────────────────────── -->
-            <div class="col-lg-8">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Thời gian hiện tại</h5>
-                        <div class="d-flex justify-content-center align-items-center" style="min-height:260px">
-                            <div class="text-center">
-                                <div id="current-time" class="display-4 text-primary fw-bold mb-2"
-                                     style="font-size:3rem;letter-spacing:2px;"></div>
-                                <div id="current-date" class="h5 text-muted"></div>
+                <!-- ── ĐỒNG HỒ & THAO TÁC NHANH CHỦ TRỌ ────────────────────────── -->
+                <div class="col-lg-8">
+                    <div class="section-box p-4">
+                        <div class="section-box-header px-0 pt-0 mb-3">
+                            <h6 class="section-box-title">
+                                <i class="bi bi-clock"></i> Thời gian hệ thống & Trạng thái
+                            </h6>
+                            <span class="badge-neutral">Trực tuyến</span>
+                        </div>
+                        <div class="py-4 text-center">
+                            <div id="current-time" class="clock-display mb-1">00:00:00</div>
+                            <div id="current-date" class="fs-6 text-muted mb-3"></div>
+                            <div>
+                                <span class="badge-neutral px-3 py-2">
+                                    <i class="bi bi-check-circle-fill me-1" style="color: var(--brand-primary);"></i> Tài khoản chủ trọ hoạt động bình thường
+                                </span>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- ── SHORTCUTS ──────────────────────────── -->
-            <div class="col-lg-4">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Truy cập nhanh</h5>
-                        <div class="d-grid gap-2 mt-3">
-                            <a asp-area="Admin" asp-controller="Room" asp-action="Create"
-                               class="btn btn-outline-primary">
-                                <i class="bi bi-plus-circle me-1"></i> Thêm phòng mới
-                            </a>
-                            <a asp-area="Admin" asp-controller="Room" asp-action="Index"
-                               class="btn btn-outline-secondary">
-                                <i class="bi bi-building me-1"></i> Quản lý phòng
-                            </a>
-                            <a asp-area="Admin" asp-controller="Tenant" asp-action="Index"
-                               class="btn btn-outline-secondary">
-                                <i class="bi bi-people me-1"></i> Danh sách người thuê
-                            </a>
-                            <a asp-area="Admin" asp-controller="BookingRequest" asp-action="Index"
-                               class="btn @(Model.PendingBookingRequests > 0 ? "btn-warning" : "btn-outline-secondary")">
-                                <i class="bi bi-calendar2-check me-1"></i> Yêu cầu xem phòng
-                                @if (Model.PendingBookingRequests > 0)
-                                {
-                                    <span class="badge bg-danger ms-1">@Model.PendingBookingRequests chờ</span>
-                                }
-                            </a>
-                            <a asp-area="Admin" asp-controller="Chat" asp-action="Index"
-                               class="btn @(Model.OpenChatSessions > 0 ? "btn-info" : "btn-outline-secondary")">
-                                <i class="bi bi-chat-dots me-1"></i> Tin nhắn
-                                @if (Model.OpenChatSessions > 0)
-                                {
-                                    <span class="badge bg-danger ms-1">@Model.OpenChatSessions</span>
-                                }
-                            </a>
-                            <a asp-area="Admin" asp-controller="Invoice" asp-action="Index"
-                            asp-route-status="0"
-                               class="btn @(Model.UnpaidInvoicesThisMonth + Model.OverdueInvoicesThisMonth > 0 ? "btn-outline-danger" : "btn-outline-secondary")">
-                                <i class="bi bi-receipt me-1"></i> Hóa đơn chưa thanh toán
-                                @if (Model.UnpaidInvoicesThisMonth + Model.OverdueInvoicesThisMonth > 0)
-                                {
-                                    <span class="badge bg-danger ms-1">
-                                        @(Model.UnpaidInvoicesThisMonth + Model.OverdueInvoicesThisMonth)
-                                    </span>
-                                }
-                            </a>
+                <div class="col-lg-4">
+                    <div class="section-box">
+                        <div class="section-box-header">
+                            <h6 class="section-box-title">
+                                <i class="bi bi-lightning-charge"></i> Thao tác nhanh
+                            </h6>
+                        </div>
+                        <div class="p-3">
+                            <div class="d-grid gap-2">
+                                <a asp-area="Admin" asp-controller="Room" asp-action="Create" class="quick-action-link">
+                                    <span><i class="bi bi-plus-circle action-icon"></i>Đăng phòng trọ mới</span>
+                                    <i class="bi bi-chevron-right text-muted small"></i>
+                                </a>
+                                <a asp-area="Admin" asp-controller="Property" asp-action="Create" class="quick-action-link">
+                                    <span><i class="bi bi-buildings action-icon"></i>Thêm khu trọ / Tòa nhà</span>
+                                    <i class="bi bi-chevron-right text-muted small"></i>
+                                </a>
+                                <a asp-area="Admin" asp-controller="BookingRequest" asp-action="Index" class="quick-action-link">
+                                    <span><i class="bi bi-calendar2-check action-icon"></i>Lịch hẹn xem phòng</span>
+                                    @if (Model.PendingBookingRequests > 0)
+                                    {
+                                        <span class="badge-brand-subtle">@Model.PendingBookingRequests chờ</span>
+                                    }
+                                </a>
+                                <a asp-area="Admin" asp-controller="Invoice" asp-action="DueThisMonth" class="quick-action-link">
+                                    <span><i class="bi bi-receipt action-icon"></i>Hóa đơn chưa thanh toán</span>
+                                    @if ((Model.UnpaidInvoicesThisMonth + Model.OverdueInvoicesThisMonth) > 0)
+                                    {
+                                        <span class="badge-brand-subtle">@(Model.UnpaidInvoicesThisMonth + Model.OverdueInvoicesThisMonth)</span>
+                                    }
+                                </a>
+                                <a asp-area="Admin" asp-controller="Profile" asp-action="Index" class="quick-action-link">
+                                    <span><i class="bi bi-bank action-icon"></i>Tài khoản ngân hàng & VietQR</span>
+                                    <i class="bi bi-chevron-right text-muted small"></i>
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            }
 
         </div>
     </section>
@@ -261,10 +702,14 @@
     <script>
         function updateClock() {
             const now = new Date();
-            document.getElementById('current-time').textContent =
-                now.toLocaleTimeString('vi-VN', { hour12: false });
-            document.getElementById('current-date').textContent =
-                now.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            const timeEl = document.getElementById('current-time');
+            const dateEl = document.getElementById('current-date');
+            if (timeEl) {
+                timeEl.textContent = now.toLocaleTimeString('vi-VN', { hour12: false });
+            }
+            if (dateEl) {
+                dateEl.textContent = now.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            }
         }
         updateClock();
         setInterval(updateClock, 1000);

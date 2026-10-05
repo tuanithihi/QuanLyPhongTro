@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using QuanLyPhongTro.Areas.Admin.Attributes;
 using QuanLyPhongTro.Areas.Admin.Data;
 using QuanLyPhongTro.Models;
+using QuanLyPhongTro.Services;
 
 namespace QuanLyPhongTro.Areas.Admin.Controllers
 {
@@ -11,16 +12,26 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
     public class ChatController : Controller
     {
         private readonly DataContext _db;
+        private readonly ICurrentLandlordService _currentLandlordService;
 
-        public ChatController(DataContext db)
+        public ChatController(DataContext db, ICurrentLandlordService currentLandlordService)
         {
             _db = db;
+            _currentLandlordService = currentLandlordService;
         }
 
         // GET: /Admin/Chat
         public async Task<IActionResult> Index()
         {
-            var sessions = await _db.ChatSessions
+            var query = _db.ChatSessions.AsQueryable();
+
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int currentLandlordId = _currentLandlordService.GetCurrentLandlordId() ?? 0;
+                query = query.Where(s => s.LandlordId == currentLandlordId);
+            }
+
+            var sessions = await query
                 .OrderByDescending(s => s.LastMsgAt)
                 .Select(s => new
                 {
@@ -31,6 +42,7 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                     s.IsOpen,
                     s.TenantId,
                     s.UserId,
+                    s.LandlordId,
                     UnreadCount = s.Messages.Count(m => !m.IsReadByAdmin && m.SenderType == ChatSenderType.Guest)
                 })
                 .ToListAsync();
@@ -47,6 +59,16 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 .FirstOrDefaultAsync(s => s.SessionId == sessionId);
             if (session == null) return Json(new { messages = Array.Empty<object>() });
 
+            // Kiểm tra phân quyền: Chủ trọ chỉ xem tin nhắn của mình
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int currentLandlordId = _currentLandlordService.GetCurrentLandlordId() ?? 0;
+                if (session.LandlordId != currentLandlordId)
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden, new { messages = Array.Empty<object>(), error = "Không có quyền truy cập phiên chat của chủ trọ khác." });
+                }
+            }
+
             var msgs = await _db.ChatMessages.AsNoTracking()
                 .Where(m => m.SessionId == sessionId && m.MessageId > after)
                 .OrderBy(m => m.MessageId)
@@ -60,11 +82,9 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 })
                 .ToListAsync();
 
-            // Mark guest messages as read by admin
+            // Đánh dấu đã đọc cho tin nhắn từ khách
             var unread = await _db.ChatMessages
-                .Where(m => m.SessionId == sessionId
-                         && m.SenderType == ChatSenderType.Guest
-                         && !m.IsReadByAdmin)
+                .Where(m => m.SessionId == sessionId && !m.IsReadByAdmin && m.SenderType == ChatSenderType.Guest)
                 .ToListAsync();
             if (unread.Any())
             {
@@ -72,51 +92,74 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 await _db.SaveChangesAsync();
             }
 
-            return Json(new
-            {
-                messages    = msgs,
-                guestName   = session.GuestName,
-                guestPhone  = session.GuestPhone
-            });
+            return Json(new { messages = msgs });
         }
 
-        // POST: /Admin/Chat/Reply
+        // POST: /Admin/Chat/Send
         [HttpPost]
-        public async Task<IActionResult> Reply([FromBody] AdminReplyRequest req)
+        public async Task<IActionResult> Send([FromBody] AdminSendRequest req)
         {
             if (req.SessionId <= 0 || string.IsNullOrWhiteSpace(req.Content))
                 return Json(new { success = false });
 
-            var session = await _db.ChatSessions.FindAsync(req.SessionId);
-            if (session == null) return Json(new { success = false });
+            var session = await _db.ChatSessions.FirstOrDefaultAsync(s => s.SessionId == req.SessionId);
+            if (session == null) return Json(new { success = false, message = "Phiên chat không tồn tại." });
+
+            // Chống IDOR: Chủ trọ chỉ trả lời phiên của mình
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int currentLandlordId = _currentLandlordService.GetCurrentLandlordId() ?? 0;
+                if (session.LandlordId != currentLandlordId)
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden, new { success = false, message = "Bạn không có quyền gửi tin nhắn trong phiên chat này." });
+                }
+            }
 
             var msg = new tblChatMessage
             {
-                SessionId    = req.SessionId,
-                Content      = req.Content.Trim(),
-                SenderType   = ChatSenderType.Admin,
+                SessionId     = req.SessionId,
+                Content       = req.Content.Trim(),
+                SenderType    = ChatSenderType.Admin,
                 IsReadByAdmin = true,
                 IsReadByGuest = false,
-                CreatedAt    = DateTime.Now
+                CreatedAt     = DateTime.Now
             };
             _db.ChatMessages.Add(msg);
+
             session.LastMsgAt = DateTime.Now;
             await _db.SaveChangesAsync();
 
-            return Json(new { success = true, messageId = msg.MessageId, createdAt = msg.CreatedAt.ToString("HH:mm dd/MM") });
+            return Json(new
+            {
+                success   = true,
+                messageId = msg.MessageId,
+                createdAt = msg.CreatedAt.ToString("HH:mm dd/MM")
+            });
         }
 
-        // GET: /Admin/Chat/UnreadCount — sidebar badge polling
-        [HttpGet]
-        public async Task<IActionResult> UnreadCount()
+        // POST: /Admin/Chat/Close
+        [HttpPost]
+        public async Task<IActionResult> Close(int sessionId)
         {
-            int count = await _db.ChatMessages
-                .CountAsync(m => !m.IsReadByAdmin && m.SenderType == ChatSenderType.Guest);
-            return Json(new { count });
+            var session = await _db.ChatSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId);
+            if (session == null) return NotFound();
+
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int currentLandlordId = _currentLandlordService.GetCurrentLandlordId() ?? 0;
+                if (session.LandlordId != currentLandlordId)
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden);
+                }
+            }
+
+            session.IsOpen = false;
+            await _db.SaveChangesAsync();
+            return Ok();
         }
     }
 
-    public sealed class AdminReplyRequest
+    public sealed class AdminSendRequest
     {
         public int    SessionId { get; set; }
         public string Content   { get; set; } = string.Empty;

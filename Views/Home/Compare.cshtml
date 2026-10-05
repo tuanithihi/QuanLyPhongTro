@@ -1,0 +1,233 @@
+@model List<QuanLyPhongTro.Models.RoomDetailViewModel>
+@{
+    ViewData["Title"] = "So sánh phòng trọ";
+    ViewData["Description"] = "Bảng so sánh chi tiết các phòng trọ về giá thuê, diện tích, tiện ích và chi phí sinh hoạt.";
+}
+
+@section Styles {
+    <link href="~/css/pages/listing.css" rel="stylesheet">
+    <style>
+        .compare-table th {
+            width: 20%;
+            background-color: var(--gray-50);
+            font-weight: var(--font-semibold);
+            color: var(--gray-700);
+            vertical-align: middle;
+        }
+        .compare-table td {
+            width: @(Model.Count > 0 ? (80 / Model.Count) : 80)%;
+            vertical-align: top;
+        }
+        .compare-img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: var(--radius-md);
+        }
+    </style>
+}
+
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb-custom mb-3" aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+            <li class="breadcrumb-item active" aria-current="page">So sánh phòng</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h1 class="h3 fw-bold mb-1">So sánh phòng trọ</h1>
+            <p class="text-muted mb-0 small">So sánh chi tiết tối đa 3 phòng để đưa ra quyết định phù hợp nhất.</p>
+        </div>
+        <div>
+            <a asp-action="Listings" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-plus-circle me-1"></i> Thêm phòng so sánh
+            </a>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state text-center py-5">
+            <div class="empty-state-icon mb-3">
+                <i class="bi bi-arrow-left-right text-muted display-4"></i>
+            </div>
+            <h4 class="fw-bold">Chưa có phòng nào được chọn để so sánh</h4>
+            <p class="text-muted small max-w-sm mx-auto">Vui lòng chọn tối đa 3 phòng từ danh sách hoặc trang chi tiết để so sánh trực tiếp.</p>
+            <a asp-action="Listings" class="btn btn-brand mt-3">
+                <i class="bi bi-search me-1"></i> Xem danh sách phòng
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive bg-white rounded-3 border">
+            <table class="table table-bordered compare-table mb-0">
+                <tbody>
+                    <!-- Ảnh & Tiêu đề -->
+                    <tr>
+                        <th>Thông tin phòng</th>
+                        @foreach (var item in Model)
+                        {
+                            var r = item.Room;
+                            var img = r.RoomImages?.FirstOrDefault(i => i.IsPrimary)?.Url 
+                                   ?? r.RoomImages?.FirstOrDefault()?.Url 
+                                   ?? "/images/room-placeholder.jpg";
+                            <td>
+                                <img src="@img" alt="@r.Title" class="compare-img mb-2">
+                                <h6 class="fw-bold mb-1">
+                                    <a asp-action="RoomDetail" asp-route-slug="@r.Slug" asp-route-id="@r.RoomId" class="text-dark text-decoration-none">
+                                        @(r.Title ?? r.RoomName)
+                                    </a>
+                                </h6>
+                                <div class="text-muted small">Mã: @r.RoomCode</div>
+                            </td>
+                        }
+                    </tr>
+
+                    <!-- Giá thuê -->
+                    <tr>
+                        <th>Giá thuê</th>
+                        @foreach (var item in Model)
+                        {
+                            <td>
+                                <span class="fs-5 fw-bold text-danger">@QuanLyPhongTro.Services.DisplayHelper.FormatPrice(item.Room.RoomPrice)</span>
+                            </td>
+                        }
+                    </tr>
+
+                    <!-- Đặt cọc -->
+                    <tr>
+                        <th>Tiền cọc</th>
+                        @foreach (var item in Model)
+                        {
+                            <td>
+                                @(item.Room.DefaultDeposit > 0 ? item.Room.DefaultDeposit.ToString("N0") + " đ" : "Không cọc")
+                            </td>
+                        }
+                    </tr>
+
+                    <!-- Diện tích & Sức chứa -->
+                    <tr>
+                        <th>Diện tích & Tầng</th>
+                        @foreach (var item in Model)
+                        {
+                            <td>
+                                <div><i class="bi bi-arrows-fullscreen me-1 text-muted"></i> @QuanLyPhongTro.Services.DisplayHelper.FormatArea(item.Room.Area)</div>
+                                <div class="small text-muted mt-1"><i class="bi bi-layers me-1 text-muted"></i> Tầng: @item.Room.Floor</div>
+                                <div class="small text-muted mt-1"><i class="bi bi-people me-1 text-muted"></i> Tối đa: @item.Room.Capacity người</div>
+                            </td>
+                        }
+                    </tr>
+
+                    <!-- Vị trí -->
+                    <tr>
+                        <th>Vị trí</th>
+                        @foreach (var item in Model)
+                        {
+                            <td>
+                                <div class="small">
+                                    <i class="bi bi-geo-alt text-danger me-1"></i>
+                                    @item.Room.Property?.Address, @item.Room.Property?.District?.Name, @item.Room.Property?.Province?.Name
+                                </div>
+                            </td>
+                        }
+                    </tr>
+
+                    <!-- Loại phòng -->
+                    <tr>
+                        <th>Loại phòng</th>
+                        @foreach (var item in Model)
+                        {
+                            <td>
+                                <span class="badge bg-light text-dark border">
+                                    @(item.Room.RoomType?.RoomTypeName ?? "Phòng trọ")
+                                </span>
+                            </td>
+                        }
+                    </tr>
+
+                    <!-- Tiện ích -->
+                    <tr>
+                        <th>Tiện ích có sẵn</th>
+                        @foreach (var item in Model)
+                        {
+                            <td>
+                                @if (item.Room.RoomAmenities != null && item.Room.RoomAmenities.Any())
+                                {
+                                    <div class="d-flex flex-wrap gap-1">
+                                        @foreach (var ra in item.Room.RoomAmenities)
+                                        {
+                                            <span class="badge bg-light text-secondary border small">
+                                                <i class="bi @(ra.Amenity?.Icon ?? "bi-check") me-1 text-success"></i>
+                                                @ra.Amenity?.Name
+                                            </span>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">Cơ bản</span>
+                                }
+                            </td>
+                        }
+                    </tr>
+
+                    <!-- Dịch vụ & Chi phí -->
+                    <tr>
+                        <th>Bảng giá dịch vụ</th>
+                        @foreach (var item in Model)
+                        {
+                            <td>
+                                @if (item.Services.Any())
+                                {
+                                    <ul class="list-unstyled small mb-0">
+                                        @foreach (var s in item.Services)
+                                        {
+                                            <li class="mb-1">
+                                                <i class="bi bi-dot text-primary"></i>
+                                                <strong>@s.ServiceName:</strong> @s.UnitPrice.ToString("N0") đ/@s.Unit
+                                            </li>
+                                        }
+                                    </ul>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">Theo thỏa thuận</span>
+                                }
+                            </td>
+                        }
+                    </tr>
+
+                    <!-- Chủ trọ -->
+                    <tr>
+                        <th>Chủ trọ</th>
+                        @foreach (var item in Model)
+                        {
+                            var l = item.Room.Property?.Landlord;
+                            <td>
+                                <div class="fw-semibold">@(l?.FullName ?? "Chủ nhà")</div>
+                                <div class="small text-muted">SĐT: @(l?.Phone ?? "Đang cập nhật")</div>
+                            </td>
+                        }
+                    </tr>
+
+                    <!-- Thao tác -->
+                    <tr>
+                        <th>Hành động</th>
+                        @foreach (var item in Model)
+                        {
+                            <td>
+                                <a asp-action="RoomDetail" asp-route-slug="@item.Room.Slug" asp-route-id="@item.Room.RoomId" class="btn btn-brand btn-sm w-100 mb-2">
+                                    Xem chi tiết
+                                </a>
+                            </td>
+                        }
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

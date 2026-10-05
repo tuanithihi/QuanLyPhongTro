@@ -1,17 +1,36 @@
 namespace QuanLyPhongTro.Areas.Admin.Models
 {
+    public class LocationStatItem
+    {
+        public string ProvinceName { get; set; } = string.Empty;
+        public int RoomCount { get; set; }
+        public int PropertyCount { get; set; }
+    }
+
     /// <summary>
     /// Dữ liệu tổng hợp hiển thị trên trang Dashboard.
     /// </summary>
     public class DashboardViewModel
     {
-        // Thống kê phòng
+        public bool IsSuperAdmin { get; set; }
+
+        // ── Thống kê SuperAdmin ──────────────────────────────────────────
+        public int TotalLandlords { get; set; }
+        public int PendingLandlords { get; set; }
+        public int PendingRooms { get; set; }
+        public int TotalRoomViews { get; set; }
+        public int NewUsersThisWeek { get; set; }
+        public int NewUsersThisMonth { get; set; }
+        public List<LocationStatItem> RoomsByProvince { get; set; } = new();
+
+        // ── Thống kê phòng & Vận hành (chung hoặc theo chủ trọ) ──────────
         public int TotalRooms { get; set; }
         public int AvailableRooms { get; set; }
         public int OccupiedRooms { get; set; }
         public int MaintenanceRooms { get; set; }
+        public double OccupancyRate { get; set; }
 
-        // Thống kê tài chính tháng hiện tại
+        // ── Thống kê tài chính theo khoảng thời gian ──────────────────────
         public decimal TotalRevenueThisMonth { get; set; }
         public int PaidInvoicesThisMonth { get; set; }
         public int UnpaidInvoicesThisMonth { get; set; }
@@ -26,17 +45,15 @@ namespace QuanLyPhongTro.Areas.Admin.Models
         public int SelectedQuarter { get; set; }
         public int SelectedYear { get; set; }
 
-        // Hợp đồng
+        // ── Hợp đồng ─────────────────────────────────────────────────────
         public int ActiveContracts { get; set; }
         public int ExpiringContractsIn30Days { get; set; }
 
-        // Người thuê
+        // ── Người thuê ────────────────────────────────────────────────────
         public int TotalTenants { get; set; }
 
-        // Yêu cầu chờ xử lý
+        // ── Yêu cầu & Tương tác ───────────────────────────────────────────
         public int PendingBookingRequests { get; set; }
-
-        // Phiên chat đang mở (chờ phản hồi)
         public int OpenChatSessions { get; set; }
     }
 }

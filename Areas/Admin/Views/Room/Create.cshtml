@@ -1,261 +1,216 @@
-@model QuanLyPhongTro.Areas.Admin.Models.RoomCreateViewModel
+@model QuanLyPhongTro.Models.ViewModels.RoomCreateEditViewModel
 @{
     ViewData["Title"] = "Thêm phòng mới";
     Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+    var amenities = ViewBag.Amenities as List<QuanLyPhongTro.Models.tblAmenity> ?? new();
+}
+
+@section Styles {
+<style>
+  .photo-dropzone {
+    border: 2px dashed #0d6efd;
+    background-color: #f8faff;
+    border-radius: 8px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .photo-dropzone:hover {
+    background-color: #eef4ff;
+    border-color: #0b5ed7;
+  }
+  .preview-thumb {
+    width: 100px;
+    height: 75px;
+    object-fit: cover;
+    border-radius: 6px;
+  }
+</style>
 }
 
 <main id="main" class="main">
-    <div class="pagetitle">
-        <h1>Thêm phòng mới</h1>
-        <nav><ol class="breadcrumb">
-            <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
-            <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Room" asp-action="Index">Danh sách phòng</a></li>
-            <li class="breadcrumb-item active">Thêm mới</li>
-        </ol></nav>
-    </div>
 
-    <section class="section">
-        <form asp-area="Admin" asp-controller="Room" asp-action="Create"
-              method="post" enctype="multipart/form-data">
-            @Html.AntiForgeryToken()
-            <div asp-validation-summary="ModelOnly" class="alert alert-danger d-none mb-3" id="val-summary"></div>
+  <div class="pagetitle">
+    <h1>Thêm phòng trọ mới</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item"><a asp-action="Index">Phòng trọ</a></li>
+        <li class="breadcrumb-item active">Thêm mới</li>
+      </ol>
+    </nav>
+  </div>
 
-            <div class="row g-3">
+  <section class="section">
+    <div class="card shadow-sm border-0">
+      <div class="card-body pt-3">
 
-                @* ── Cột trái: thông tin phòng ── *@
-                <div class="col-lg-8">
-                    <div class="card h-100">
-                        <div class="card-header py-3">
-                            <h6 class="mb-0 fw-semibold">Thông tin phòng</h6>
-                        </div>
-                        <div class="card-body pt-3">
+        <form asp-action="Create" method="post" enctype="multipart/form-data">
+          @Html.AntiForgeryToken()
+          <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
-                            <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <label asp-for="RoomCode" class="form-label fw-semibold"></label>
-                                    <input asp-for="RoomCode" class="form-control" placeholder="VD: P101">
-                                    <span asp-validation-for="RoomCode" class="text-danger small"></span>
-                                </div>
-                                <div class="col-md-8">
-                                    <label asp-for="RoomName" class="form-label fw-semibold"></label>
-                                    <input asp-for="RoomName" class="form-control" placeholder="VD: Phòng 101 - Tầng 1">
-                                    <span asp-validation-for="RoomName" class="text-danger small"></span>
-                                </div>
-                            </div>
+          <div class="row g-4">
+            <!-- Cột trái: Thông tin cơ bản -->
+            <div class="col-lg-7">
+              <h5 class="fw-bold mb-3 text-primary"><i class="bi bi-info-circle me-1"></i>Thông tin phòng trọ</h5>
 
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label asp-for="RoomTypeId" class="form-label fw-semibold"></label>
-                                    <select asp-for="RoomTypeId" asp-items="Model.RoomTypeSelectList" class="form-select">
-                                        <option value="">-- Chọn loại phòng --</option>
-                                    </select>
-                                    <span asp-validation-for="RoomTypeId" class="text-danger small"></span>
-                                </div>
-                                <div class="col-md-3">
-                                    <label asp-for="Floor" class="form-label fw-semibold"></label>
-                                    <input asp-for="Floor" class="form-control" type="number" min="1">
-                                    <span asp-validation-for="Floor" class="text-danger small"></span>
-                                </div>
-                                <div class="col-md-3">
-                                    <label asp-for="MaxOccupants" class="form-label fw-semibold"></label>
-                                    <input asp-for="MaxOccupants" class="form-control" type="number" min="1">
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <label asp-for="RoomPrice" class="form-label fw-semibold"></label>
-                                    <div class="input-group">
-                                        <input asp-for="RoomPrice" class="form-control" type="number" min="0" step="100000">
-                                        <span class="input-group-text">đ/tháng</span>
-                                    </div>
-                                    <span asp-validation-for="RoomPrice" class="text-danger small"></span>
-                                </div>
-                                <div class="col-md-4">
-                                    <label asp-for="DefaultDeposit" class="form-label fw-semibold"></label>
-                                    <div class="input-group">
-                                        <input asp-for="DefaultDeposit" class="form-control" type="number" min="0" step="100000">
-                                        <span class="input-group-text">đ</span>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <label asp-for="Area" class="form-label fw-semibold"></label>
-                                    <div class="input-group">
-                                        <input asp-for="Area" class="form-control" type="number" min="0" step="0.5">
-                                        <span class="input-group-text">m²</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-5">
-                                    <label asp-for="Status" class="form-label fw-semibold"></label>
-                                    <select asp-for="Status" class="form-select">
-                                        <option value="0">Phòng trống</option>
-                                        <option value="1">Đang thuê</option>
-                                        <option value="2">Bảo trì</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-4 d-flex align-items-end pb-1">
-                                    <div class="form-check form-switch">
-                                        <input asp-for="IsPublished" class="form-check-input" type="checkbox" role="switch">
-                                        <label asp-for="IsPublished" class="form-check-label fw-semibold"></label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label asp-for="Description" class="form-label fw-semibold"></label>
-                                <textarea asp-for="Description" class="form-control" rows="5"
-                                          placeholder="Mô tả chi tiết về phòng (tiện nghi, nội thất, vị trí...)"></textarea>
-                            </div>
-
-                            <div class="mb-3">
-                                <label asp-for="IncludedAmenities" class="form-label fw-semibold"></label>
-                                <textarea asp-for="IncludedAmenities" class="form-control" rows="4"
-                                          placeholder="VD: Máy lạnh, tủ lạnh, máy giặt, giường, nệm, bàn học, kệ bếp..."></textarea>
-                                <small class="text-muted">Mỗi vật dụng có thể xuống dòng riêng để hiển thị rõ hơn trên trang chi tiết.</small>
-                            </div>
-
-                            @* ── Vị trí phòng ── *@
-                            <div class="card border-success border-opacity-25 mt-3">
-                                <div class="card-header py-2" style="background:#E8F8F5">
-                                    <h6 class="mb-0 fw-semibold text-success">
-                                        <i class="bi bi-geo-alt-fill me-1"></i>Vị trí phòng
-                                    </h6>
-                                </div>
-                                <div class="card-body pt-3">
-                                    <div class="row mb-2">
-                                        <div class="col-md-9">
-                                            <label asp-for="Address" class="form-label fw-semibold"></label>
-                                            <input asp-for="Address" class="form-control" id="addressInput"
-                                                   placeholder="VD: 123 Lê Lợi, TP. Vinh, Nghệ An" />
-                                        </div>
-                                        <div class="col-md-3 d-flex align-items-end">
-                                            <button type="button" id="btnGeocode" class="btn btn-outline-success w-100">
-                                                <i class="bi bi-crosshair me-1"></i>Lấy tọa độ
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <label asp-for="Latitude" class="form-label fw-semibold"></label>
-                                            <input asp-for="Latitude" class="form-control" id="latInput"
-                                                   type="number" step="any" placeholder="VD: 18.6796" />
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label asp-for="Longitude" class="form-label fw-semibold"></label>
-                                            <input asp-for="Longitude" class="form-control" id="lngInput"
-                                                   type="number" step="any" placeholder="VD: 105.6813" />
-                                        </div>
-                                    </div>
-                                    <small class="text-muted mt-1 d-block">
-                                        <i class="bi bi-info-circle me-1"></i>Nhập địa chỉ rồi bấm "Lấy tọa độ" để tự động điền vĩ độ & kinh độ.
-                                    </small>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label asp-for="PropertyId" class="form-label fw-bold">Khu trọ / Tòa nhà <span class="text-danger">*</span></label>
+                  <select asp-for="PropertyId" class="form-select" asp-items="ViewBag.PropertyList">
+                    <option value="">-- Chọn khu trọ --</option>
+                  </select>
+                  <span asp-validation-for="PropertyId" class="text-danger small"></span>
                 </div>
 
-                @* ── Cột phải: ảnh + nút lưu ── *@
-                <div class="col-lg-4">
-                    <div class="card">
-                        <div class="card-header py-3">
-                            <h6 class="mb-0 fw-semibold">Ảnh đại diện</h6>
-                        </div>
-                        <div class="card-body">
-                            <input asp-for="ThumbnailFile" class="form-control" type="file"
-                                   accept="image/*" onchange="previewImage(this)">
-                            <div class="mt-3" id="img-preview-wrap" style="display:none">
-                                <img id="img-preview" src="" alt="preview" class="img-fluid rounded"
-                                     style="max-height:260px;width:100%;object-fit:cover;border:1px solid #dee2e6;">
-                            </div>
-                            <div id="img-placeholder" class="text-center text-muted py-5 border rounded mt-3"
-                                 style="border-style:dashed!important;font-size:.85rem;">
-                                <i class="bi bi-image fs-2 d-block mb-1"></i>
-                                Chưa chọn ảnh
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card mt-3">
-                        <div class="card-header py-3">
-                            <h6 class="mb-0 fw-semibold">Ảnh mô tả thêm</h6>
-                        </div>
-                        <div class="card-body">
-                            <input asp-for="GalleryFiles" class="form-control" type="file" accept="image/*" multiple>
-                            <small class="text-muted d-block mt-2">Có thể chọn nhiều ảnh: góc phòng, nhà vệ sinh, bếp, ban công, nội thất...</small>
-                        </div>
-                    </div>
-
-                    <div class="card mt-3">
-                        <div class="card-body">
-                            <div class="d-grid gap-2">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="bi bi-check-lg me-1"></i> Thêm phòng
-                                </button>
-                                <a asp-area="Admin" asp-controller="Room" asp-action="Index"
-                                   class="btn btn-outline-secondary">Hủy</a>
-                            </div>
-                        </div>
-                    </div>
+                <div class="col-md-6">
+                  <label asp-for="RoomTypeId" class="form-label fw-bold">Loại phòng <span class="text-danger">*</span></label>
+                  <select asp-for="RoomTypeId" class="form-select" asp-items="ViewBag.RoomTypeList">
+                    <option value="">-- Chọn loại phòng --</option>
+                  </select>
+                  <span asp-validation-for="RoomTypeId" class="text-danger small"></span>
                 </div>
 
+                <div class="col-md-6">
+                  <label asp-for="RoomCode" class="form-label fw-bold">Mã phòng <span class="text-danger">*</span></label>
+                  <input asp-for="RoomCode" class="form-control" placeholder="P101, P202..." />
+                  <span asp-validation-for="RoomCode" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                  <label asp-for="RoomName" class="form-label fw-bold">Tên phòng <span class="text-danger">*</span></label>
+                  <input asp-for="RoomName" class="form-control" placeholder="Phòng 101 - Ban công thoáng..." />
+                  <span asp-validation-for="RoomName" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                  <label asp-for="RoomPrice" class="form-label fw-bold">Giá thuê (VNĐ/tháng) <span class="text-danger">*</span></label>
+                  <input asp-for="RoomPrice" type="number" step="10000" class="form-control" placeholder="3000000" />
+                  <span asp-validation-for="RoomPrice" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                  <label asp-for="DefaultDeposit" class="form-label fw-bold">Tiền cọc mặc định (VNĐ)</label>
+                  <input asp-for="DefaultDeposit" type="number" step="10000" class="form-control" placeholder="3000000" />
+                  <span asp-validation-for="DefaultDeposit" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-4">
+                  <label asp-for="Area" class="form-label fw-bold">Diện tích (m²) <span class="text-danger">*</span></label>
+                  <input asp-for="Area" type="number" step="0.5" class="form-control" />
+                  <span asp-validation-for="Area" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-4">
+                  <label asp-for="Floor" class="form-label fw-bold">Tầng</label>
+                  <input asp-for="Floor" type="number" class="form-control" />
+                </div>
+
+                <div class="col-md-4">
+                  <label asp-for="MaxOccupants" class="form-label fw-bold">Số người tối đa</label>
+                  <input asp-for="MaxOccupants" type="number" class="form-control" />
+                </div>
+
+                <div class="col-12">
+                  <label asp-for="Description" class="form-label fw-bold">Mô tả chi tiết phòng</label>
+                  <textarea asp-for="Description" class="form-control" rows="4" placeholder="Mô tả không gian, cửa sổ, điều hòa, ban công, nội thất..."></textarea>
+                </div>
+
+                <!-- Tiện ích phòng -->
+                <div class="col-12">
+                  <label class="form-label fw-bold d-block"><i class="bi bi-stars me-1 text-warning"></i>Tiện ích có sẵn trong phòng</label>
+                  <div class="row g-2">
+                    @foreach (var amenity in amenities)
+                    {
+                        <div class="col-md-4 col-sm-6">
+                          <div class="form-check p-2 border rounded bg-light">
+                            <input class="form-check-input" type="checkbox" name="SelectedAmenityIds" value="@amenity.AmenityId" id="amenity-@amenity.AmenityId">
+                            <label class="form-check-label fw-semibold" for="amenity-@amenity.AmenityId">
+                              @if (!string.IsNullOrEmpty(amenity.Icon))
+                              {
+                                  <i class="@amenity.Icon me-1 text-primary"></i>
+                              }
+                              @amenity.Name
+                            </label>
+                          </div>
+                        </div>
+                    }
+                  </div>
+                </div>
+
+              </div>
             </div>
+
+            <!-- Cột phải: Upload nhiều ảnh & Cài đặt hiển thị -->
+            <div class="col-lg-5">
+              <h5 class="fw-bold mb-3 text-primary"><i class="bi bi-images me-1"></i>Hình ảnh phòng trọ</h5>
+
+              <div class="mb-3">
+                <div class="photo-dropzone" onclick="document.getElementById('fileInput').click()">
+                  <i class="bi bi-cloud-arrow-up fs-1 text-primary d-block mb-2"></i>
+                  <span class="fw-bold d-block">Chọn hoặc kéo thả nhiều ảnh vào đây</span>
+                  <span class="text-muted small">Hỗ trợ JPG, PNG, WEBP (Tự động nén và tạo Thumbnail)</span>
+                  <input type="file" id="fileInput" name="NewPhotos" multiple accept="image/*" class="d-none" onchange="handleFileSelect(this)" />
+                </div>
+
+                <div id="previewContainer" class="d-flex flex-wrap gap-2 mt-3"></div>
+              </div>
+
+              <div class="card bg-light border-0 p-3 mt-3">
+                <h6 class="fw-bold mb-2">Cài đặt tin đăng</h6>
+                <div class="form-check form-switch mb-2">
+                  <input class="form-check-input" type="checkbox" asp-for="IsPublished" id="switchPublished">
+                  <label class="form-check-label fw-semibold" for="switchPublished">Cho phép hiển thị tin trên Website</label>
+                </div>
+                <div class="form-check form-switch mb-2">
+                  <input class="form-check-input" type="checkbox" asp-for="IsFeatured" id="switchFeatured">
+                  <label class="form-check-label fw-semibold" for="switchFeatured">Đánh dấu là Tin Nổi Bật (Featured)</label>
+                </div>
+                <div class="small text-muted mt-1">
+                  <i class="bi bi-info-circle me-1"></i> Tin đăng mới sẽ ở trạng thái Chờ duyệt (Pending) nếu chế độ tự động duyệt chưa được bật.
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="mt-4 pt-3 border-top d-flex justify-content-end gap-2">
+            <a asp-action="Index" class="btn btn-secondary px-3">Hủy</a>
+            <button type="submit" class="btn btn-primary px-4 fw-semibold">
+              <i class="bi bi-save me-1"></i> Lưu phòng trọ
+            </button>
+          </div>
         </form>
-    </section>
+
+      </div>
+    </div>
+  </section>
+
 </main>
 
 @section Scripts {
-    <partial name="~/Views/Shared/_ValidationScriptsPartial.cshtml" />
-    <script>
-        function previewImage(input) {
-            const wrap        = document.getElementById('img-preview-wrap');
-            const placeholder = document.getElementById('img-placeholder');
-            const img         = document.getElementById('img-preview');
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    img.src = e.target.result;
-                    wrap.style.display = '';
-                    placeholder.style.display = 'none';
-                };
-                reader.readAsDataURL(input.files[0]);
-            } else {
-                wrap.style.display = 'none';
-                placeholder.style.display = '';
-            }
-        }
-        const vs = document.getElementById('val-summary');
-        if (vs && vs.querySelectorAll('li').length) vs.classList.remove('d-none');
-
-        // ── GEOCODING ──────────────────────────────────────────────────
-        document.getElementById('btnGeocode')?.addEventListener('click', async function () {
-            const addr = document.getElementById('addressInput').value.trim();
-            if (!addr) { alert('Vui lòng nhập địa chỉ trước.'); return; }
-
-            const btn = this;
-            const originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Đang tìm...';
-
-            try {
-                const resp = await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=' + encodeURIComponent(addr));
-                const data = await resp.json();
-                if (data.length > 0) {
-                    document.getElementById('latInput').value = parseFloat(data[0].lat).toFixed(7);
-                    document.getElementById('lngInput').value = parseFloat(data[0].lon).toFixed(7);
-                } else {
-                    alert('Không tìm thấy tọa độ cho địa chỉ này. Vui lòng nhập chính xác hơn.');
-                }
-            } catch {
-                alert('Lỗi khi gọi API geocoding. Vui lòng thử lại.');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-            }
+<script>
+function handleFileSelect(input) {
+    const container = document.getElementById('previewContainer');
+    container.innerHTML = '';
+    if (input.files) {
+        Array.from(input.files).forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const div = document.createElement('div');
+                div.className = 'position-relative border rounded p-1 bg-white shadow-xs';
+                div.innerHTML = `
+                  <img src="${e.target.result}" class="preview-thumb" />
+                  <span class="badge ${index === 0 ? 'bg-primary' : 'bg-secondary'} position-absolute top-0 start-0 m-1">
+                    ${index === 0 ? 'Đại diện' : '#' + (index + 1)}
+                  </span>
+                `;
+                container.appendChild(div);
+            };
+            reader.readAsDataURL(file);
         });
-    </script>
+    }
+}
+</script>
 }

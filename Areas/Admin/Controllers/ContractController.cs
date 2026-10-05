@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using QuanLyPhongTro.Areas.Admin.Attributes;
 using QuanLyPhongTro.Areas.Admin.Data;
 using QuanLyPhongTro.Models;
+using QuanLyPhongTro.Services;
 using MiniSoftware;
 
 namespace QuanLyPhongTro.Areas.Admin.Controllers
@@ -15,12 +16,18 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
         private readonly DataContext _context;
         private readonly IWebHostEnvironment _env;
         private readonly IConfiguration _config;
+        private readonly ICurrentLandlordService _currentLandlordService;
 
-        public ContractController(DataContext context, IWebHostEnvironment env, IConfiguration config)
+        public ContractController(
+            DataContext context,
+            IWebHostEnvironment env,
+            IConfiguration config,
+            ICurrentLandlordService currentLandlordService)
         {
             _context = context;
             _env = env;
             _config = config;
+            _currentLandlordService = currentLandlordService;
         }
 
         // ── INDEX ────────────────────────────────────────────────────────
@@ -32,6 +39,13 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 .Include(c => c.Room)
                 .Include(c => c.Tenant)
                 .AsQueryable();
+
+            // Cô lập dữ liệu theo chủ trọ nếu không phải SuperAdmin
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int? currentLandlordId = _currentLandlordService.GetCurrentLandlordId();
+                query = query.Where(c => c.LandlordId == currentLandlordId);
+            }
 
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -72,7 +86,7 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             return View(list);
         }
 
-        // ── DETAILS ──────────────────────────────────────────────────────
+        // ── DETAILS (Chống IDOR) ─────────────────────────────────────────
         public async Task<IActionResult> Details(int id)
         {
             var contract = await _context.Contracts
@@ -81,6 +95,17 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 .FirstOrDefaultAsync(c => c.ContractId == id);
 
             if (contract == null) return NotFound();
+
+            // Chống IDOR
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int? currentLandlordId = _currentLandlordService.GetCurrentLandlordId();
+                if (contract.LandlordId != currentLandlordId)
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden);
+                }
+            }
+
             return View(contract);
         }
 
@@ -129,8 +154,9 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 return View(model);
             }
 
-            model.CreatedAt = DateTime.Now;
-            model.Status    = ContractStatus.Active;
+            model.LandlordId = _currentLandlordService.GetCurrentLandlordId();
+            model.CreatedAt  = DateTime.Now;
+            model.Status     = ContractStatus.Active;
 
             _context.Contracts.Add(model);
 
@@ -144,7 +170,7 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             return RedirectToAction(nameof(Details), new { id = model.ContractId });
         }
 
-        // ── EDIT GET ─────────────────────────────────────────────────────
+        // ── EDIT GET (Chống IDOR) ────────────────────────────────────────
         public async Task<IActionResult> Edit(int id)
         {
             var contract = await _context.Contracts
@@ -154,11 +180,21 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
 
             if (contract == null) return NotFound();
 
+            // Chống IDOR
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int? currentLandlordId = _currentLandlordService.GetCurrentLandlordId();
+                if (contract.LandlordId != currentLandlordId)
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden);
+                }
+            }
+
             ViewBag.StatusList = BuildStatusSelectList(contract.Status);
             return View(contract);
         }
 
-        // ── EDIT POST ────────────────────────────────────────────────────
+        // ── EDIT POST (Chống IDOR) ───────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, tblContract model)
@@ -170,6 +206,16 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 .FirstOrDefaultAsync(c => c.ContractId == id);
 
             if (contract == null) return NotFound();
+
+            // Chống IDOR
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int? currentLandlordId = _currentLandlordService.GetCurrentLandlordId();
+                if (contract.LandlordId != currentLandlordId)
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden);
+                }
+            }
 
             // Validate: nếu Terminated phải có ngày chấm dứt
             if (model.Status == ContractStatus.Terminated && model.ActualEndDate == null)
@@ -187,7 +233,6 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             bool nowActive   = model.Status == ContractStatus.Active;
             bool nowInactive = !nowActive;
 
-            // Cập nhật các field cho phép sửa
             contract.EndDate              = model.EndDate;
             contract.MonthlyRent          = model.MonthlyRent;
             contract.Deposit              = model.Deposit;
@@ -203,7 +248,6 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
 
             if (contract.Room != null)
             {
-                // Hợp đồng kết thúc → phòng về Available
                 if (wasActive && nowInactive)
                 {
                     var hasOtherActive = await _context.Contracts
@@ -211,7 +255,6 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                     if (!hasOtherActive)
                         contract.Room.Status = RoomStatus.Available;
                 }
-                // Hợp đồng tái kích hoạt → phòng về Occupied
                 else if (!wasActive && nowActive)
                 {
                     contract.Room.Status = RoomStatus.Occupied;
@@ -220,11 +263,9 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
 
             await _context.SaveChangesAsync();
 
-            // Khi chấm dứt: chuyển người thuê về danh sách người dùng
             if (wasActive && model.Status == ContractStatus.Terminated)
                 await ConvertTenantToUserAsync(contract.TenantId, id);
 
-            // Khi tái kích hoạt: chuyển người dùng về lại người thuê
             if (!wasActive && nowActive)
                 await ConvertUserToTenantAsync(contract.TenantId);
 
@@ -232,7 +273,7 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
-        // ── DELETE POST ──────────────────────────────────────────────────
+        // ── DELETE POST (Chống IDOR) ─────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
@@ -244,13 +285,22 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
 
             if (contract == null) return NotFound();
 
+            // Chống IDOR
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int? currentLandlordId = _currentLandlordService.GetCurrentLandlordId();
+                if (contract.LandlordId != currentLandlordId)
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden);
+                }
+            }
+
             if (contract.Invoices.Any())
             {
                 TempData["Error"] = "Không thể xóa hợp đồng đã có hóa đơn.";
                 return RedirectToAction(nameof(Details), new { id });
             }
 
-            // Nếu đang active → trả phòng về Available
             if (contract.Status == ContractStatus.Active && contract.Room != null)
             {
                 var hasOtherActive = await _context.Contracts
@@ -266,16 +316,28 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // ── EXPORT WORD ──────────────────────────────────────────────────
+        // ── EXPORT WORD (Chống IDOR) ─────────────────────────────────────
         [HttpGet]
         public async Task<IActionResult> ExportWord(int id)
         {
             var contract = await _context.Contracts
                 .Include(c => c.Room).ThenInclude(r => r!.RoomType)
+                .Include(c => c.Room).ThenInclude(r => r!.Property)
                 .Include(c => c.Tenant)
+                .Include(c => c.Landlord)
                 .FirstOrDefaultAsync(c => c.ContractId == id);
 
             if (contract == null) return NotFound();
+
+            // Chống IDOR: Chỉ SuperAdmin hoặc đúng chủ trọ mới tải được file word hợp đồng
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int? currentLandlordId = _currentLandlordService.GetCurrentLandlordId();
+                if (contract.LandlordId != currentLandlordId)
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden);
+                }
+            }
 
             string templatePath = Path.Combine(_env.WebRootPath, "templates", "HopDong_Template.docx");
             if (!System.IO.File.Exists(templatePath))
@@ -284,13 +346,21 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 return RedirectToAction(nameof(Details), new { id });
             }
 
+            var landlord = contract.Landlord 
+                ?? (contract.LandlordId.HasValue ? await _context.Landlords.FindAsync(contract.LandlordId.Value) : null)
+                ?? (contract.Room?.Property?.LandlordId != null ? await _context.Landlords.FindAsync(contract.Room.Property.LandlordId) : null);
+
             var value = new Dictionary<string, object>
             {
                 ["ContractCode"] = contract.ContractCode,
-                ["LandlordName"] = _config["Landlord:Name"] ?? "",
-                ["LandlordIdentity"] = _config["Landlord:IdentityNumber"] ?? "",
-                ["LandlordPhone"] = _config["Landlord:Phone"] ?? "",
-                ["LandlordAddress"] = _config["Landlord:Address"] ?? "",
+                ["LandlordName"] = landlord?.FullName ?? _config["Landlord:Name"] ?? "",
+                ["LandlordIdentity"] = landlord?.IdentityNumber ?? _config["Landlord:IdentityNumber"] ?? "",
+                ["LandlordPhone"] = landlord?.Phone ?? _config["Landlord:Phone"] ?? "",
+                ["LandlordAddress"] = landlord?.Address ?? _config["Landlord:Address"] ?? "",
+                ["BankName"] = landlord?.BankName ?? _config["BankPayment:BankName"] ?? "",
+                ["BankId"] = landlord?.BankId ?? _config["BankPayment:BankId"] ?? "",
+                ["AccountNumber"] = landlord?.AccountNumber ?? _config["BankPayment:AccountNumber"] ?? "",
+                ["AccountName"] = landlord?.AccountName ?? _config["BankPayment:AccountName"] ?? "",
                 
                 ["TenantName"] = contract.Tenant?.FullName ?? "",
                 ["TenantIdentity"] = contract.Tenant?.IdentityNumber ?? "",
@@ -333,35 +403,25 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
         }
 
         // ── HELPERS ──────────────────────────────────────────────────────
-        /// <summary>
-        /// Khi hợp đồng bị chấm dứt: tạo tài khoản tblUser từ tenant (nếu có username/email),
-        /// xóa thông tin đăng nhập khỏi tenant và đánh dấu không còn active.
-        /// Giữ nguyên record tenant để lịch sử hợp đồng không bị gãy FK.
-        /// </summary>
         private async Task ConvertTenantToUserAsync(int tenantId, int excludeContractId)
         {
             var tenant = await _context.Tenants.FindAsync(tenantId);
-
-            // Chỉ chuyển nếu tenant có đủ thông tin đăng nhập
             if (tenant == null
                 || string.IsNullOrEmpty(tenant.Username)
                 || string.IsNullOrEmpty(tenant.PasswordHash)
                 || string.IsNullOrEmpty(tenant.Email))
                 return;
 
-            // Không chuyển nếu còn hợp đồng active khác
             bool hasOtherActive = await _context.Contracts
                 .AnyAsync(c => c.TenantId == tenantId
                             && c.ContractId != excludeContractId
                             && c.Status == ContractStatus.Active);
             if (hasOtherActive) return;
 
-            // Không chuyển nếu username/email đã tồn tại trong tblUser
             bool conflict = await _context.Users
                 .AnyAsync(u => u.Username == tenant.Username || u.Email == tenant.Email);
             if (conflict) return;
 
-            // Tạo tài khoản người dùng
             _context.Users.Add(new tblUser
             {
                 Username     = tenant.Username,
@@ -375,7 +435,6 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 CreatedAt    = DateTime.Now
             });
 
-            // Xóa thông tin đăng nhập khỏi tenant, đánh dấu không còn active
             tenant.Username     = null;
             tenant.PasswordHash = null;
             tenant.IsActive     = false;
@@ -384,23 +443,17 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             await _context.SaveChangesAsync();
         }
 
-        /// <summary>
-        /// Khi hợp đồng được tái kích hoạt: tìm tblUser khớp email với tenant,
-        /// copy credentials về lại tenant, xóa tblUser, set tenant IsActive = true.
-        /// </summary>
         private async Task ConvertUserToTenantAsync(int tenantId)
         {
             var tenant = await _context.Tenants.FindAsync(tenantId);
             if (tenant == null) return;
 
-            // Nếu tenant vẫn còn credentials (chưa từng bị chuyển) → chỉ bật lại active
             if (!string.IsNullOrEmpty(tenant.Username))
             {
                 if (!tenant.IsActive) { tenant.IsActive = true; tenant.UpdatedAt = DateTime.Now; await _context.SaveChangesAsync(); }
                 return;
             }
 
-            // Tìm tblUser được tạo từ tenant này (khớp email)
             if (!string.IsNullOrEmpty(tenant.Email))
             {
                 var user = await _context.Users
@@ -408,7 +461,6 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
 
                 if (user != null)
                 {
-                    // Chuyển chat session từ user về tenant
                     await _context.ChatSessions
                         .Where(s => s.UserId == user.UserId)
                         .ExecuteUpdateAsync(s => s
@@ -428,14 +480,23 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
 
         private async Task LoadDropdowns(int? selectedRoomId, int? selectedTenantId)
         {
-            // Chỉ hiện phòng Available (hoặc phòng đang chọn)
-            var rooms = await _context.Rooms
+            var roomQuery = _context.Rooms.AsQueryable();
+            var tenantQuery = _context.Tenants.AsQueryable();
+
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int? currentLandlordId = _currentLandlordService.GetCurrentLandlordId();
+                roomQuery = roomQuery.Where(r => r.Property != null && r.Property.LandlordId == currentLandlordId);
+                tenantQuery = tenantQuery.Where(t => t.LandlordId == currentLandlordId);
+            }
+
+            var rooms = await roomQuery
                 .Where(r => r.Status == RoomStatus.Available || r.RoomId == selectedRoomId)
                 .OrderBy(r => r.RoomCode)
                 .Select(r => new { r.RoomId, Display = $"{r.RoomCode} — {r.RoomName}" })
                 .ToListAsync();
 
-            var tenants = await _context.Tenants
+            var tenants = await tenantQuery
                 .Where(t => t.IsActive)
                 .OrderBy(t => t.FullName)
                 .Select(t => new { t.TenantId, Display = $"{t.FullName} ({t.IdentityNumber})" })

@@ -3,13 +3,13 @@
 @{
     ViewData["Title"] = "Danh sách hóa đơn";
     Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
-    int    currentPage = ViewBag.Page;
-    int    totalItems  = ViewBag.TotalItems;
-    int    totalPages  = ViewBag.TotalPages;
+    int    currentPage = (ViewBag.Page as int?) ?? 1;
+    int    totalItems  = (ViewBag.TotalItems as int?) ?? 0;
+    int    totalPages  = (ViewBag.TotalPages as int?) ?? 1;
     string search      = ViewBag.Search  ?? "";
     string statusVal   = ViewBag.Status  ?? "";
-    int?   monthVal    = ViewBag.Month;
-    int    yearVal     = ViewBag.Year;
+    int?   monthVal    = ViewBag.Month as int?;
+    int?   yearVal     = ViewBag.Year as int?;
 }
 
 <main id="main" class="main">
@@ -71,7 +71,7 @@
             </select>
         </div>
         <div class="col-md-2">
-            <input type="number" name="year" value="@(monthVal.HasValue ? yearVal : "")" class="form-control"
+            <input type="number" name="year" value="@(yearVal.HasValue ? yearVal.Value.ToString() : "")" class="form-control"
                    placeholder="Năm" min="2000" max="2100" />
         </div>
         <div class="col-md-2">
@@ -109,7 +109,7 @@
             {
                 <tr><td colspan="9" class="text-center text-muted py-4">Không có dữ liệu.</td></tr>
             }
-            @{ int stt = (currentPage - 1) * (int)ViewBag.PageSize + 1; }
+            @{ int pageSize = (ViewBag.PageSize as int?) ?? 15; int stt = (currentPage - 1) * pageSize + 1; }
             @foreach (var inv in Model)
             {
                 <tr class="cursor-pointer" onclick="window.location='/Admin/Invoice/Details/@inv.InvoiceId'">

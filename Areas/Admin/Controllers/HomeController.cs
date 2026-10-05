@@ -4,6 +4,7 @@ using QuanLyPhongTro.Areas.Admin.Attributes;
 using QuanLyPhongTro.Areas.Admin.Data;
 using QuanLyPhongTro.Areas.Admin.Models;
 using QuanLyPhongTro.Models;
+using QuanLyPhongTro.Services;
 
 namespace QuanLyPhongTro.Areas.Admin.Controllers
 {
@@ -12,10 +13,12 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
     public class HomeController : Controller
     {
         private readonly DataContext _context;
+        private readonly ICurrentLandlordService _currentLandlordService;
 
-        public HomeController(DataContext context)
+        public HomeController(DataContext context, ICurrentLandlordService currentLandlordService)
         {
             _context = context;
+            _currentLandlordService = currentLandlordService;
         }
 
         // GET: /Admin
@@ -24,8 +27,36 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
         {
             var now = DateTime.Now;
             var filter = ResolveDashboardPeriod(period, month, quarter, year, fromDate, toDate);
+            bool isSuperAdmin = _currentLandlordService.IsSuperAdmin();
+            if (!isSuperAdmin)
+            {
+                var landlord = await _currentLandlordService.GetCurrentLandlordAsync();
+                if (landlord != null && landlord.Status == LandlordStatus.Pending)
+                {
+                    return RedirectToAction("LandlordStatus", "Account", new { area = "" });
+                }
+            }
+            int? landlordId = isSuperAdmin ? null : _currentLandlordService.GetCurrentLandlordId();
 
-            var invoiceQuery = _context.Invoices.AsQueryable();
+            var vm = new DashboardViewModel
+            {
+                IsSuperAdmin = isSuperAdmin,
+                PeriodType = filter.Type,
+                PeriodLabel = filter.Label,
+                PeriodStart = filter.Start,
+                PeriodEnd = filter.End,
+                SelectedMonth = filter.Month,
+                SelectedQuarter = filter.Quarter,
+                SelectedYear = filter.Year,
+            };
+
+            // ── INVOICES QUERY ────────────────────────────────────────────
+            var invoiceQuery = _context.Invoices.AsNoTracking().AsQueryable();
+            if (!isSuperAdmin && landlordId.HasValue)
+            {
+                invoiceQuery = invoiceQuery.Where(i => i.LandlordId == landlordId.Value);
+            }
+
             if (filter.UseBillingPeriod)
             {
                 var startKey = filter.Start.Year * 100 + filter.Start.Month;
@@ -40,62 +71,109 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 invoiceQuery = invoiceQuery.Where(i => i.DueDate >= filter.Start.Date && i.DueDate < endExclusive);
             }
 
-            var vm = new DashboardViewModel
+            vm.TotalRevenueThisMonth = await invoiceQuery
+                .Where(i => i.Status == InvoiceStatus.Paid)
+                .SumAsync(i => (decimal?)i.TotalAmount) ?? 0;
+            vm.ExpectedRevenueInPeriod = await invoiceQuery
+                .SumAsync(i => (decimal?)i.TotalAmount) ?? 0;
+            vm.TotalInvoicesInPeriod = await invoiceQuery.CountAsync();
+            vm.PaidInvoicesThisMonth = await invoiceQuery
+                .CountAsync(i => i.Status == InvoiceStatus.Paid);
+            vm.UnpaidInvoicesThisMonth = await invoiceQuery
+                .CountAsync(i => i.Status == InvoiceStatus.Unpaid);
+            vm.OverdueInvoicesThisMonth = await invoiceQuery
+                .CountAsync(i => i.Status == InvoiceStatus.Overdue);
+
+            if (isSuperAdmin)
             {
-                // ── Phòng ────────────────────────────────────────────
-                TotalRooms       = await _context.Rooms.CountAsync(),
-                AvailableRooms   = await _context.Rooms.CountAsync(r => r.Status == RoomStatus.Available),
-                OccupiedRooms    = await _context.Rooms.CountAsync(r => r.Status == RoomStatus.Occupied),
-                MaintenanceRooms = await _context.Rooms.CountAsync(r => r.Status == RoomStatus.Maintenance),
+                // ── SUPERADMIN METRICS ────────────────────────────────────
+                vm.TotalLandlords = await _context.Landlords.CountAsync();
+                vm.PendingLandlords = await _context.Landlords.CountAsync(l => l.Status == LandlordStatus.Pending);
+                vm.PendingRooms = await _context.Rooms.CountAsync(r => r.ApprovalStatus == RoomApprovalStatus.Pending);
+                vm.TotalRoomViews = await _context.Rooms.SumAsync(r => (int?)r.ViewCount) ?? 0;
 
-                // ── Hợp đồng ─────────────────────────────────────────
-                ActiveContracts = await _context.Contracts
-                    .CountAsync(c => c.Status == ContractStatus.Active),
+                var weekAgo = now.AddDays(-7);
+                var monthAgo = now.AddDays(-30);
+                vm.NewUsersThisWeek = await _context.Users.CountAsync(u => u.CreatedAt >= weekAgo);
+                vm.NewUsersThisMonth = await _context.Users.CountAsync(u => u.CreatedAt >= monthAgo);
 
-                ExpiringContractsIn30Days = await _context.Contracts
+                // Biểu đồ khu vực theo Tỉnh/Thành
+                vm.RoomsByProvince = await _context.Properties
+                    .AsNoTracking()
+                    .Where(p => p.Province != null)
+                    .GroupBy(p => p.Province!.Name)
+                    .Select(g => new LocationStatItem
+                    {
+                        ProvinceName = g.Key,
+                        PropertyCount = g.Count(),
+                        RoomCount = g.SelectMany(p => p.Rooms).Count()
+                    })
+                    .OrderByDescending(x => x.RoomCount)
+                    .Take(8)
+                    .ToListAsync();
+
+                // Tổng phòng toàn hệ thống
+                vm.TotalRooms = await _context.Rooms.CountAsync();
+                vm.AvailableRooms = await _context.Rooms.CountAsync(r => r.Status == RoomStatus.Available);
+                vm.OccupiedRooms = await _context.Rooms.CountAsync(r => r.Status == RoomStatus.Occupied);
+                vm.MaintenanceRooms = await _context.Rooms.CountAsync(r => r.Status == RoomStatus.Maintenance);
+
+                // Hợp đồng toàn hệ thống
+                vm.ActiveContracts = await _context.Contracts
+                    .CountAsync(c => c.Status == ContractStatus.Active);
+                vm.ExpiringContractsIn30Days = await _context.Contracts
                     .CountAsync(c => c.Status == ContractStatus.Active
                                   && c.EndDate.HasValue
-                                  && c.EndDate <= DateTime.Now.AddDays(30)),
+                                  && c.EndDate <= now.AddDays(30));
 
-                // ── Người thuê ────────────────────────────────────────
-                TotalTenants = await _context.Tenants.CountAsync(t => t.IsActive),
+                // Người thuê toàn hệ thống
+                vm.TotalTenants = await _context.Tenants.CountAsync(t => t.IsActive);
 
-                // ── Tài chính theo khoảng thời gian đang chọn ──────────
-                TotalRevenueThisMonth = await invoiceQuery
-                    .Where(i => i.Status == InvoiceStatus.Paid)
-                    .SumAsync(i => (decimal?)i.TotalAmount) ?? 0,
+                // Yêu cầu và Chat toàn hệ thống
+                vm.PendingBookingRequests = await _context.BookingRequests
+                    .CountAsync(b => b.Status == BookingRequestStatus.Pending);
+                vm.OpenChatSessions = await _context.ChatSessions
+                    .CountAsync(s => s.Messages.Any(m => m.SenderType == ChatSenderType.Guest && !m.IsReadByAdmin));
+            }
+            else
+            {
+                // ── LANDLORD METRICS (Chỉ tính dữ liệu của chính chủ trọ đó) ──
+                int lid = landlordId ?? 0;
 
-                ExpectedRevenueInPeriod = await invoiceQuery
-                    .SumAsync(i => (decimal?)i.TotalAmount) ?? 0,
+                var roomQuery = _context.Rooms
+                    .AsNoTracking()
+                    .Where(r => r.Property != null && r.Property.LandlordId == lid);
 
-                TotalInvoicesInPeriod = await invoiceQuery.CountAsync(),
+                vm.TotalRooms = await roomQuery.CountAsync();
+                vm.AvailableRooms = await roomQuery.CountAsync(r => r.Status == RoomStatus.Available);
+                vm.OccupiedRooms = await roomQuery.CountAsync(r => r.Status == RoomStatus.Occupied);
+                vm.MaintenanceRooms = await roomQuery.CountAsync(r => r.Status == RoomStatus.Maintenance);
+                vm.PendingRooms = await roomQuery.CountAsync(r => r.ApprovalStatus == RoomApprovalStatus.Pending);
+                vm.TotalRoomViews = await roomQuery.SumAsync(r => (int?)r.ViewCount) ?? 0;
 
-                PaidInvoicesThisMonth = await invoiceQuery
-                    .CountAsync(i => i.Status == InvoiceStatus.Paid),
+                // Hợp đồng của chủ trọ
+                vm.ActiveContracts = await _context.Contracts
+                    .CountAsync(c => c.LandlordId == lid && c.Status == ContractStatus.Active);
+                vm.ExpiringContractsIn30Days = await _context.Contracts
+                    .CountAsync(c => c.LandlordId == lid
+                                  && c.Status == ContractStatus.Active
+                                  && c.EndDate.HasValue
+                                  && c.EndDate <= now.AddDays(30));
 
-                UnpaidInvoicesThisMonth = await invoiceQuery
-                    .CountAsync(i => i.Status == InvoiceStatus.Unpaid),
+                // Người thuê của chủ trọ
+                vm.TotalTenants = await _context.Tenants
+                    .CountAsync(t => t.LandlordId == lid && t.IsActive);
 
-                OverdueInvoicesThisMonth = await invoiceQuery
-                    .CountAsync(i => i.Status == InvoiceStatus.Overdue),
+                // Yêu cầu đặt lịch & Chat của chủ trọ
+                vm.PendingBookingRequests = await _context.BookingRequests
+                    .CountAsync(b => b.LandlordId == lid && b.Status == BookingRequestStatus.Pending);
+                vm.OpenChatSessions = await _context.ChatSessions
+                    .CountAsync(s => s.LandlordId == lid && s.Messages.Any(m => m.SenderType == ChatSenderType.Guest && !m.IsReadByAdmin));
+            }
 
-                PeriodType = filter.Type,
-                PeriodLabel = filter.Label,
-                PeriodStart = filter.Start,
-                PeriodEnd = filter.End,
-                SelectedMonth = filter.Month,
-                SelectedQuarter = filter.Quarter,
-                SelectedYear = filter.Year,
-
-                // ── Yêu cầu chờ xử lý ────────────────────────────────
-                PendingBookingRequests = await _context.BookingRequests
-                    .CountAsync(b => b.Status == BookingRequestStatus.Pending),
-
-                // ── Chat có tin nhắn khách chưa đọc ─────────────────────
-                OpenChatSessions = await _context.ChatSessions
-                    .CountAsync(s => s.Messages.Any(m => m.SenderType == ChatSenderType.Guest
-                                                      && !m.IsReadByAdmin)),
-            };
+            vm.OccupancyRate = vm.TotalRooms > 0
+                ? Math.Round(vm.OccupiedRooms * 100.0 / vm.TotalRooms, 1)
+                : 0.0;
 
             return View(vm);
         }

@@ -1,0 +1,180 @@
+@model QuanLyPhongTro.Models.ViewModels.PropertyDetailViewModel
+@{
+    ViewData["Title"] = $"Chi tiết khu trọ: {Model.Property.Name}";
+    Layout = "_LayoutAdmin";
+}
+
+@section Styles {
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    #detailMap { height: 260px; border-radius: 8px; border: 1px solid #ced4da; }
+  </style>
+}
+
+<main id="main" class="main">
+
+  <div class="pagetitle d-flex justify-content-between align-items-center">
+    <div>
+      <h1>@Model.Property.Name</h1>
+      <nav>
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+          <li class="breadcrumb-item"><a asp-action="Index">Khu trọ</a></li>
+          <li class="breadcrumb-item active">Chi tiết</li>
+        </ol>
+      </nav>
+    </div>
+    <div class="d-flex gap-2">
+      <a asp-action="Edit" asp-route-id="@Model.Property.PropertyId" class="btn btn-outline-primary">
+        <i class="bi bi-pencil me-1"></i> Sửa khu trọ
+      </a>
+      <a asp-area="Admin" asp-controller="Room" asp-action="Create" asp-route-propertyId="@Model.Property.PropertyId" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i> Thêm phòng vào đây
+      </a>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="row g-4">
+      <!-- Cột trái: Thông tin tổng quan & bản đồ -->
+      <div class="col-lg-5">
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header bg-light fw-bold">
+            <i class="bi bi-building me-1 text-primary"></i> Thông tin khu trọ
+          </div>
+          <div class="card-body pt-3">
+            <div class="mb-3">
+              <span class="text-muted small d-block">Địa chỉ:</span>
+              <strong class="fs-6">@Model.Property.Address</strong>
+              <div class="text-muted small">
+                @string.Join(", ", new[] { Model.Property.Ward?.Name, Model.Property.District?.Name, Model.Property.Province?.Name }.Where(x => !string.IsNullOrEmpty(x)))
+              </div>
+            </div>
+
+            <div class="row g-2 text-center mb-3">
+              <div class="col-4">
+                <div class="p-2 border rounded bg-light">
+                  <div class="fs-4 fw-bold text-primary">@Model.TotalRooms</div>
+                  <div class="small text-muted">Tổng số phòng</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="p-2 border rounded bg-light">
+                  <div class="fs-4 fw-bold text-success">@Model.AvailableRooms</div>
+                  <div class="small text-muted">Phòng trống</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="p-2 border rounded bg-light">
+                  <div class="fs-4 fw-bold text-danger">@Model.OccupiedRooms</div>
+                  <div class="small text-muted">Đang thuê</div>
+                </div>
+              </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.Property.Description))
+            {
+                <div class="mb-3">
+                  <span class="text-muted small d-block">Mô tả tiện ích chung:</span>
+                  <p class="mb-0">@Model.Property.Description</p>
+                </div>
+            }
+
+            <div class="mt-3">
+              <span class="text-muted small d-block mb-1">Vị trí bản đồ:</span>
+              <div id="detailMap"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cột phải: Danh sách các phòng thuộc khu trọ -->
+      <div class="col-lg-7">
+        <div class="card shadow-sm border-0">
+          <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <span class="fw-bold"><i class="bi bi-door-open me-1 text-primary"></i> Danh sách phòng trọ (@Model.Rooms.Count)</span>
+            <a asp-area="Admin" asp-controller="Room" asp-action="Create" asp-route-propertyId="@Model.Property.PropertyId" class="btn btn-sm btn-primary">
+              <i class="bi bi-plus-lg me-1"></i> Thêm phòng
+            </a>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Mã & Tên phòng</th>
+                    <th>Loại phòng</th>
+                    <th class="text-end">Giá thuê</th>
+                    <th class="text-center">Trạng thái</th>
+                    <th class="text-end">Hành động</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @if (Model.Rooms.Any())
+                  {
+                      foreach (var r in Model.Rooms)
+                      {
+                          <tr>
+                            <td>
+                              <a asp-area="Admin" asp-controller="Room" asp-action="Details" asp-route-id="@r.RoomId" class="fw-bold text-decoration-none">
+                                @r.RoomCode — @r.RoomName
+                              </a>
+                              <div class="text-muted small">Tầng @r.Floor • @r.Area m²</div>
+                            </td>
+                            <td>@r.RoomType?.RoomTypeName</td>
+                            <td class="text-end fw-bold text-primary">@r.RoomPrice.ToString("N0") đ</td>
+                            <td class="text-center">
+                              @if (r.Status == QuanLyPhongTro.Models.RoomStatus.Available)
+                              {
+                                  <span class="badge bg-success">Trống</span>
+                              }
+                              else if (r.Status == QuanLyPhongTro.Models.RoomStatus.Occupied)
+                              {
+                                  <span class="badge bg-danger">Đã thuê</span>
+                              }
+                              else
+                              {
+                                  <span class="badge bg-warning text-dark">Bảo trì</span>
+                              }
+                            </td>
+                            <td class="text-end">
+                              <a asp-area="Admin" asp-controller="Room" asp-action="Edit" asp-route-id="@r.RoomId" class="btn btn-sm btn-outline-primary" title="Sửa">
+                                <i class="bi bi-pencil"></i>
+                              </a>
+                            </td>
+                          </tr>
+                      }
+                  }
+                  else
+                  {
+                      <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">
+                          Chưa có phòng nào trong khu trọ này.
+                        </td>
+                      </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+@section Scripts {
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    let lat = @(Model.Property.Latitude ?? 21.0285);
+    let lng = @(Model.Property.Longitude ?? 105.8542);
+
+    const map = L.map('detailMap').setView([lat, lng], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    L.marker([lat, lng]).addTo(map).bindPopup('<strong>@Model.Property.Name</strong><br/>@Model.Property.Address').openPopup();
+  </script>
+}

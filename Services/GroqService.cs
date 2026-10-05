@@ -17,7 +17,7 @@ namespace QuanLyPhongTro.Services
     /// - Đường dẫn file key cấu hình qua appsettings.json
     /// - Rate limiting phía server (giới hạn request/user/phút)
     /// </summary>
-    public class GroqService
+    public class GroqService : IGroqService
     {
         // ── Endpoint Groq (OpenAI-compatible) ────────────────────────────
         private const string GROQ_URL =
@@ -63,33 +63,88 @@ namespace QuanLyPhongTro.Services
         // ══════════════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Lấy đường dẫn file API key từ appsettings.json (GroqApi:KeyFilePath).
-        /// Fallback về đường dẫn mặc định nếu không cấu hình.
+        /// Lấy API key từ Biến môi trường hoặc User Secrets / appsettings.json trước.
+        /// Nếu không có mới fallback sang file cấu hình hoặc file cũ.
         /// </summary>
-        private string GetKeyFilePath()
+        private void LoadApiKeys()
         {
-            return _configuration["GroqApi:KeyFilePath"]
-                ?? @"E:\VSCode\DemoApp\API\groq_api_key.txt";
+            var keys = new List<string>();
+
+            // 1. Đọc từ Biến môi trường (GROQ_API_KEY hoặc GroqApi__ApiKey)
+            var envKey = Environment.GetEnvironmentVariable("GROQ_API_KEY")
+                      ?? Environment.GetEnvironmentVariable("GroqApi__ApiKey");
+            if (!string.IsNullOrWhiteSpace(envKey))
+            {
+                char[] seps = { ',', ';', (char)13, (char)10 };
+                var envParts = envKey.Split(seps, StringSplitOptions.RemoveEmptyEntries)
+                                     .Select(k => k.Trim())
+                                     .Where(k => !string.IsNullOrWhiteSpace(k) && !k.StartsWith("#"));
+                keys.AddRange(envParts);
+            }
+
+            // 2. Đọc từ User Secrets / appsettings (GroqApi:ApiKey hoặc GroqApi:ApiKeys)
+            var configKey = _configuration["GroqApi:ApiKey"] ?? _configuration["GroqApi:ApiKeys"];
+            if (!string.IsNullOrWhiteSpace(configKey))
+            {
+                char[] seps = { ',', ';', (char)13, (char)10 };
+                var cfgParts = configKey.Split(seps, StringSplitOptions.RemoveEmptyEntries)
+                                        .Select(k => k.Trim())
+                                        .Where(k => !string.IsNullOrWhiteSpace(k) && !k.StartsWith("#"));
+                foreach (var k in cfgParts)
+                {
+                    if (!keys.Contains(k)) keys.Add(k);
+                }
+            }
+
+            // 3. Fallback đọc từ file nếu cấu hình hoặc tồn tại file cũ
+            if (keys.Count == 0)
+            {
+                var filePath = _configuration["GroqApi:KeyFilePath"];
+                if (string.IsNullOrWhiteSpace(filePath))
+                {
+                    var fallbackPath = @"E:\VSCode\DemoApp\API\groq_api_key.txt";
+                    if (File.Exists(fallbackPath)) filePath = fallbackPath;
+                }
+
+                if (!string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath))
+                {
+                    var fileLines = File.ReadAllLines(filePath)
+                        .Select(l => l.Trim())
+                        .Where(l => !string.IsNullOrWhiteSpace(l) && !l.StartsWith("#"));
+                    keys.AddRange(fileLines);
+                }
+            }
+
+            _apiKeys = keys.Distinct().ToArray();
+            _keysLoadedAt = DateTime.Now;
+
+            if (_apiKeys.Length > 0)
+            {
+                _logger.LogInformation("Đã nạp {Count} Groq API key(s) thành công.", _apiKeys.Length);
+            }
+            else
+            {
+                _logger.LogWarning("Chưa cấu hình Groq API key. Vui lòng thiết lập biến môi trường GROQ_API_KEY hoặc User Secrets 'GroqApi:ApiKey'.");
+            }
         }
 
         /// <summary>
         /// Đọc API key — thread-safe với SemaphoreSlim.
-        /// Cache 5 phút để tránh đọc file liên tục.
+        /// Cache 5 phút để tránh đọc liên tục.
         /// </summary>
         private async Task<string> GetApiKeyAsync()
         {
             await _keyLock.WaitAsync();
             try
             {
-                // Reload nếu cache hết hạn hoặc chưa load
                 if (_apiKeys.Length == 0 || (DateTime.Now - _keysLoadedAt).TotalMinutes > KEY_CACHE_MINUTES)
                 {
-                    LoadKeysFromFile();
+                    LoadApiKeys();
                 }
 
                 if (_apiKeys.Length == 0)
                     throw new InvalidOperationException(
-                        $"Không tìm thấy API key hợp lệ trong file: {GetKeyFilePath()}");
+                        "Không tìm thấy Groq API key hợp lệ. Vui lòng thiết lập biến môi trường GROQ_API_KEY hoặc User Secrets 'GroqApi:ApiKey'.");
 
                 return _apiKeys[_currentKeyIndex % _apiKeys.Length];
             }
@@ -111,40 +166,13 @@ namespace QuanLyPhongTro.Services
                 if (_apiKeys.Length <= 1) return;
                 _currentKeyIndex = (_currentKeyIndex + 1) % _apiKeys.Length;
                 _logger.LogWarning(
-                    "⚠ Groq API key bị limit, chuyển sang key #{Index}/{Total}",
+                    "Groq API key bị limit, chuyển sang key #{Index}/{Total}",
                     _currentKeyIndex + 1, _apiKeys.Length);
             }
             finally
             {
                 _keyLock.Release();
             }
-        }
-
-        /// <summary>
-        /// Đọc tất cả key từ file text.
-        /// Trim khoảng trắng, bỏ dòng trống, bỏ dòng comment (#).
-        /// </summary>
-        private void LoadKeysFromFile()
-        {
-            string keyFilePath = GetKeyFilePath();
-
-            if (!File.Exists(keyFilePath))
-                throw new FileNotFoundException(
-                    $"File API key không tồn tại: {keyFilePath}. " +
-                    "Vui lòng tạo file này với mỗi dòng chứa 1 API key.");
-
-            var lines = File.ReadAllLines(keyFilePath)
-                .Select(l => l.Trim())
-                .Where(l => !string.IsNullOrWhiteSpace(l) && !l.StartsWith("#"))  // Bỏ comment
-                .ToArray();
-
-            if (lines.Length == 0)
-                throw new InvalidOperationException(
-                    $"File {keyFilePath} không chứa API key hợp lệ nào.");
-
-            _apiKeys = lines;
-            _keysLoadedAt = DateTime.Now;
-            _logger.LogInformation("✅ Đã load {Count} Groq API key(s) từ file.", lines.Length);
         }
 
         // ══════════════════════════════════════════════════════════════════

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using QuanLyPhongTro.Areas.Admin.Attributes;
 using QuanLyPhongTro.Areas.Admin.Data;
 using QuanLyPhongTro.Models;
+using QuanLyPhongTro.Services;
 
 namespace QuanLyPhongTro.Areas.Admin.Controllers
 {
@@ -11,16 +12,26 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
     public class ServiceController : Controller
     {
         private readonly DataContext _context;
+        private readonly ICurrentLandlordService _currentLandlordService;
 
-        public ServiceController(DataContext context)
+        public ServiceController(DataContext context, ICurrentLandlordService currentLandlordService)
         {
             _context = context;
+            _currentLandlordService = currentLandlordService;
         }
 
         // GET: /Admin/Service
         public async Task<IActionResult> Index()
         {
-            var services = await _context.Services
+            var query = _context.Services.AsQueryable();
+
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int currentLandlordId = _currentLandlordService.GetCurrentLandlordId() ?? 0;
+                query = query.Where(s => s.LandlordId == currentLandlordId || s.LandlordId == null);
+            }
+
+            var services = await query
                 .OrderBy(s => s.ServiceType)
                 .ThenBy(s => s.ServiceName)
                 .ToListAsync();
@@ -39,6 +50,7 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
+            model.LandlordId = _currentLandlordService.GetCurrentLandlordId();
             model.CreatedAt = DateTime.Now;
             _context.Services.Add(model);
             await _context.SaveChangesAsync();
@@ -52,6 +64,10 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
         {
             var service = await _context.Services.FindAsync(id);
             if (service == null) return NotFound();
+
+            if (!_currentLandlordService.IsSuperAdmin() && service.LandlordId.HasValue && service.LandlordId != _currentLandlordService.GetCurrentLandlordId())
+                return StatusCode(StatusCodes.Status403Forbidden);
+
             return View(service);
         }
 
@@ -67,6 +83,9 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
 
             var service = await _context.Services.FindAsync(id);
             if (service == null) return NotFound();
+
+            if (!_currentLandlordService.IsSuperAdmin() && service.LandlordId.HasValue && service.LandlordId != _currentLandlordService.GetCurrentLandlordId())
+                return StatusCode(StatusCodes.Status403Forbidden);
 
             service.ServiceName   = model.ServiceName;
             service.ServiceType   = model.ServiceType;
@@ -91,6 +110,9 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             var service = await _context.Services.FindAsync(id);
             if (service == null) return NotFound();
 
+            if (!_currentLandlordService.IsSuperAdmin() && service.LandlordId.HasValue && service.LandlordId != _currentLandlordService.GetCurrentLandlordId())
+                return StatusCode(StatusCodes.Status403Forbidden);
+
             service.IsActive  = !service.IsActive;
             service.UpdatedAt = DateTime.Now;
             await _context.SaveChangesAsync();
@@ -111,6 +133,9 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 .FirstOrDefaultAsync(s => s.ServiceId == id);
 
             if (service == null) return NotFound();
+
+            if (!_currentLandlordService.IsSuperAdmin() && service.LandlordId.HasValue && service.LandlordId != _currentLandlordService.GetCurrentLandlordId())
+                return StatusCode(StatusCodes.Status403Forbidden);
 
             if (service.InvoiceDetails.Any())
             {

@@ -1,0 +1,95 @@
+@model List<QuanLyPhongTro.Models.ViewModels.RoomCardViewModel>
+@{
+    ViewData["Title"] = "Phòng trọ đã lưu";
+    ViewData["Description"] = "Danh sách các phòng trọ bạn đã lưu và quan tâm trên hệ thống Phòng Trọ Mới.";
+}
+
+@section Styles {
+    <link href="~/css/pages/listing.css" rel="stylesheet">
+}
+
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb-custom mb-3" aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Phòng đã lưu</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h1 class="h3 fw-bold mb-1">Danh sách phòng đã lưu</h1>
+            <p class="text-muted mb-0 small">Quản lý và xem lại các phòng trọ bạn đang quan tâm.</p>
+        </div>
+        <div>
+            <span class="badge bg-light text-dark border px-3 py-2 fs-6">
+                <i class="bi bi-heart-fill text-danger me-1"></i> <span id="fav-count">@Model.Count</span> phòng
+            </span>
+        </div>
+    </div>
+
+    @if (!ViewBag.IsLoggedIn && !Model.Any())
+    {
+        <div id="anonymous-fav-container">
+            <div class="alert alert-info d-flex align-items-center mb-4" role="alert">
+                <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+                <div>
+                    Bạn chưa đăng nhập. Các phòng lưu trên thiết bị này sẽ được hiển thị bên dưới. 
+                    <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#authModal" class="fw-bold alert-link">Đăng nhập</a> để đồng bộ vĩnh viễn vào tài khoản của bạn.
+                </div>
+            </div>
+            <div id="local-fav-list" class="row g-3">
+                <!-- Javascript will load items from localStorage if available -->
+            </div>
+        </div>
+    }
+
+    @if (Model.Any())
+    {
+        <div class="row g-3" id="logged-in-fav-list">
+            @foreach (var room in Model)
+            {
+                <div class="col-12 col-md-6 col-lg-4 col-xl-3" id="fav-card-@room.RoomId">
+                    @await Html.PartialAsync("_RoomCard", room)
+                </div>
+            }
+        </div>
+    }
+    else if (ViewBag.IsLoggedIn)
+    {
+        <div class="empty-state text-center py-5">
+            <div class="empty-state-icon mb-3">
+                <i class="bi bi-heart text-muted display-4"></i>
+            </div>
+            <h4 class="fw-bold">Bạn chưa lưu phòng trọ nào</h4>
+            <p class="text-muted small max-w-sm mx-auto">Hãy lướt xem các tin đăng và bấm biểu tượng trái tim để lưu lại phòng trọ bạn ưng ý nhé.</p>
+            <a asp-controller="Home" asp-action="Listings" class="btn btn-brand mt-3">
+                <i class="bi bi-search me-1"></i> Khám phá phòng ngay
+            </a>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Đồng bộ localStorage khi mở trang
+            const localFavs = JSON.parse(localStorage.getItem('saved_rooms') || '[]');
+            const isLoggedIn = @(ViewBag.IsLoggedIn ? "true" : "false");
+
+            if (isLoggedIn && localFavs.length > 0) {
+                fetch('/api/favorites/sync', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ roomIds: localFavs })
+                }).then(res => res.json()).then(data => {
+                    if (data.success && data.addedCount > 0) {
+                        localStorage.removeItem('saved_rooms');
+                        window.location.reload();
+                    }
+                }).catch(e => console.error(e));
+            }
+        });
+    </script>
+}

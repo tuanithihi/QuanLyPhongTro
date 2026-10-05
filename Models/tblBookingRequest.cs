@@ -5,8 +5,10 @@ namespace QuanLyPhongTro.Models
 {
     public enum BookingRequestType
     {
-        ViewingRequest = 1,  // Đặt lịch xem phòng
-        ChatMessage    = 2   // Tin nhắn liên hệ
+        Viewing = 1,
+        ViewingRequest = 1,  // Đặt lịch xem phòng (backward compatibility)
+        ChatMessage = 2,     // Tin nhắn liên hệ
+        Deposit = 3          // Đặt cọc giữ phòng
     }
 
     public enum BookingRequestStatus
@@ -22,6 +24,9 @@ namespace QuanLyPhongTro.Models
         [Key]
         public int RequestId { get; set; }
 
+        [Display(Name = "Chủ trọ")]
+        public int? LandlordId { get; set; }
+
         [Required]
         public int RoomId { get; set; }
 
@@ -36,6 +41,7 @@ namespace QuanLyPhongTro.Models
         public string Phone { get; set; } = string.Empty;
 
         [StringLength(100)]
+        [EmailAddress]
         [Display(Name = "Email")]
         public string? Email { get; set; }
 
@@ -43,12 +49,15 @@ namespace QuanLyPhongTro.Models
         [Display(Name = "Ngày muốn xem")]
         public string? PreferredDate { get; set; }
 
+        [Display(Name = "Thời gian xem phòng")]
+        public DateTime? ViewingTime { get; set; }
+
         [StringLength(1000)]
         [Display(Name = "Nội dung / Tin nhắn")]
         public string? Message { get; set; }
 
         [Display(Name = "Loại yêu cầu")]
-        public BookingRequestType RequestType { get; set; } = BookingRequestType.ViewingRequest;
+        public BookingRequestType RequestType { get; set; } = BookingRequestType.Viewing;
 
         [Display(Name = "Trạng thái")]
         public BookingRequestStatus Status { get; set; } = BookingRequestStatus.Pending;
@@ -63,6 +72,9 @@ namespace QuanLyPhongTro.Models
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         // Navigation
+        [ForeignKey(nameof(LandlordId))]
+        public virtual tblLandlord? Landlord { get; set; }
+
         [ForeignKey(nameof(RoomId))]
         public virtual tblRoom? Room { get; set; }
     }

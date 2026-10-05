@@ -1,0 +1,190 @@
+@model List<QuanLyPhongTro.Models.tblRoomType>
+@{
+    ViewData["Title"] = "Quản lý Loại phòng";
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<main id="main" class="main">
+
+    <div class="pagetitle d-flex justify-content-between align-items-center">
+        <div>
+            <h1>Danh mục Loại phòng</h1>
+            <nav>
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+                    <li class="breadcrumb-item active">Loại phòng</li>
+                </ol>
+            </nav>
+        </div>
+        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createRoomTypeModal">
+            <i class="bi bi-plus-lg me-1"></i> Thêm loại phòng mới
+        </button>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-1"></i> @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-1"></i> @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <section class="section">
+        <div class="card shadow-sm border-0">
+            <div class="card-body pt-3">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 60px;">Thứ tự</th>
+                                <th>Tên loại phòng</th>
+                                <th>Mô tả</th>
+                                <th class="text-center">Số phòng áp dụng</th>
+                                <th class="text-center">Trạng thái</th>
+                                <th class="text-end">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model != null && Model.Any())
+                            {
+                                foreach (var rt in Model)
+                                {
+                                    <tr>
+                                        <td class="fw-bold font-monospace text-muted text-center">@rt.SortOrder</td>
+                                        <td class="fw-semibold text-dark">
+                                            <i class="bi bi-door-closed me-2 text-primary"></i>@rt.RoomTypeName
+                                        </td>
+                                        <td class="text-muted small">@(string.IsNullOrEmpty(rt.Description) ? "Không có mô tả" : rt.Description)</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-primary-subtle text-primary border">
+                                                @(rt.Rooms?.Count ?? 0) phòng
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            @if (rt.IsActive)
+                                            {
+                                                <span class="badge bg-success">Hoạt động</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">Vô hiệu</span>
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="btn-group btn-group-sm">
+                                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editModal-@rt.RoomTypeId" title="Sửa">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <form method="post" asp-action="ToggleActive" asp-route-id="@rt.RoomTypeId" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-outline-warning text-dark" title="@(rt.IsActive ? "Vô hiệu hóa" : "Kích hoạt")">
+                                                        <i class="bi @(rt.IsActive ? "bi-eye-slash" : "bi-eye")"></i>
+                                                    </button>
+                                                </form>
+                                                <form method="post" asp-action="Delete" asp-route-id="@rt.RoomTypeId" class="d-inline" onsubmit="return confirm('Xóa loại phòng @rt.RoomTypeName?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-outline-danger" title="Xóa">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+
+                                            <!-- Edit Modal -->
+                                            <div class="modal fade text-start" id="editModal-@rt.RoomTypeId" tabindex="-1">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <form method="post" asp-action="Edit">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="RoomTypeId" value="@rt.RoomTypeId" />
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title">Sửa loại phòng: @rt.RoomTypeName</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label fw-semibold">Tên loại phòng <span class="text-danger">*</span></label>
+                                                                    <input type="text" name="RoomTypeName" class="form-control" value="@rt.RoomTypeName" required />
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label class="form-label fw-semibold">Thứ tự hiển thị</label>
+                                                                    <input type="number" name="SortOrder" class="form-control" value="@rt.SortOrder" />
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label class="form-label fw-semibold">Mô tả</label>
+                                                                    <input type="text" name="Description" class="form-control" value="@rt.Description" />
+                                                                </div>
+                                                                <div class="form-check form-switch">
+                                                                    <input class="form-check-input" type="checkbox" name="IsActive" value="true" @(rt.IsActive ? "checked" : "") id="switch-@rt.RoomTypeId" />
+                                                                    <label class="form-check-label" for="switch-@rt.RoomTypeId">Kích hoạt</label>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                                                                <button type="submit" class="btn btn-primary btn-sm">Lưu thay đổi</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">Chưa có loại phòng nào trong hệ thống.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Create Modal -->
+    <div class="modal fade" id="createRoomTypeModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" asp-action="Create">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-header">
+                        <h5 class="modal-title">Thêm loại phòng mới</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Tên loại phòng <span class="text-danger">*</span></label>
+                            <input type="text" name="RoomTypeName" class="form-control" placeholder="Ví dụ: Phòng trọ khép kín, Chung cư mini, Homestay, Ký túc xá..." required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Thứ tự hiển thị</label>
+                            <input type="number" name="SortOrder" class="form-control" value="0" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Mô tả ngắn</label>
+                            <input type="text" name="Description" class="form-control" placeholder="Mô tả đặc điểm loại phòng..." />
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="IsActive" value="true" checked id="switchCreateRT" />
+                            <label class="form-check-label" for="switchCreateRT">Kích hoạt ngay</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary btn-sm">Tạo loại phòng</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</main>

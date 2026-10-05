@@ -1,0 +1,255 @@
+@model QuanLyPhongTro.Models.ViewModels.LandlordProfileViewModel
+@{
+    ViewData["Title"] = "Hồ sơ chủ trọ & Cài đặt thanh toán VietQR";
+    Layout = "_LayoutAdmin";
+}
+
+<main id="main" class="main">
+
+  <div class="pagetitle">
+    <h1>Hồ sơ chủ trọ & Tài khoản ngân hàng</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item active">Hồ sơ & Ngân hàng</li>
+      </ol>
+    </nav>
+  </div>
+
+  @if (TempData["Success"] != null)
+  {
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+          <i class="bi bi-check-circle me-1"></i> @TempData["Success"]
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+  }
+  @if (TempData["Error"] != null)
+  {
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <i class="bi bi-exclamation-octagon me-1"></i> @TempData["Error"]
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+  }
+
+  <section class="section profile">
+    <form asp-action="Index" method="post" enctype="multipart/form-data">
+      @Html.AntiForgeryToken()
+      <input type="hidden" asp-for="LandlordId" />
+      <input type="hidden" asp-for="Avatar" />
+      <input type="hidden" asp-for="Status" />
+
+      <div class="row">
+        <!-- Cột trái: Avatar và thẻ tóm tắt -->
+        <div class="col-xl-4">
+          <div class="card shadow-sm border-0">
+            <div class="card-body profile-card pt-4 d-flex flex-column align-items-center text-center">
+              <div class="position-relative mb-3">
+                <img src="@(string.IsNullOrEmpty(Model.Avatar) ? "/admin/assets/img/profile-img.jpg" : Model.Avatar)"
+                     alt="Avatar" id="avatarPreview" class="rounded-circle shadow-sm"
+                     style="width: 140px; height: 140px; object-fit: cover; border: 3px solid #4154f1;">
+              </div>
+              <h4 class="fw-bold mb-1">@Model.FullName</h4>
+              <p class="text-muted small mb-2">Chủ trọ / Đối tác cho thuê</p>
+              <div>
+                @if (Model.Status == QuanLyPhongTro.Models.LandlordStatus.Approved)
+                {
+                    <span class="badge bg-success"><i class="bi bi-patch-check-fill me-1"></i>Đã xác thực / Phê duyệt</span>
+                }
+                else if (Model.Status == QuanLyPhongTro.Models.LandlordStatus.Pending)
+                {
+                    <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split me-1"></i>Chờ ban quản trị duyệt</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger"><i class="bi bi-lock-fill me-1"></i>Tạm đình chỉ</span>
+                }
+              </div>
+
+              <div class="mt-4 w-100 text-start">
+                <label class="form-label fw-bold small text-muted"><i class="bi bi-camera me-1"></i>Thay đổi ảnh đại diện</label>
+                <input asp-for="AvatarFile" id="AvatarFile" name="AvatarFile" type="file" class="form-control form-control-sm" accept="image/*" onchange="previewAvatar(this)" />
+                <div class="form-text small">Hỗ trợ JPG, PNG, WEBP (tối đa 5MB).</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Thẻ xem trước VietQR trực quan -->
+          <div class="card shadow-sm border-0">
+            <div class="card-header bg-light fw-bold">
+              <i class="bi bi-qr-code-scan me-1 text-primary"></i> Xem trước mã VietQR
+            </div>
+            <div class="card-body text-center p-3">
+              <div class="p-2 border rounded-3 bg-white d-inline-block shadow-xs mb-2">
+                <img id="qrPreviewImg" src="" alt="Mã VietQR" class="img-fluid" style="width: 200px; height: 200px; object-fit: contain;" />
+              </div>
+              <p class="small text-muted mb-0">Khách thuê sẽ quét mã này để chuyển khoản tiền phòng & hóa đơn trực tiếp vào tài khoản của bạn.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cột phải: Form thông tin cá nhân & Tài khoản ngân hàng -->
+        <div class="col-xl-8">
+          <div class="card shadow-sm border-0">
+            <div class="card-body pt-3">
+              <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+
+              <!-- Tabs -->
+              <ul class="nav nav-tabs nav-tabs-bordered" role="tablist">
+                <li class="nav-item">
+                  <button class="nav-link active fw-semibold" data-bs-toggle="tab" data-bs-target="#profile-info" type="button">
+                    <i class="bi bi-person me-1"></i>Thông tin cá nhân
+                  </button>
+                </li>
+                <li class="nav-item">
+                  <button class="nav-link fw-semibold text-primary" data-bs-toggle="tab" data-bs-target="#bank-info" type="button">
+                    <i class="bi bi-bank me-1"></i>Tài khoản ngân hàng nhận tiền
+                  </button>
+                </li>
+              </ul>
+
+              <div class="tab-content pt-3">
+                <!-- Tab 1: Thông tin cá nhân -->
+                <div class="tab-pane fade show active" id="profile-info">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label asp-for="FullName" class="form-label fw-bold">Họ và tên <span class="text-danger">*</span></label>
+                      <input asp-for="FullName" class="form-control" placeholder="Nguyễn Văn A" />
+                      <span asp-validation-for="FullName" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                      <label asp-for="Phone" class="form-label fw-bold">Số điện thoại liên hệ <span class="text-danger">*</span></label>
+                      <input asp-for="Phone" class="form-control" placeholder="0987654321" />
+                      <span asp-validation-for="Phone" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                      <label asp-for="Email" class="form-label fw-bold">Email <span class="text-danger">*</span></label>
+                      <input asp-for="Email" type="email" class="form-control" placeholder="chutro@gmail.com" />
+                      <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                      <label asp-for="IdentityNumber" class="form-label fw-bold">Số CCCD / CMND</label>
+                      <input asp-for="IdentityNumber" class="form-control" placeholder="038200001234" />
+                      <span asp-validation-for="IdentityNumber" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-12">
+                      <label asp-for="Address" class="form-label fw-bold">Địa chỉ thường trú / liên hệ</label>
+                      <input asp-for="Address" class="form-control" placeholder="Số nhà, đường, phường, quận..." />
+                      <span asp-validation-for="Address" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-12">
+                      <label asp-for="Description" class="form-label fw-bold">Mô tả / Lời ngỏ gửi khách thuê</label>
+                      <textarea asp-for="Description" class="form-control" rows="3" placeholder="Giới thiệu về hệ thống phòng trọ, quy định chung hoặc giờ giấc tự do..."></textarea>
+                      <span asp-validation-for="Description" class="text-danger small"></span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Tab 2: Thông tin ngân hàng VietQR -->
+                <div class="tab-pane fade" id="bank-info">
+                  <div class="alert alert-info border-0 shadow-sm d-flex align-items-center">
+                    <i class="bi bi-info-circle-fill fs-4 me-3 text-info"></i>
+                    <div>
+                      <strong>Cấu hình nhận thanh toán tự động:</strong>
+                      Hệ thống sẽ tự động tạo mã QR VietQR chuẩn NAPAS chứa chính xác số tài khoản, tên ngân hàng và số tiền mỗi khi lập hóa đơn cho khách thuê.
+                    </div>
+                  </div>
+
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label class="form-label fw-bold">Chọn ngân hàng thụ hưởng</label>
+                      <select id="selectBank" class="form-select" onchange="onBankSelected(this)">
+                        <option value="">-- Chọn ngân hàng nhanh --</option>
+                        @foreach (var b in QuanLyPhongTro.Models.ViewModels.LandlordProfileViewModel.PopularBanks)
+                        {
+                            <option value="@b.Bin" data-name="@b.ShortName" selected="@(Model.BankId == b.Bin)">@b.ShortName (@b.FullName)</option>
+                        }
+                      </select>
+                    </div>
+
+                    <div class="col-md-6">
+                      <label asp-for="BankId" class="form-label fw-bold">Mã định danh ngân hàng (BIN VietQR)</label>
+                      <input asp-for="BankId" id="inputBankId" class="form-control font-monospace" placeholder="Ví dụ: 970422" oninput="updateQrPreview()" />
+                      <span asp-validation-for="BankId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                      <label asp-for="BankName" class="form-label fw-bold">Tên ngân hàng</label>
+                      <input asp-for="BankName" id="inputBankName" class="form-control" placeholder="Ví dụ: MB Bank" />
+                      <span asp-validation-for="BankName" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                      <label asp-for="AccountNumber" class="form-label fw-bold">Số tài khoản nhận tiền <span class="text-danger">*</span></label>
+                      <input asp-for="AccountNumber" id="inputAccount" class="form-control font-monospace fw-bold" placeholder="Nhập chính xác số tài khoản" oninput="updateQrPreview()" />
+                      <span asp-validation-for="AccountNumber" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-12">
+                      <label asp-for="AccountName" class="form-label fw-bold">Tên chủ tài khoản (in hoa không dấu) <span class="text-danger">*</span></label>
+                      <input asp-for="AccountName" id="inputOwner" class="form-control text-uppercase fw-bold" placeholder="NGUYEN VAN A" oninput="updateQrPreview()" />
+                      <span asp-validation-for="AccountName" class="text-danger small"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-4 pt-3 border-top d-flex justify-content-end gap-2">
+                <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold">
+                  <i class="bi bi-save me-1"></i> Lưu thay đổi
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </section>
+
+</main>
+
+@section Scripts {
+<script>
+function previewAvatar(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('avatarPreview').src = e.target.result;
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function onBankSelected(sel) {
+    const bin = sel.value;
+    const name = sel.options[sel.selectedIndex].getAttribute('data-name');
+    if (bin) {
+        document.getElementById('inputBankId').value = bin;
+        document.getElementById('inputBankName').value = name || '';
+        updateQrPreview();
+    }
+}
+
+function updateQrPreview() {
+    const bankId = document.getElementById('inputBankId').value.trim();
+    const account = document.getElementById('inputAccount').value.trim();
+    const owner = encodeURIComponent(document.getElementById('inputOwner').value.trim());
+
+    const qrImg = document.getElementById('qrPreviewImg');
+    if (bankId && account) {
+        qrImg.src = `https://img.vietqr.io/image/${bankId}-${account}-compact2.png?amount=100000&addInfo=TEST%20VIETQR&accountName=${owner}`;
+    } else {
+        qrImg.src = 'https://via.placeholder.com/200x200?text=Chua+co+STK';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    updateQrPreview();
+});
+</script>
+}

@@ -3,9 +3,9 @@
 @{
     ViewData["Title"] = "Phòng cần lập hóa đơn";
     Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
-    DateTime today    = ViewBag.Today;
-    int needCount     = ViewBag.NeedCount;
-    int doneCount     = Model.Count - needCount;
+    DateTime today    = (ViewBag.Today as DateTime?) ?? DateTime.Today;
+    int needCount     = (ViewBag.NeedCount as int?) ?? 0;
+    int doneCount     = (Model?.Count ?? 0) - needCount;
 }
 
 <main id="main" class="main">
@@ -56,7 +56,7 @@
         <div class="col-sm-4">
         <div class="card border-0 bg-secondary-subtle h-100">
             <div class="card-body text-center py-3">
-                <div class="fs-1 fw-bold text-secondary">@Model.Count</div>
+                <div class="fs-1 fw-bold text-secondary">@(Model?.Count ?? 0)</div>
                 <div class="text-secondary small fw-semibold">Tổng phòng đang thuê</div>
             </div>
         </div>

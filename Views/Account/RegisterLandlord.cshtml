@@ -1,0 +1,332 @@
+@model QuanLyPhongTro.Controllers.RegisterLandlordViewModel
+@{
+    ViewData["Title"] = "Đăng ký Chủ Trọ & Đăng tin Cho Thuê Phòng Trọ";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var provinces = ViewBag.Provinces as List<QuanLyPhongTro.Models.tblProvince> ?? new List<QuanLyPhongTro.Models.tblProvince>();
+}
+
+@section Styles {
+    <style>
+        .register-landlord-hero {
+            background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
+            border-bottom: 1px solid var(--gray-200, #e5e7eb);
+            padding: 48px 0 36px;
+        }
+
+        .benefit-card {
+            background: #ffffff;
+            border: 1px solid var(--gray-200, #e5e7eb);
+            border-radius: 8px;
+            padding: 20px;
+            height: 100%;
+            transition: all 0.2s ease;
+        }
+
+        .benefit-card:hover {
+            border-color: var(--brand-primary-border, #fecaca);
+            box-shadow: 0 4px 12px rgba(224, 60, 49, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .benefit-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            background-color: var(--brand-primary-light, #fef2f2);
+            color: var(--brand-primary, #e03c31);
+            border: 1px solid var(--brand-primary-border, #fecaca);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            margin-bottom: 12px;
+        }
+
+        .reg-form-card {
+            background: #ffffff;
+            border: 1px solid var(--gray-200, #e5e7eb);
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        }
+
+        .form-section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--gray-900, #111827);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--gray-200, #e5e7eb);
+        }
+
+        .form-section-title i {
+            color: var(--brand-primary, #e03c31);
+        }
+
+        .form-section-number {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: var(--brand-primary, #e03c31);
+            color: #ffffff;
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-submit-landlord {
+            background-color: var(--brand-primary, #e03c31);
+            color: #ffffff;
+            border: none;
+            padding: 14px 28px;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-submit-landlord:hover {
+            background-color: var(--brand-primary-hover, #c93126);
+            color: #ffffff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(224, 60, 49, 0.25);
+        }
+    </style>
+}
+
+<!-- ── HERO BANNER ──────────────────────────────────────────────── -->
+<section class="register-landlord-hero">
+    <div class="container-xl">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-8">
+                <span class="badge px-3 py-2 mb-2 rounded-pill fw-semibold" style="background-color: var(--brand-primary-light, #fef2f2); color: var(--brand-primary, #e03c31); border: 1px solid var(--brand-primary-border, #fecaca);">
+                    <i class="bi bi-buildings me-1"></i> Dành Cho Chủ Nhà Trọ & Căn Hộ
+                </span>
+                <h1 class="fw-bold text-dark mb-2 fs-2">Đăng Ký Chủ Trọ &amp; Đăng Tin Cho Thuê Phòng</h1>
+                <p class="text-muted fs-6 mb-0">
+                    Gửi yêu cầu đăng ký chủ trọ để tiếp cận hơn 100.000 khách thuê mỗi tháng. Miễn phí trọn đời phần mềm quản lý phòng, hợp đồng, hóa đơn và tích hợp VietQR thu tiền tự động.
+                </p>
+            </div>
+            <div class="col-lg-4 text-lg-end">
+                <a href="#registerFormSection" class="btn btn-submit-landlord">
+                    <i class="bi bi-pencil-square me-1"></i> Đăng Ký Ngay
+                </a>
+            </div>
+        </div>
+
+        <!-- 3 Lợi ích vượt trội -->
+        <div class="row g-3 mt-3">
+            <div class="col-md-4">
+                <div class="benefit-card">
+                    <div class="benefit-icon">
+                        <i class="bi bi-megaphone"></i>
+                    </div>
+                    <h6 class="fw-bold text-dark mb-1">Đăng tin tiếp cận khách thuê</h6>
+                    <p class="text-muted small mb-0">Tin đăng được kiểm duyệt uy tín, ưu tiên hiển thị tại khu vực và nhận lịch hẹn xem phòng online.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="benefit-card">
+                    <div class="benefit-icon">
+                        <i class="bi bi-grid-1x2"></i>
+                    </div>
+                    <h6 class="fw-bold text-dark mb-1">Kênh quản lý riêng biệt</h6>
+                    <p class="text-muted small mb-0">Giao diện quản lý chuyên biệt: theo dõi phòng trống, khách thuê, hợp đồng và hóa đơn điện nước minh bạch.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="benefit-card">
+                    <div class="benefit-icon">
+                        <i class="bi bi-qr-code-scan"></i>
+                    </div>
+                    <h6 class="fw-bold text-dark mb-1">Tự động thu tiền với VietQR</h6>
+                    <p class="text-muted small mb-0">Tự sinh mã QR ngân hàng trên hóa đơn mỗi tháng. Khách quét mã chuyển tiền thẳng vào tài khoản của bạn.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── FORM ĐĂNG KÝ CHỦ TRỌ ──────────────────────────────────────── -->
+<section class="py-5" id="registerFormSection">
+    <div class="container-xl">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-xl-9">
+
+                <div class="reg-form-card">
+                    <div class="d-flex align-items-center gap-3 mb-4">
+                        <div class="benefit-icon mb-0">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <div>
+                            <h4 class="fw-bold text-dark mb-1">Hồ Sơ Đăng Ký Đối Tác Cho Thuê</h4>
+                            <p class="text-muted small mb-0">
+                                Vui lòng điền thông tin chính xác. Ban Quản Trị sàn sẽ xác minh và phê duyệt trong vòng 24 giờ.
+                            </p>
+                        </div>
+                    </div>
+
+                    @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ErrorCount > 0)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <strong>Vui lòng kiểm tra lại thông tin:</strong>
+                            <div asp-validation-summary="All" class="small mt-1 text-danger"></div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <form asp-action="RegisterLandlord" method="post" id="landlordRegForm">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="IsExistingUser" />
+
+                        <!-- 1. THÔNG TIN CÁ NHÂN & XÁC MINH CHỦ TRỌ -->
+                        <div class="mb-4">
+                            <div class="form-section-title">
+                                <span class="form-section-number">1</span>
+                                <span>Thông tin cá nhân &amp; Xác thực chủ trọ</span>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label asp-for="FullName" class="form-label small fw-semibold text-dark">Họ và tên <span class="text-danger">*</span></label>
+                                    <input asp-for="FullName" class="form-control" placeholder="Nguyễn Văn A" required />
+                                    <span asp-validation-for="FullName" class="text-danger small"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="Phone" class="form-label small fw-semibold text-dark">Số điện thoại liên hệ <span class="text-danger">*</span></label>
+                                    <input asp-for="Phone" class="form-control" placeholder="0912345678" required />
+                                    <span asp-validation-for="Phone" class="text-danger small"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="Email" class="form-label small fw-semibold text-dark">Địa chỉ Email <span class="text-danger">*</span></label>
+                                    <input asp-for="Email" type="email" class="form-control" placeholder="chutro@gmail.com" required />
+                                    <span asp-validation-for="Email" class="text-danger small"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="IdentityNumber" class="form-label small fw-semibold text-dark">Số CCCD / CMND <span class="text-danger">*</span></label>
+                                    <input asp-for="IdentityNumber" class="form-control" placeholder="Số căn cước 12 số" required />
+                                    <small class="text-muted" style="font-size: 11px;">Dùng để Ban Quản Trị xác thực chủ trọ thật, bảo vệ khách thuê.</small>
+                                    <span asp-validation-for="IdentityNumber" class="text-danger small"></span>
+                                </div>
+                                <div class="col-12">
+                                    <label asp-for="Address" class="form-label small fw-semibold text-dark">Địa chỉ thường trú / liên hệ</label>
+                                    <input asp-for="Address" class="form-control" placeholder="Số nhà, tên đường, phường/xã, quận/huyện" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. TÀI KHOẢN ĐĂNG NHẬP -->
+                        @if (!Model.IsExistingUser)
+                        {
+                            <div class="mb-4">
+                                <div class="form-section-title">
+                                    <span class="form-section-number">2</span>
+                                    <span>Tài khoản đăng nhập Kênh Chủ Trọ</span>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label asp-for="Username" class="form-label small fw-semibold text-dark">Tên đăng nhập <span class="text-danger">*</span></label>
+                                        <input asp-for="Username" class="form-control" placeholder="chutro_nguyenvana" required />
+                                        <span asp-validation-for="Username" class="text-danger small"></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label asp-for="Password" class="form-label small fw-semibold text-dark">Mật khẩu <span class="text-danger">*</span></label>
+                                        <input asp-for="Password" type="password" class="form-control" placeholder="Tối thiểu 6 ký tự" required />
+                                        <span asp-validation-for="Password" class="text-danger small"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="mb-4 p-3 rounded" style="background-color: var(--brand-primary-light, #fef2f2); border: 1px solid var(--brand-primary-border, #fecaca);">
+                                <i class="bi bi-info-circle text-danger me-1"></i>
+                                <span>Bạn đang đăng nhập với tài khoản <strong>@Model.Username</strong>. Tài khoản này sẽ được nâng cấp thành Đối tác Chủ trọ sau khi được duyệt.</span>
+                            </div>
+                        }
+
+                        <!-- 3. TÀI KHOẢN NGÂN HÀNG NHẬN TIỀN (VIETQR) -->
+                        <div class="mb-4">
+                            <div class="form-section-title">
+                                <span class="form-section-number">@(Model.IsExistingUser ? "2" : "3")</span>
+                                <span>Tài khoản ngân hàng nhận tiền thuê (Tích hợp VietQR)</span>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label asp-for="BankName" class="form-label small fw-semibold text-dark">Tên ngân hàng</label>
+                                    <input asp-for="BankName" class="form-control" placeholder="VD: Vietcombank, Techcombank, MB..." />
+                                </div>
+                                <div class="col-md-4">
+                                    <label asp-for="AccountNumber" class="form-label small fw-semibold text-dark">Số tài khoản</label>
+                                    <input asp-for="AccountNumber" class="form-control" placeholder="Số tài khoản ngân hàng" />
+                                </div>
+                                <div class="col-md-4">
+                                    <label asp-for="AccountName" class="form-label small fw-semibold text-dark">Tên chủ tài khoản</label>
+                                    <input asp-for="AccountName" class="form-control" placeholder="NGUYEN VAN A" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 4. KHU TRỌ / PHÒNG CHO THUÊ DỰ KIẾN -->
+                        <div class="mb-4">
+                            <div class="form-section-title">
+                                <span class="form-section-number">@(Model.IsExistingUser ? "3" : "4")</span>
+                                <span>Thông tin khu trọ / phòng cho thuê dự kiến</span>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label asp-for="InitialPropertyName" class="form-label small fw-semibold text-dark">Tên khu trọ / Tòa nhà trọ</label>
+                                    <input asp-for="InitialPropertyName" class="form-control" placeholder="VD: Nhà trọ An Bình, Căn hộ mini Cầu Giấy..." />
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="ProvinceId" class="form-label small fw-semibold text-dark">Tỉnh / Thành phố</label>
+                                    <select asp-for="ProvinceId" class="form-select" id="provinceSelect">
+                                        <option value="">-- Chọn Tỉnh / Thành phố --</option>
+                                        @foreach (var p in provinces)
+                                        {
+                                            <option value="@p.ProvinceId">@p.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label asp-for="InitialPropertyAddress" class="form-label small fw-semibold text-dark">Địa chỉ chi tiết khu trọ</label>
+                                    <input asp-for="InitialPropertyAddress" class="form-control" placeholder="Số nhà, ngõ/ngách, tên đường..." />
+                                </div>
+                                <div class="col-12">
+                                    <label asp-for="Description" class="form-label small fw-semibold text-dark">Mô tả thêm / Giới thiệu khu trọ</label>
+                                    <textarea asp-for="Description" class="form-control" rows="3" placeholder="Giới thiệu về số lượng phòng, đối tượng khách thuê, tiện nghi nổi bật..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ĐIỀU KHOẢN & SUBMIT -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="agreeTerms" required checked />
+                                <label class="form-check-label small text-muted" for="agreeTerms">
+                                    Tôi cam kết cung cấp thông tin phòng trọ trung thực, không lừa đảo và tuân thủ <a href="/Home/Privacy" target="_blank" style="color:var(--brand-primary);">Quy định đăng tin</a> của sàn PhongTroMoi.
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="text-center pt-2">
+                            <button type="submit" class="btn btn-submit-landlord w-100 py-3 fs-6">
+                                <i class="bi bi-send-check me-2"></i> Gửi Yêu Cầu Đăng Ký Chủ Trọ &amp; Đăng Tin
+                            </button>
+                            <p class="text-muted small mt-2 mb-0">
+                                Sau khi gửi thành công, Ban Quản Trị sẽ xác thực và duyệt hồ sơ của bạn.
+                            </p>
+                        </div>
+
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>

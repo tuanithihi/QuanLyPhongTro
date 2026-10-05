@@ -14,7 +14,7 @@
 <main id="main" class="main">
 
     <div class="pagetitle">
-        <h1>Chi tiết phòng</h1>
+        <h1>Chi tiết phòng: @Model.RoomCode</h1>
         <nav>
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
@@ -99,6 +99,10 @@
                         <h5 class="card-title">Thông tin cơ bản</h5>
                         <div class="row">
                             <div class="col-6 col-md-3 mb-3">
+                                <small class="text-muted d-block">Khu trọ</small>
+                                <strong>@(Model.Property?.Name ?? "—")</strong>
+                            </div>
+                            <div class="col-6 col-md-3 mb-3">
                                 <small class="text-muted d-block">Loại phòng</small>
                                 <strong>@(Model.RoomType?.RoomTypeName ?? "—")</strong>
                             </div>
@@ -133,18 +137,37 @@
                                     <span class="badge bg-secondary">Ẩn</span>
                                 }
                             </div>
-                            <div class="col-6 col-md-3 mb-3">
-                                <small class="text-muted d-block">Ngày tạo</small>
-                                <strong>@Model.CreatedAt.ToString("dd/MM/yyyy")</strong>
-                            </div>
                         </div>
+
                         @if (!string.IsNullOrEmpty(Model.Description))
                         {
                             <hr>
                             <small class="text-muted d-block mb-1">Mô tả</small>
                             <p class="mb-0">@Model.Description</p>
                         }
-                        @if (amenityItems.Any())
+
+                        @if (Model.RoomAmenities.Any())
+                        {
+                            <hr>
+                            <small class="text-muted d-block mb-2">Tiện ích phòng</small>
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach (var ra in Model.RoomAmenities)
+                                {
+                                    <span class="badge bg-light text-dark border">
+                                        @if (!string.IsNullOrEmpty(ra.Amenity?.Icon))
+                                        {
+                                            <i class="@ra.Amenity.Icon text-primary me-1"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-check2 text-success me-1"></i>
+                                        }
+                                        @ra.Amenity?.Name
+                                    </span>
+                                }
+                            </div>
+                        }
+                        else if (amenityItems.Any())
                         {
                             <hr>
                             <small class="text-muted d-block mb-2">Vật dụng / đồ dùng có sẵn</small>
@@ -157,7 +180,26 @@
                                 }
                             </div>
                         }
-                        @if (galleryImages.Any())
+
+                        @if (Model.RoomImages.Any())
+                        {
+                            <hr>
+                            <small class="text-muted d-block mb-2">Thư viện ảnh phòng (@Model.RoomImages.Count ảnh)</small>
+                            <div class="row g-2">
+                                @foreach (var img in Model.RoomImages)
+                                {
+                                    <div class="col-6 col-md-3 position-relative">
+                                        <img src="@img.Url" alt="@Model.RoomName" class="img-fluid rounded border"
+                                             style="height:100px;width:100%;object-fit:cover;">
+                                        @if (img.IsPrimary)
+                                        {
+                                            <span class="badge bg-primary position-absolute top-0 start-0 m-1">Đại diện</span>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else if (galleryImages.Any())
                         {
                             <hr>
                             <small class="text-muted d-block mb-2">Ảnh mô tả thêm</small>
@@ -201,81 +243,30 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach (var c in Model.Contracts.OrderByDescending(x => x.StartDate))
+                                        @foreach (var c in Model.Contracts)
                                         {
                                             <tr>
-                                                <td><code>@c.ContractCode</code></td>
+                                                <td>
+                                                    <a asp-area="Admin" asp-controller="Contract"
+                                                       asp-action="Details" asp-route-id="@c.ContractId">
+                                                        @c.ContractCode
+                                                    </a>
+                                                </td>
                                                 <td>@(c.Tenant?.FullName ?? "—")</td>
                                                 <td>@c.StartDate.ToString("dd/MM/yyyy")</td>
-                                                <td>@(c.EndDate.HasValue ? c.EndDate.Value.ToString("dd/MM/yyyy") : "Không xác định")</td>
+                                                <td>@(c.EndDate.HasValue ? c.EndDate.Value.ToString("dd/MM/yyyy") : "—")</td>
                                                 <td>@c.MonthlyRent.ToString("N0") đ</td>
                                                 <td>
                                                     @switch (c.Status)
                                                     {
                                                         case ContractStatus.Active:
-                                                            <span class="badge bg-success">Hiệu lực</span>
+                                                            <span class="badge bg-success">Đang hiệu lực</span>
                                                             break;
                                                         case ContractStatus.Expired:
                                                             <span class="badge bg-secondary">Hết hạn</span>
                                                             break;
                                                         case ContractStatus.Terminated:
-                                                            <span class="badge bg-danger">Đã chấm dứt</span>
-                                                            break;
-                                                    }
-                                                </td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-                        }
-                    </div>
-                </div>
-
-                <!-- Hóa đơn gần nhất -->
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            Hóa đơn gần nhất
-                            <span class="badge bg-secondary ms-1">@Model.Invoices.Count</span>
-                        </h5>
-
-                        @if (!Model.Invoices.Any())
-                        {
-                            <p class="text-muted fst-italic">Chưa có hóa đơn nào.</p>
-                        }
-                        else
-                        {
-                            <div class="table-responsive">
-                                <table class="table table-sm table-hover align-middle">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Mã HĐơn</th>
-                                            <th>Tháng</th>
-                                            <th>Tổng tiền</th>
-                                            <th>Hạn TT</th>
-                                            <th>Trạng thái</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var inv in Model.Invoices.OrderByDescending(i => i.BillingYear).ThenByDescending(i => i.BillingMonth).Take(10))
-                                        {
-                                            <tr>
-                                                <td><code>@inv.InvoiceCode</code></td>
-                                                <td>@inv.BillingMonth/@inv.BillingYear</td>
-                                                <td class="text-end">@inv.TotalAmount.ToString("N0") đ</td>
-                                                <td>@inv.DueDate.ToString("dd/MM/yyyy")</td>
-                                                <td>
-                                                    @switch (inv.Status)
-                                                    {
-                                                        case InvoiceStatus.Paid:
-                                                            <span class="badge bg-success">Đã thanh toán</span>
-                                                            break;
-                                                        case InvoiceStatus.Unpaid:
-                                                            <span class="badge bg-warning text-dark">Chưa TT</span>
-                                                            break;
-                                                        case InvoiceStatus.Overdue:
-                                                            <span class="badge bg-danger">Quá hạn</span>
+                                                            <span class="badge bg-danger">Chấm dứt</span>
                                                             break;
                                                     }
                                                 </td>

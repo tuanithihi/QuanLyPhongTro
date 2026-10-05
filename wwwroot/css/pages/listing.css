@@ -1,0 +1,210 @@
+@import url('../variables.css');
+
+/* ── Listing Page Container ───────────────────────────────────── */
+.listing-page {
+  padding-bottom: var(--space-12);
+}
+
+.listing-header {
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--border-color);
+  padding: var(--space-4) 0;
+  margin-bottom: var(--space-6);
+}
+
+.listing-title-main {
+  font-size: 1.45rem;
+  font-weight: var(--font-bold);
+  color: var(--gray-900);
+  margin-bottom: var(--space-1);
+}
+
+.listing-count-text {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: 0;
+}
+
+/* ── Filter Top Bar (View modes, Sort, Mobile filter toggle) ─── */
+.listing-control-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+}
+
+.view-mode-buttons {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background-color: #ffffff;
+}
+
+.btn-view-mode {
+  border: none;
+  background: transparent;
+  padding: 6px 12px;
+  font-size: var(--text-sm);
+  color: var(--gray-600);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all var(--transition-fast);
+}
+
+.btn-view-mode:not(:last-child) {
+  border-right: 1px solid var(--border-color);
+}
+
+.btn-view-mode:hover {
+  background-color: var(--gray-50);
+  color: var(--brand-primary);
+}
+
+.btn-view-mode.active {
+  background-color: var(--brand-primary);
+  color: #ffffff;
+}
+
+/* ── Filter Sidebar (Desktop) ────────────────────────────────── */
+.filter-sidebar {
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+
+.filter-group {
+  margin-bottom: var(--space-5);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.filter-group:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.filter-group-title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-bold);
+  color: var(--gray-900);
+  margin-bottom: var(--space-3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.filter-shortcuts-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.filter-chip-btn {
+  font-size: var(--text-xs);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background-color: var(--gray-50);
+  color: var(--gray-700);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+}
+
+.filter-chip-btn:hover {
+  background-color: var(--brand-primary-light);
+  border-color: var(--brand-primary-border);
+  color: var(--brand-primary);
+}
+
+.filter-chip-btn.active {
+  background-color: var(--brand-primary);
+  border-color: var(--brand-primary);
+  color: #ffffff;
+  font-weight: var(--font-semibold);
+}
+
+.amenity-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--gray-700);
+  cursor: pointer;
+  margin-bottom: var(--space-2);
+  user-select: none;
+}
+
+.amenity-checkbox-label input[type="checkbox"] {
+  accent-color: var(--brand-primary);
+  width: 15px;
+  height: 15px;
+}
+
+/* ── Map View Container ──────────────────────────────────────── */
+.listing-map-container {
+  height: 600px;
+  width: 100%;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  position: relative;
+}
+
+#listingLeafletMap {
+  width: 100%;
+  height: 100%;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: var(--radius-md) !important;
+  padding: 0 !important;
+  overflow: hidden;
+  box-shadow: var(--shadow-hover) !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  line-height: 1.4 !important;
+}
+
+.map-popup-card {
+  width: 220px;
+}
+
+.map-popup-img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+}
+
+.map-popup-body {
+  padding: 8px 10px;
+}
+
+.map-popup-title {
+  font-size: 13px;
+  font-weight: var(--font-semibold);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.map-popup-price {
+  color: var(--brand-primary);
+  font-weight: var(--font-bold);
+  font-size: 13px;
+}

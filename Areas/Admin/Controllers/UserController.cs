@@ -8,6 +8,7 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
 {
     [Area("Admin")]
     [AdminOnly]
+    [SuperAdminOnly]
     public class UserController : Controller
     {
         private readonly DataContext _context;

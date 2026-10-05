@@ -1,0 +1,272 @@
+@import url('../variables.css');
+
+/* ── Detail Page Container ────────────────────────────────────── */
+.detail-page {
+  padding-bottom: var(--space-12);
+}
+
+/* ── Image Gallery ────────────────────────────────────────────── */
+.detail-gallery {
+  margin-bottom: var(--space-6);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  background-color: #000000;
+}
+
+.gallery-main-wrap {
+  width: 100%;
+  height: 440px;
+  position: relative;
+  background-color: var(--gray-900);
+}
+
+.gallery-main-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  cursor: pointer;
+}
+
+.gallery-thumbs-strip {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background-color: #ffffff;
+  border-top: 1px solid var(--border-color);
+  overflow-x: auto;
+}
+
+.gallery-thumb-item {
+  width: 80px;
+  height: 60px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 2px solid transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color var(--transition-fast);
+}
+
+.gallery-thumb-item.active,
+.gallery-thumb-item:hover {
+  border-color: var(--brand-primary);
+}
+
+.gallery-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ── Detail Header & Price ────────────────────────────────────── */
+.detail-header-card {
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  margin-bottom: var(--space-6);
+}
+
+.detail-title {
+  font-size: 1.5rem;
+  font-weight: var(--font-bold);
+  color: var(--gray-900);
+  line-height: 1.35;
+  margin-bottom: var(--space-2);
+}
+
+.detail-address {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.detail-price-box {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background-color: var(--brand-primary-light);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--brand-primary-border);
+}
+
+.detail-price-num {
+  font-size: 1.65rem;
+  font-weight: var(--font-bold);
+  color: var(--brand-primary);
+}
+
+.detail-specs-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--gray-100);
+}
+
+@media (max-width: 576px) {
+  .detail-specs-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.spec-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.spec-label {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-bottom: 2px;
+}
+
+.spec-value {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--gray-900);
+}
+
+/* ── Content Sections ────────────────────────────────────────── */
+.detail-content-section {
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  margin-bottom: var(--space-6);
+}
+
+.detail-section-heading {
+  font-size: 1.15rem;
+  font-weight: var(--font-bold);
+  color: var(--gray-900);
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--gray-100);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* ── Amenities Grid ──────────────────────────────────────────── */
+.amenities-display-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+}
+
+@media (max-width: 576px) {
+  .amenities-display-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.amenity-chip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--gray-800);
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--gray-50);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--gray-200);
+}
+
+/* ── Service Pricing Table ───────────────────────────────────── */
+.table-services {
+  width: 100%;
+  font-size: var(--text-sm);
+  border-collapse: collapse;
+}
+
+.table-services th,
+.table-services td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.table-services th {
+  background-color: var(--gray-50);
+  font-weight: var(--font-semibold);
+  color: var(--gray-700);
+  text-align: left;
+}
+
+/* ── Landlord Contact Card (Right Sidebar) ───────────────────── */
+.landlord-contact-card {
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-card);
+  position: sticky;
+  top: 90px;
+}
+
+.landlord-profile-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.landlord-avatar-circle {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-color);
+  background-color: var(--gray-100);
+}
+
+.landlord-meta-name {
+  font-size: var(--text-base);
+  font-weight: var(--font-bold);
+  color: var(--gray-900);
+  margin-bottom: 2px;
+}
+
+.landlord-meta-sub {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.landlord-actions-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* ── Mobile Sticky Bottom Action Bar ─────────────────────────── */
+.mobile-bottom-bar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #ffffff;
+  border-top: 1px solid var(--border-color);
+  padding: 10px 16px;
+  z-index: 1030;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+}
+
+@media (max-width: 991px) {
+  .mobile-bottom-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+}

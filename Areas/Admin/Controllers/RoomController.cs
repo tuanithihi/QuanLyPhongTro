@@ -3,366 +3,434 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using QuanLyPhongTro.Areas.Admin.Attributes;
 using QuanLyPhongTro.Areas.Admin.Data;
-using QuanLyPhongTro.Areas.Admin.Models;
 using QuanLyPhongTro.Models;
+using QuanLyPhongTro.Models.ViewModels;
+using QuanLyPhongTro.Services;
 
 namespace QuanLyPhongTro.Areas.Admin.Controllers
 {
-    /// <summary>
-    /// Quan ly phong tro: CRUD + tim kiem + loc + phan trang.
-    /// Tat ca action yeu cau dang nhap Admin ([AdminOnly]).
-    /// </summary>
     [Area("Admin")]
     [AdminOnly]
     public class RoomController : Controller
     {
         private readonly DataContext _context;
-        private readonly IWebHostEnvironment _env;
+        private readonly IRoomService _roomService;
+        private readonly IPropertyService _propertyService;
+        private readonly ICurrentLandlordService _currentLandlordService;
         private readonly ILogger<RoomController> _logger;
-        private const string IMAGE_FOLDER = "images/rooms";
 
-        public RoomController(DataContext context, IWebHostEnvironment env, ILogger<RoomController> logger)
+        public RoomController(
+            DataContext context,
+            IRoomService roomService,
+            IPropertyService propertyService,
+            ICurrentLandlordService currentLandlordService,
+            ILogger<RoomController> logger)
         {
             _context = context;
-            _env     = env;
-            _logger  = logger;
+            _roomService = roomService;
+            _propertyService = propertyService;
+            _currentLandlordService = currentLandlordService;
+            _logger = logger;
         }
 
-        // ================================================================
-        //  INDEX  -  Danh sach phong (tim kiem + loc + phan trang)
-        // ================================================================
-
-        // GET: /Admin/Room
+        // ── INDEX ────────────────────────────────────────────────────────
         public async Task<IActionResult> Index(
-            string? searchTerm, int? roomTypeId, int? status, int page = 1, int pageSize = 10)
+            string? searchTerm, int? propertyId, int? status, int? approvalStatus)
         {
-            var query = _context.Rooms.Include(r => r.RoomType).AsQueryable();
+            int? landlordId = _currentLandlordService.IsSuperAdmin() ? null : _currentLandlordService.GetCurrentLandlordId();
+            if (!_currentLandlordService.IsSuperAdmin() && !landlordId.HasValue)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden);
+            }
 
-            // Loc theo tu khoa (ma phong hoac ten phong)
-            if (!string.IsNullOrWhiteSpace(searchTerm))
-                query = query.Where(r => r.RoomCode.Contains(searchTerm) || r.RoomName.Contains(searchTerm));
+            var rooms = await _roomService.GetRoomsByLandlordAsync(
+                landlordId,
+                propertyId,
+                searchTerm,
+                status.HasValue ? (RoomStatus)status.Value : null,
+                approvalStatus.HasValue ? (RoomApprovalStatus)approvalStatus.Value : null);
 
-            // Loc theo loai phong
-            if (roomTypeId.HasValue)
-                query = query.Where(r => r.RoomTypeId == roomTypeId.Value);
-
-            // Loc theo trang thai
-            if (status.HasValue)
-                query = query.Where(r => (int)r.Status == status.Value);
-
-            // Phan trang
-            int totalItems = await query.CountAsync();
-            var rooms = await query
-                .OrderBy(r => r.Floor).ThenBy(r => r.RoomCode)
-                .Skip((page - 1) * pageSize).Take(pageSize)
-                .ToListAsync();
-
-            ViewBag.SearchTerm   = searchTerm;
-            ViewBag.RoomTypeId   = roomTypeId;
-            ViewBag.Status       = status;
-            ViewBag.Page         = page;
-            ViewBag.PageSize     = pageSize;
-            ViewBag.TotalItems   = totalItems;
-            ViewBag.TotalPages   = (int)Math.Ceiling((double)totalItems / pageSize);
-            ViewBag.RoomTypeList = new SelectList(
-                await _context.RoomTypes.Where(rt => rt.IsActive).ToListAsync(),
-                "RoomTypeId", "RoomTypeName", roomTypeId);
+            var properties = await _propertyService.GetPropertiesByLandlordAsync(landlordId);
+            ViewBag.PropertyList = new SelectList(properties, "PropertyId", "Name", propertyId);
+            ViewBag.SearchTerm = searchTerm ?? string.Empty;
+            ViewBag.PropertyId = propertyId;
+            ViewBag.Status = status;
+            ViewBag.ApprovalStatus = approvalStatus;
 
             return View(rooms);
         }
 
-        // ================================================================
-        //  DETAIL  -  Xem chi tiet phong + lich su hop dong
-        // ================================================================
-
-        // GET: /Admin/Room/Detail/5
-        public async Task<IActionResult> Detail(int id)
+        // ── DETAIL (Chống IDOR) ──────────────────────────────────────────
+        [HttpGet]
+        public async Task<IActionResult> Details(int id)
         {
-            var room = await _context.Rooms
-                .Include(r => r.RoomType)
-                .Include(r => r.Contracts).ThenInclude(c => c.Tenant)
-                .Include(r => r.Invoices)
-                .FirstOrDefaultAsync(r => r.RoomId == id);
+            int? landlordId = _currentLandlordService.IsSuperAdmin() ? null : _currentLandlordService.GetCurrentLandlordId();
+            var room = await _roomService.GetRoomByIdAsync(id, landlordId);
 
-            if (room == null) return NotFound();
-            return View(room);
+            if (room == null)
+            {
+                var any = await _roomService.GetRoomByIdAsync(id, null);
+                if (any != null)
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden);
+                }
+                return NotFound();
+            }
+
+            return View("Detail", room);
         }
 
-        // ================================================================
-        //  CREATE
-        // ================================================================
+        [HttpGet]
+        [ActionName("Detail")]
+        public Task<IActionResult> DetailAlias(int id) => Details(id);
 
-        // GET: /Admin/Room/Create
-        public async Task<IActionResult> Create()
+        // ── CREATE GET ───────────────────────────────────────────────────
+        [RequireApprovedLandlord]
+        public async Task<IActionResult> Create(int? propertyId)
         {
-            var vm = new RoomCreateViewModel();
-            await PopulateDropdownsAsync(vm);
-            return View(vm);
+            int? landlordId = _currentLandlordService.GetCurrentLandlordId();
+            if (!landlordId.HasValue && !_currentLandlordService.IsSuperAdmin())
+            {
+                return StatusCode(StatusCodes.Status403Forbidden);
+            }
+
+            var model = new RoomCreateEditViewModel
+            {
+                PropertyId = propertyId ?? 0,
+                Area = 20,
+                Floor = 1,
+                MaxOccupants = 2,
+                Capacity = 2,
+                Status = RoomStatus.Available,
+                IsPublished = true
+            };
+
+            await PopulateDropdowns(landlordId, model.PropertyId, model.RoomTypeId);
+            return View(model);
         }
 
-        // POST: /Admin/Room/Create
+        // ── CREATE POST ──────────────────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(RoomCreateViewModel vm)
+        [RequireApprovedLandlord]
+        public async Task<IActionResult> Create(RoomCreateEditViewModel model)
         {
-            // Guard: kiem tra ma phong trung
-            if (await _context.Rooms.AnyAsync(r => r.RoomCode == vm.RoomCode))
-                ModelState.AddModelError(nameof(vm.RoomCode), "Ma phong da ton tai.");
+            int? landlordId = _currentLandlordService.GetCurrentLandlordId();
+            if (!landlordId.HasValue && _currentLandlordService.IsSuperAdmin())
+            {
+                landlordId = 1;
+            }
+
+            if (!landlordId.HasValue)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden);
+            }
 
             if (!ModelState.IsValid)
             {
-                await PopulateDropdownsAsync(vm);
-                return View(vm);
+                await PopulateDropdowns(landlordId, model.PropertyId, model.RoomTypeId);
+                return View(model);
             }
 
-            // Xu ly upload anh
-            string? thumbnail = null;
-            if (vm.ThumbnailFile != null && vm.ThumbnailFile.Length > 0)
-                thumbnail = await SaveImageAsync(vm.ThumbnailFile);
-            var galleryImages = await SaveImagesAsync(vm.GalleryFiles);
-
-            // Map ViewModel -> Entity
-            var room = new tblRoom
+            var (success, error, roomId) = await _roomService.CreateRoomAsync(model, landlordId.Value);
+            if (!success)
             {
-                RoomCode       = vm.RoomCode.Trim(),
-                RoomName       = vm.RoomName.Trim(),
-                RoomTypeId     = vm.RoomTypeId,
-                RoomPrice      = vm.RoomPrice,
-                DefaultDeposit = vm.DefaultDeposit,
-                Area           = vm.Area,
-                Floor          = vm.Floor,
-                MaxOccupants   = vm.MaxOccupants,
-                Description    = vm.Description,
-                IncludedAmenities = vm.IncludedAmenities,
-                ThumbnailImage = thumbnail,
-                GalleryImages  = SerializeGalleryImages(galleryImages),
-                Address        = vm.Address?.Trim(),
-                Latitude       = vm.Latitude,
-                Longitude      = vm.Longitude,
-                Status         = vm.Status,
-                IsPublished    = vm.IsPublished,
-                CreatedAt      = DateTime.Now
-            };
+                ModelState.AddModelError(string.Empty, error ?? "Không thể tạo phòng mới.");
+                await PopulateDropdowns(landlordId, model.PropertyId, model.RoomTypeId);
+                return View(model);
+            }
 
-            _context.Rooms.Add(room);
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] = string.Concat("Them phong \"", room.RoomName, "\" thanh cong.");
+            TempData["Success"] = $"Đã tạo phòng \"{model.RoomCode} - {model.RoomName}\" thành công!";
             return RedirectToAction(nameof(Index));
         }
 
-        // ================================================================
-        //  EDIT
-        // ================================================================
-
-        // GET: /Admin/Room/Edit/5
+        // ── EDIT GET (Chống IDOR) ────────────────────────────────────────
         public async Task<IActionResult> Edit(int id)
         {
-            var room = await _context.Rooms.FindAsync(id);
-            if (room == null) return NotFound();
+            int? landlordId = _currentLandlordService.IsSuperAdmin() ? null : _currentLandlordService.GetCurrentLandlordId();
+            var model = await _roomService.GetRoomForEditAsync(id, landlordId);
 
-            // Map Entity -> ViewModel
-            var vm = new RoomCreateViewModel
+            if (model == null)
             {
-                RoomId           = room.RoomId,
-                RoomCode         = room.RoomCode,
-                RoomName         = room.RoomName,
-                RoomTypeId       = room.RoomTypeId,
-                RoomPrice        = room.RoomPrice,
-                DefaultDeposit   = room.DefaultDeposit,
-                Area             = room.Area,
-                Floor            = room.Floor,
-                MaxOccupants     = room.MaxOccupants,
-                Description      = room.Description,
-                IncludedAmenities = room.IncludedAmenities,
-                Address          = room.Address,
-                Latitude         = room.Latitude,
-                Longitude        = room.Longitude,
-                Status           = room.Status,
-                IsPublished      = room.IsPublished,
-                CurrentThumbnail = room.ThumbnailImage,
-                CurrentGalleryImages = room.GalleryImages
-            };
+                var any = await _roomService.GetRoomByIdAsync(id, null);
+                if (any != null)
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden);
+                }
+                return NotFound();
+            }
 
-            await PopulateDropdownsAsync(vm);
-            return View(vm);
+            await PopulateDropdowns(landlordId, model.PropertyId, model.RoomTypeId);
+            return View(model);
         }
 
-        // POST: /Admin/Room/Edit/5
+        // ── EDIT POST (Chống IDOR) ───────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, RoomCreateViewModel vm)
+        public async Task<IActionResult> Edit(int id, RoomCreateEditViewModel model)
         {
-            if (id != vm.RoomId) return BadRequest();
+            if (id != model.RoomId) return BadRequest();
 
-            // Guard: kiem tra ma phong trung (tru ban than)
-            if (await _context.Rooms.AnyAsync(r => r.RoomCode == vm.RoomCode && r.RoomId != id))
-                ModelState.AddModelError(nameof(vm.RoomCode), "Ma phong da duoc su dung boi phong khac.");
+            int? landlordId = _currentLandlordService.IsSuperAdmin() ? null : _currentLandlordService.GetCurrentLandlordId();
 
             if (!ModelState.IsValid)
             {
-                await PopulateDropdownsAsync(vm);
-                return View(vm);
+                await PopulateDropdowns(landlordId, model.PropertyId, model.RoomTypeId);
+                return View(model);
             }
 
-            var room = await _context.Rooms.FindAsync(id);
-            if (room == null) return NotFound();
-
-            // Neu co anh moi -> xoa anh cu, luu anh moi
-            if (vm.ThumbnailFile != null && vm.ThumbnailFile.Length > 0)
+            var (success, error) = await _roomService.UpdateRoomAsync(model, landlordId);
+            if (!success)
             {
-                DeleteImage(room.ThumbnailImage);
-                room.ThumbnailImage = await SaveImageAsync(vm.ThumbnailFile);
+                var any = await _roomService.GetRoomByIdAsync(id, null);
+                if (any != null && landlordId.HasValue && any.Property?.LandlordId != landlordId.Value)
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden);
+                }
+
+                ModelState.AddModelError(string.Empty, error ?? "Không thể cập nhật thông tin phòng.");
+                await PopulateDropdowns(landlordId, model.PropertyId, model.RoomTypeId);
+                return View(model);
             }
 
-            var galleryImages = ParseGalleryImages(room.GalleryImages);
-            foreach (var image in vm.RemoveGalleryImages ?? new List<string>())
-            {
-                if (galleryImages.Remove(image))
-                    DeleteImage(image);
-            }
-            galleryImages.AddRange(await SaveImagesAsync(vm.GalleryFiles));
-
-            // Cap nhat tung truong
-            room.RoomCode       = vm.RoomCode.Trim();
-            room.RoomName       = vm.RoomName.Trim();
-            room.RoomTypeId     = vm.RoomTypeId;
-            room.RoomPrice      = vm.RoomPrice;
-            room.DefaultDeposit = vm.DefaultDeposit;
-            room.Area           = vm.Area;
-            room.Floor          = vm.Floor;
-            room.MaxOccupants   = vm.MaxOccupants;
-            room.Description    = vm.Description;
-            room.IncludedAmenities = vm.IncludedAmenities;
-            room.GalleryImages  = SerializeGalleryImages(galleryImages);
-            room.Address        = vm.Address?.Trim();
-            room.Latitude       = vm.Latitude;
-            room.Longitude      = vm.Longitude;
-            room.Status         = vm.Status;
-            room.IsPublished    = vm.IsPublished;
-            room.UpdatedAt      = DateTime.Now;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-                TempData["Success"] = string.Concat("Cap nhat phong \"", room.RoomName, "\" thanh cong.");
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!await _context.Rooms.AnyAsync(r => r.RoomId == id)) return NotFound();
-                throw;
-            }
-
+            TempData["Success"] = $"Đã cập nhật phòng \"{model.RoomName}\" thành công!";
             return RedirectToAction(nameof(Index));
         }
 
-        // ================================================================
-        //  DELETE  -  Chi dung POST de tranh CSRF (khong dung [HttpGet])
-        // ================================================================
-
-        // POST: /Admin/Room/Delete/5
+        // ── DELETE POST (Chống IDOR) ─────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            var room = await _context.Rooms
-                .Include(r => r.Contracts)
-                .FirstOrDefaultAsync(r => r.RoomId == id);
+            int? landlordId = _currentLandlordService.IsSuperAdmin() ? null : _currentLandlordService.GetCurrentLandlordId();
+            var (success, error) = await _roomService.DeleteRoomAsync(id, landlordId);
 
-            if (room == null) return NotFound();
-
-            // Bao ve: khong cho xoa phong dang co hop dong hieu luc
-            if (room.Contracts.Any(c => c.Status == ContractStatus.Active))
+            if (!success)
             {
-                TempData["Error"] = "Khong the xoa phong dang co hop dong hieu luc!";
+                var any = await _roomService.GetRoomByIdAsync(id, null);
+                if (any != null && landlordId.HasValue && any.Property?.LandlordId != landlordId.Value)
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden);
+                }
+
+                TempData["Error"] = error ?? "Không thể xóa phòng.";
                 return RedirectToAction(nameof(Index));
             }
 
-            // Xoa anh vat ly tren server
-            DeleteImage(room.ThumbnailImage);
-            foreach (var image in ParseGalleryImages(room.GalleryImages))
-                DeleteImage(image);
-
-            _context.Rooms.Remove(room);
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] = string.Concat("Da xoa phong \"", room.RoomName, "\".");
+            TempData["Success"] = "Đã xóa phòng và toàn bộ ảnh thành công.";
             return RedirectToAction(nameof(Index));
         }
 
-        // ================================================================
-        //  PRIVATE HELPERS
-        // ================================================================
-
-        /// <summary>Do du lieu cac dropdown truoc khi tra View.</summary>
-        private async Task PopulateDropdownsAsync(RoomCreateViewModel vm)
+        // ── ACTIONS TRẠNG THÁI (Chống IDOR) ──────────────────────────────
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Publish(int id)
         {
+            int? landlordId = _currentLandlordService.IsSuperAdmin() ? null : _currentLandlordService.GetCurrentLandlordId();
+            var (success, error) = await _roomService.PublishListingAsync(id, landlordId);
+            if (!success)
+            {
+                var any = await _roomService.GetRoomByIdAsync(id, null);
+                if (any != null && landlordId.HasValue && any.Property?.LandlordId != landlordId.Value)
+                    return StatusCode(StatusCodes.Status403Forbidden);
+
+                TempData["Error"] = error;
+                return RedirectToAction(nameof(Index));
+            }
+
+            TempData["Success"] = "Đã bật hiển thị / gửi duyệt đăng tin phòng!";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Hide(int id)
+        {
+            int? landlordId = _currentLandlordService.IsSuperAdmin() ? null : _currentLandlordService.GetCurrentLandlordId();
+            var (success, error) = await _roomService.HideListingAsync(id, landlordId);
+            if (!success)
+            {
+                var any = await _roomService.GetRoomByIdAsync(id, null);
+                if (any != null && landlordId.HasValue && any.Property?.LandlordId != landlordId.Value)
+                    return StatusCode(StatusCodes.Status403Forbidden);
+
+                TempData["Error"] = error;
+                return RedirectToAction(nameof(Index));
+            }
+
+            TempData["Success"] = "Đã ẩn tin đăng phòng khỏi website.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Approve(int id)
+        {
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                return StatusCode(StatusCodes.Status403Forbidden);
+            }
+
+            var (success, error) = await _roomService.ApproveListingAsync(id);
+            if (!success)
+            {
+                TempData["Error"] = error;
+                return RedirectToAction(nameof(Index));
+            }
+
+            TempData["Success"] = "Đã phê duyệt tin đăng phòng thành công!";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Reject(int id, string? reason)
+        {
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                return StatusCode(StatusCodes.Status403Forbidden);
+            }
+
+            var (success, error) = await _roomService.RejectListingAsync(id, reason);
+            if (!success)
+            {
+                TempData["Error"] = error;
+                return RedirectToAction(nameof(Index));
+            }
+
+            TempData["Success"] = $"Đã từ chối tin đăng phòng. Lý do: {reason}";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Unpublish(int id, string? reason)
+        {
+            int? landlordId = _currentLandlordService.IsSuperAdmin() ? null : _currentLandlordService.GetCurrentLandlordId();
+            var (success, error) = await _roomService.UnpublishListingAsync(id, reason, landlordId);
+            if (!success)
+            {
+                var any = await _roomService.GetRoomByIdAsync(id, null);
+                if (any != null && landlordId.HasValue && any.Property?.LandlordId != landlordId.Value)
+                    return StatusCode(StatusCodes.Status403Forbidden);
+
+                TempData["Error"] = error;
+                return RedirectToAction(nameof(Index));
+            }
+
+            TempData["Success"] = "Đã gỡ tin đăng phòng khỏi sàn.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkOccupied(int id)
+        {
+            int? landlordId = _currentLandlordService.IsSuperAdmin() ? null : _currentLandlordService.GetCurrentLandlordId();
+            var (success, error) = await _roomService.MarkAsOccupiedAsync(id, landlordId);
+            if (!success)
+            {
+                var any = await _roomService.GetRoomByIdAsync(id, null);
+                if (any != null && landlordId.HasValue && any.Property?.LandlordId != landlordId.Value)
+                    return StatusCode(StatusCodes.Status403Forbidden);
+
+                TempData["Error"] = error;
+                return RedirectToAction(nameof(Index));
+            }
+
+            TempData["Success"] = "Đã chuyển trạng thái sang ĐÃ CÓ NGƯỜI THUÊ.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkAvailable(int id)
+        {
+            int? landlordId = _currentLandlordService.IsSuperAdmin() ? null : _currentLandlordService.GetCurrentLandlordId();
+            var (success, error) = await _roomService.MarkAsAvailableAsync(id, landlordId);
+            if (!success)
+            {
+                var any = await _roomService.GetRoomByIdAsync(id, null);
+                if (any != null && landlordId.HasValue && any.Property?.LandlordId != landlordId.Value)
+                    return StatusCode(StatusCodes.Status403Forbidden);
+
+                TempData["Error"] = error;
+                return RedirectToAction(nameof(Index));
+            }
+
+            TempData["Success"] = "Đã chuyển trạng thái sang PHÒNG TRỐNG.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // ── AJAX QUẢN LÝ ẢNH PHÒNG (Chống IDOR) ──────────────────────────
+        [HttpPost]
+        public async Task<IActionResult> SetPrimaryImage(int roomId, int imageId)
+        {
+            int? landlordId = _currentLandlordService.IsSuperAdmin() ? null : _currentLandlordService.GetCurrentLandlordId();
+            var (success, error) = await _roomService.SetPrimaryImageAsync(roomId, imageId, landlordId);
+            if (!success)
+            {
+                var any = await _roomService.GetRoomByIdAsync(roomId, null);
+                if (any != null && landlordId.HasValue && any.Property?.LandlordId != landlordId.Value)
+                    return StatusCode(StatusCodes.Status403Forbidden);
+
+                return Json(new { success = false, message = error });
+            }
+
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteImage(int roomId, int imageId)
+        {
+            int? landlordId = _currentLandlordService.IsSuperAdmin() ? null : _currentLandlordService.GetCurrentLandlordId();
+            var (success, error) = await _roomService.DeleteImageAsync(roomId, imageId, landlordId);
+            if (!success)
+            {
+                var any = await _roomService.GetRoomByIdAsync(roomId, null);
+                if (any != null && landlordId.HasValue && any.Property?.LandlordId != landlordId.Value)
+                    return StatusCode(StatusCodes.Status403Forbidden);
+
+                return Json(new { success = false, message = error });
+            }
+
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateImageOrder(int roomId, [FromBody] List<int> imageIds)
+        {
+            int? landlordId = _currentLandlordService.IsSuperAdmin() ? null : _currentLandlordService.GetCurrentLandlordId();
+            var (success, error) = await _roomService.UpdateImageSortOrderAsync(roomId, imageIds, landlordId);
+            if (!success)
+            {
+                var any = await _roomService.GetRoomByIdAsync(roomId, null);
+                if (any != null && landlordId.HasValue && any.Property?.LandlordId != landlordId.Value)
+                    return StatusCode(StatusCodes.Status403Forbidden);
+
+                return Json(new { success = false, message = error });
+            }
+
+            return Json(new { success = true });
+        }
+
+        // ── Helper ───────────────────────────────────────────────────────
+        private async Task PopulateDropdowns(int? landlordId, int? selectedPropertyId, int? selectedRoomTypeId)
+        {
+            var properties = await _propertyService.GetPropertiesByLandlordAsync(landlordId);
+            ViewBag.PropertyList = new SelectList(properties, "PropertyId", "Name", selectedPropertyId);
+
             var roomTypes = await _context.RoomTypes
                 .Where(rt => rt.IsActive)
                 .OrderBy(rt => rt.SortOrder)
                 .ToListAsync();
+            ViewBag.RoomTypeList = new SelectList(roomTypes, "RoomTypeId", "RoomTypeName", selectedRoomTypeId);
 
-            vm.RoomTypeSelectList = new SelectList(
-                roomTypes, "RoomTypeId", "RoomTypeName", vm.RoomTypeId);
-        }
-
-        /// <summary>Luu file anh vao wwwroot/images/rooms, tra ve duong dan tuong doi.</summary>
-        private async Task<string> SaveImageAsync(IFormFile file)
-        {
-            string uploadDir = Path.Combine(_env.WebRootPath, IMAGE_FOLDER);
-            Directory.CreateDirectory(uploadDir);
-
-            string ext      = Path.GetExtension(file.FileName);
-            string fileName = Guid.NewGuid().ToString() + ext;
-            string filePath = Path.Combine(uploadDir, fileName);
-
-            await using var stream = new FileStream(filePath, FileMode.Create);
-            await file.CopyToAsync(stream);
-
-            return "/" + IMAGE_FOLDER + "/" + fileName;
-        }
-
-        private async Task<List<string>> SaveImagesAsync(IEnumerable<IFormFile>? files)
-        {
-            var saved = new List<string>();
-            if (files == null) return saved;
-
-            foreach (var file in files.Where(f => f != null && f.Length > 0))
-                saved.Add(await SaveImageAsync(file));
-
-            return saved;
-        }
-
-        private static List<string> ParseGalleryImages(string? galleryImages)
-        {
-            if (string.IsNullOrWhiteSpace(galleryImages)) return new List<string>();
-
-            return galleryImages
-                .Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Distinct()
-                .ToList();
-        }
-
-        private static string? SerializeGalleryImages(IEnumerable<string> galleryImages)
-        {
-            var images = galleryImages
-                .Where(path => !string.IsNullOrWhiteSpace(path))
-                .Distinct()
-                .ToList();
-
-            return images.Count == 0 ? null : string.Join('|', images);
-        }
-
-        /// <summary>Xoa file anh vat ly khoi wwwroot (bo qua neu khong tim thay).</summary>
-        private void DeleteImage(string? relativePath)
-        {
-            if (string.IsNullOrEmpty(relativePath)) return;
-
-            string sanitized = relativePath.TrimStart('/');
-            string fullPath  = Path.Combine(_env.WebRootPath, sanitized);
-
-            if (System.IO.File.Exists(fullPath))
-                System.IO.File.Delete(fullPath);
+            var amenities = await _context.Amenities
+                .Where(a => a.IsActive)
+                .OrderBy(a => a.Name)
+                .ToListAsync();
+            ViewBag.Amenities = amenities;
         }
     }
 }

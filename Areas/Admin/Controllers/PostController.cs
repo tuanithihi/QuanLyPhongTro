@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using QuanLyPhongTro.Areas.Admin.Attributes;
 using QuanLyPhongTro.Areas.Admin.Data;
 using QuanLyPhongTro.Models;
+using QuanLyPhongTro.Services;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -10,6 +11,7 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
 {
     [Area("Admin")]
     [AdminOnly]
+    [SuperAdminOnly]
     public class PostController : Controller
     {
         private readonly DataContext _context;
@@ -107,6 +109,7 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             ModelState.Remove("Slug"); ModelState.Remove("ThumbnailImage");
             if (!ModelState.IsValid) return View(model);
             model.Slug = await UniqueSlug(ToSlug(model.Title));
+            model.Content = HtmlSanitizerHelper.Sanitize(model.Content);
             model.CreatedAt = DateTime.Now;
             if (thumbnailFile != null) model.ThumbnailImage = await SaveImage(thumbnailFile);
             if (model.IsPublished) model.PublishedAt = DateTime.Now;
@@ -137,7 +140,7 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             else if (thumbnailFile != null) { DeleteImage(post.ThumbnailImage); post.ThumbnailImage = await SaveImage(thumbnailFile); }
 
             post.Title = model.Title; post.Summary = model.Summary;
-            post.Content = model.Content; post.Category = model.Category;
+            post.Content = HtmlSanitizerHelper.Sanitize(model.Content); post.Category = model.Category;
             post.IsPinned = model.IsPinned;
             post.MetaTitle = model.MetaTitle; post.MetaDescription = model.MetaDescription;
             post.UpdatedAt = DateTime.Now;

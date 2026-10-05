@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using QuanLyPhongTro.Areas.Admin.Attributes;
 using QuanLyPhongTro.Areas.Admin.Data;
 using QuanLyPhongTro.Models;
+using QuanLyPhongTro.Services;
 
 namespace QuanLyPhongTro.Areas.Admin.Controllers
 {
@@ -11,10 +12,12 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
     public class BookingRequestController : Controller
     {
         private readonly DataContext _context;
+        private readonly ICurrentLandlordService _currentLandlordService;
 
-        public BookingRequestController(DataContext context)
+        public BookingRequestController(DataContext context, ICurrentLandlordService currentLandlordService)
         {
             _context = context;
+            _currentLandlordService = currentLandlordService;
         }
 
         // GET: /Admin/BookingRequest
@@ -24,8 +27,16 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
 
             var query = _context.BookingRequests
                 .Include(b => b.Room)
+                    .ThenInclude(r => r.Property)
                 .Where(b => b.RequestType == BookingRequestType.ViewingRequest)
                 .AsQueryable();
+
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int currentLandlordId = _currentLandlordService.GetCurrentLandlordId() ?? 0;
+                query = query.Where(b => b.LandlordId == currentLandlordId || 
+                                         (b.Room != null && b.Room.Property != null && b.Room.Property.LandlordId == currentLandlordId));
+            }
 
             // ── Lọc theo trạng thái ────────────────────────────────────
             if (status == "pending")
@@ -49,7 +60,7 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             ViewBag.TotalPages  = (int)Math.Ceiling(total / (double)pageSize);
             ViewBag.Type        = type ?? "";
             ViewBag.Status      = status ?? "";
-            ViewBag.PendingCount= await _context.BookingRequests.CountAsync(b => b.Status == BookingRequestStatus.Pending);
+            ViewBag.PendingCount= await query.CountAsync(b => b.Status == BookingRequestStatus.Pending);
 
             return View(items);
         }
@@ -60,8 +71,19 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
         public async Task<IActionResult> UpdateStatus(int id, string action, string? adminNote,
                                                        string? returnType, string? returnStatus, int returnPage = 1)
         {
-            var req = await _context.BookingRequests.Include(b => b.Room).FirstOrDefaultAsync(b => b.RequestId == id);
+            var req = await _context.BookingRequests
+                .Include(b => b.Room)
+                    .ThenInclude(r => r.Property)
+                .FirstOrDefaultAsync(b => b.RequestId == id);
             if (req == null) return NotFound();
+
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int currentLandlordId = _currentLandlordService.GetCurrentLandlordId() ?? 0;
+                int? reqLandlordId = req.LandlordId ?? req.Room?.Property?.LandlordId;
+                if (reqLandlordId != currentLandlordId)
+                    return StatusCode(StatusCodes.Status403Forbidden);
+            }
 
             req.Status    = action == "accept" ? BookingRequestStatus.Accepted : BookingRequestStatus.Rejected;
             req.AdminNote = adminNote?.Trim();
@@ -112,13 +134,24 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id, string? returnType, string? returnStatus, int returnPage = 1)
         {
-            var req = await _context.BookingRequests.FindAsync(id);
-            if (req != null)
+            var req = await _context.BookingRequests
+                .Include(b => b.Room)
+                    .ThenInclude(r => r.Property)
+                .FirstOrDefaultAsync(b => b.RequestId == id);
+            if (req == null) return NotFound();
+
+            if (!_currentLandlordService.IsSuperAdmin())
             {
-                _context.BookingRequests.Remove(req);
-                await _context.SaveChangesAsync();
-                TempData["Success"] = "Đã xóa yêu cầu.";
+                int currentLandlordId = _currentLandlordService.GetCurrentLandlordId() ?? 0;
+                int? reqLandlordId = req.LandlordId ?? req.Room?.Property?.LandlordId;
+                if (reqLandlordId != currentLandlordId)
+                    return StatusCode(StatusCodes.Status403Forbidden);
             }
+
+            _context.BookingRequests.Remove(req);
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "Đã xóa yêu cầu.";
+
             return RedirectToAction("Index", new { type = returnType, status = returnStatus, page = returnPage });
         }
     }

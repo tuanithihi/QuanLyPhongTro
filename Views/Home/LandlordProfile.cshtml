@@ -1,0 +1,94 @@
+@model QuanLyPhongTro.Models.ViewModels.LandlordPublicProfileViewModel
+@{
+    var landlord = Model.Landlord;
+    ViewData["Title"] = $"Chủ trọ {landlord.FullName} - Danh sách phòng trọ cho thuê";
+    ViewData["Description"] = $"Thông tin chủ trọ {landlord.FullName}, hiện đang quản lý {Model.TotalProperties} khu trọ với {Model.TotalRooms} phòng cho thuê.";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/pages/landlord.css" />
+}
+
+<div class="landlord-hero">
+    <div class="container-xl">
+        <div class="landlord-hero-card">
+            @if (!string.IsNullOrEmpty(landlord.Avatar))
+            {
+                <img src="@landlord.Avatar" alt="@landlord.FullName" class="landlord-profile-avatar" />
+            }
+            else
+            {
+                <div class="landlord-profile-avatar d-flex align-items-center justify-content-center text-muted">
+                    <i class="bi bi-person-fill" style="font-size:3rem;"></i>
+                </div>
+            }
+
+            <div class="landlord-profile-info">
+                <h1 class="landlord-profile-title">
+                    <span>@landlord.FullName</span>
+                    <span class="badge-status badge-status-verified" style="font-size:12px;">
+                        <i class="bi bi-patch-check-fill me-1"></i>Chủ trọ xác thực
+                    </span>
+                </h1>
+
+                <p class="landlord-profile-bio">
+                    @(string.IsNullOrWhiteSpace(landlord.Description)
+                        ? "Chủ trọ uy tín, cam kết cung cấp phòng trọ chất lượng, giá điện nước chuẩn nhà nước và hỗ trợ người thuê tận tình."
+                        : landlord.Description)
+                </p>
+
+                <div class="landlord-stats-row">
+                    <div class="stat-box">
+                        <span class="stat-box-val">@Model.TotalProperties</span>
+                        <span class="stat-box-lbl">Khu trọ / Tòa nhà</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-box-val">@Model.ActiveListings.Count</span>
+                        <span class="stat-box-lbl">Phòng đang trống</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(landlord.Phone))
+                    {
+                        <div class="stat-box">
+                            <span class="stat-box-val" style="font-size:1.1rem; color:var(--gray-900);">
+                                <i class="bi bi-telephone text-primary me-1"></i>@landlord.Phone
+                            </span>
+                            <span class="stat-box-lbl">Số điện thoại liên hệ</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-xl pb-5">
+    <div class="section-header">
+        <div>
+            <h2 class="section-title">Phòng trọ đang cho thuê của @landlord.FullName</h2>
+            <p class="section-subtitle">Tất cả các phòng đang có sẵn, sẵn sàng dọn vào ở ngay</p>
+        </div>
+    </div>
+
+    @if (Model.ActiveListings != null && Model.ActiveListings.Any())
+    {
+        <div class="row g-4">
+            @foreach (var room in Model.ActiveListings)
+            {
+                <div class="col-12 col-md-6 col-lg-4">
+                    @await Html.PartialAsync("_RoomCard", room)
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="bi bi-house-check"></i>
+            </div>
+            <h3 class="empty-state-title">Hiện tại chưa có phòng trống</h3>
+            <p class="empty-state-desc">Toàn bộ phòng trọ của chủ nhà này đã được cho thuê. Vui lòng quay lại sau hoặc xem các phòng cùng khu vực.</p>
+            <a href="/phong-tro" class="btn btn-brand">Tìm phòng trọ khác</a>
+        </div>
+    }
+</div>

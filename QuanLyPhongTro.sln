@@ -1,8 +1,10 @@
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuanLyPhongTro", "QuanLyPhongTro.csproj", "{6FCADDA8-6225-5AB3-A977-CDDA459BC17E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuanLyPhongTro.Tests", "QuanLyPhongTro.Tests\QuanLyPhongTro.Tests.csproj", "{38E03DF3-C33D-434E-8C86-69A7ABC46001}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -14,6 +16,10 @@ Global
 		{6FCADDA8-6225-5AB3-A977-CDDA459BC17E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6FCADDA8-6225-5AB3-A977-CDDA459BC17E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6FCADDA8-6225-5AB3-A977-CDDA459BC17E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{38E03DF3-C33D-434E-8C86-69A7ABC46001}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{38E03DF3-C33D-434E-8C86-69A7ABC46001}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{38E03DF3-C33D-434E-8C86-69A7ABC46001}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{38E03DF3-C33D-434E-8C86-69A7ABC46001}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

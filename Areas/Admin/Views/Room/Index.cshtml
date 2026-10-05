@@ -1,208 +1,329 @@
-@model IEnumerable<QuanLyPhongTro.Models.tblRoom>
-@using Microsoft.AspNetCore.Mvc.Rendering
+@model List<QuanLyPhongTro.Models.ViewModels.RoomListItemViewModel>
+@inject QuanLyPhongTro.Services.ICurrentLandlordService _currentLandlord
 @{
-    ViewData["Title"] = "Danh sách phòng";
+    ViewData["Title"] = "Quản lý phòng trọ";
     Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
-    int currentPage = ViewBag.Page;
-    int pageSize    = ViewBag.PageSize;
-    int totalItems  = ViewBag.TotalItems;
-    int totalPages  = ViewBag.TotalPages;
-    string searchQ  = ViewBag.SearchTerm ?? string.Empty;
-    string rtId     = ViewBag.RoomTypeId?.ToString() ?? string.Empty;
-    string st       = ViewBag.Status?.ToString() ?? string.Empty;
+    string searchQ = ViewBag.SearchTerm ?? string.Empty;
+    int? propId = ViewBag.PropertyId;
+    int? st = ViewBag.Status;
+    int? appSt = ViewBag.ApprovalStatus;
+    bool isSuperAdmin = _currentLandlord.IsSuperAdmin();
 }
 
 <main id="main" class="main">
 
-    <div class="pagetitle">
-        <h1>Quản lý phòng</h1>
-        <nav>
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
-                <li class="breadcrumb-item active">Danh sách phòng</li>
-            </ol>
-        </nav>
+    <div class="pagetitle d-flex justify-content-between align-items-center">
+        <div>
+            <h1>Quản lý phòng trọ</h1>
+            <nav>
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+                    <li class="breadcrumb-item active">Danh sách phòng</li>
+                </ol>
+            </nav>
+        </div>
+        <a asp-action="Create" class="btn btn-primary px-3 py-2 fw-semibold">
+            <i class="bi bi-plus-lg me-1"></i> Thêm phòng mới
+        </a>
     </div>
 
     @if (TempData["Success"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show">
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
             <i class="bi bi-check-circle me-1"></i> @TempData["Success"]
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
     @if (TempData["Error"] != null)
     {
-        <div class="alert alert-danger alert-dismissible fade show">
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <i class="bi bi-exclamation-triangle me-1"></i> @TempData["Error"]
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
 
     <section class="section">
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
+        <div class="card shadow-sm border-0">
+            <div class="card-body pt-3">
 
-                        <!-- Toolbar -->
-                        <div class="d-flex justify-content-between align-items-center mt-3 mb-3">
-                            <a asp-area="Admin" asp-controller="Room" asp-action="Create" class="btn btn-primary">
-                                <i class="bi bi-plus-lg me-1"></i> Thêm phòng mới
-                            </a>
-                            <span class="text-muted small">Tổng: <strong>@totalItems</strong> phòng</span>
-                        </div>
+                <!-- Bộ lọc phòng -->
+                <form method="get" asp-action="Index" class="row g-2 mb-3">
+                    <div class="col-md-3">
+                        <input type="text" name="searchTerm" value="@searchQ"
+                               class="form-control" placeholder="Mã hoặc tên phòng...">
+                    </div>
+                    <div class="col-md-3">
+                        <select name="propertyId" class="form-select" asp-items="ViewBag.PropertyList">
+                            <option value="">-- Tất cả khu trọ --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select name="status" class="form-select">
+                            <option value="">-- Tình trạng phòng --</option>
+                            <option value="0" selected="@(st == 0)">Phòng trống</option>
+                            <option value="1" selected="@(st == 1)">Đã cho thuê</option>
+                            <option value="2" selected="@(st == 2)">Đang bảo trì</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select name="approvalStatus" class="form-select">
+                            <option value="">-- Trạng thái tin --</option>
+                            <option value="0" selected="@(appSt == 0)">Bản nháp (Draft)</option>
+                            <option value="1" selected="@(appSt == 1)">Chờ duyệt (Pending)</option>
+                            <option value="2" selected="@(appSt == 2)">Đã xuất bản (Published)</option>
+                            <option value="3" selected="@(appSt == 3)">Bị từ chối (Rejected)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex gap-1">
+                        <button type="submit" class="btn btn-outline-primary flex-grow-1">
+                            <i class="bi bi-funnel me-1"></i> Lọc
+                        </button>
+                        @if (!string.IsNullOrEmpty(searchQ) || propId.HasValue || st.HasValue || appSt.HasValue)
+                        {
+                            <a asp-action="Index" class="btn btn-light" title="Xóa bộ lọc"><i class="bi bi-x-lg"></i></a>
+                        }
+                    </div>
+                </form>
 
-                        <!-- Bộ lọc -->
-                        <form method="get" asp-area="Admin" asp-controller="Room" asp-action="Index" class="row g-2 mb-3">
-                            <div class="col-md-4">
-                                <input type="text" name="searchTerm" value="@searchQ"
-                                       class="form-control" placeholder="Tìm theo mã hoặc tên phòng...">
-                            </div>
-                            <div class="col-md-3">
-                                <select name="roomTypeId" class="form-select"
-                                        asp-items="@((SelectList)ViewBag.RoomTypeList)">
-                                    <option value="">-- Loại phòng --</option>
-                                </select>
-                            </div>
-                            @{
-                                var statusList = new SelectList(new[] {
-                                    new { Value = "0", Text = "Phòng trống" },
-                                    new { Value = "1", Text = "Đang thuê"   },
-                                    new { Value = "2", Text = "Bảo trì"     }
-                                }, "Value", "Text", st);
-                            }
-                            <div class="col-md-3">
-                                <select name="status" class="form-select" asp-items="@statusList">
-                                    <option value="">-- Trạng thái --</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <button type="submit" class="btn btn-outline-primary w-100">
-                                    <i class="bi bi-search me-1"></i> Lọc
-                                </button>
-                            </div>
-                        </form>
-
-                        <!-- Bảng -->
-                        <table class="table table-hover table-bordered align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width:50px">STT</th>
-                                    <th>Ảnh</th>
-                                    <th>Mã phòng</th>
-                                    <th>Tên phòng</th>
-                                    <th>Loại</th>
-                                    <th>Tầng</th>
-                                    <th>Giá thuê</th>
-                                    <th>Trạng thái</th>
-                                    <th style="width:130px">Thao tác</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @{int stt = (currentPage - 1) * pageSize + 1;}
-                                @foreach (var room in Model)
+                <!-- Bảng danh sách phòng -->
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 50px;">STT</th>
+                                <th style="width: 80px;">Ảnh</th>
+                                <th>Phòng & Khu trọ</th>
+                                <th class="text-end">Giá thuê</th>
+                                <th class="text-center">Tình trạng</th>
+                                <th class="text-center">Tin đăng</th>
+                                <th class="text-end" style="width: 200px;">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Any())
+                            {
+                                int stt = 1;
+                                foreach (var r in Model)
                                 {
                                     <tr>
-                                        <td>@(stt++)</td>
+                                        <td>@stt</td>
                                         <td>
-                                            @if (!string.IsNullOrEmpty(room.ThumbnailImage))
+                                            <img src="@(string.IsNullOrEmpty(r.ThumbnailImage) ? "/images/default-room.jpg" : r.ThumbnailImage)"
+                                                 alt="@r.RoomName" class="rounded object-fit-cover shadow-xs"
+                                                 style="width: 65px; height: 50px;" />
+                                        </td>
+                                        <td>
+                                            <a asp-action="Details" asp-route-id="@r.RoomId" class="fw-bold text-decoration-none">
+                                                @r.RoomCode — @r.RoomName
+                                            </a>
+                                            <div class="small text-muted">
+                                                <i class="bi bi-building me-1"></i>@(r.PropertyName ?? "Chưa gán khu trọ")
+                                                • @r.Area m²
+                                                @if (r.IsFeatured)
+                                                {
+                                                    <span class="badge bg-warning text-dark ms-1"><i class="bi bi-star-fill"></i> Nổi bật</span>
+                                                }
+                                            </div>
+                                        </td>
+                                        <td class="text-end fw-bold text-primary">
+                                            @r.RoomPrice.ToString("N0") đ
+                                        </td>
+                                        <td class="text-center">
+                                            @if (r.Status == QuanLyPhongTro.Models.RoomStatus.Available)
                                             {
-                                                <img src="@room.ThumbnailImage" alt="thumb"
-                                                     style="width:48px;height:48px;object-fit:cover;border-radius:4px;">
+                                                <span class="badge bg-success mb-1 d-inline-block">Phòng trống</span>
+                                                <form asp-action="MarkOccupied" asp-route-id="@r.RoomId" method="post" class="d-block">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-link btn-sm text-secondary p-0 text-decoration-none small" title="Chuyển sang đã thuê">
+                                                        <i class="bi bi-arrow-right-circle me-1"></i>Đánh dấu đã thuê
+                                                    </button>
+                                                </form>
+                                            }
+                                            else if (r.Status == QuanLyPhongTro.Models.RoomStatus.Occupied)
+                                            {
+                                                <span class="badge bg-danger mb-1 d-inline-block">Đã có người thuê</span>
+                                                <form asp-action="MarkAvailable" asp-route-id="@r.RoomId" method="post" class="d-block">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-link btn-sm text-success p-0 text-decoration-none small" title="Chuyển sang phòng trống">
+                                                        <i class="bi bi-arrow-left-circle me-1"></i>Đánh dấu phòng trống
+                                                    </button>
+                                                </form>
                                             }
                                             else
                                             {
-                                                <div class="bg-light d-flex align-items-center justify-content-center"
-                                                     style="width:48px;height:48px;border-radius:4px;">
-                                                    <i class="bi bi-image text-muted"></i>
+                                                <span class="badge bg-secondary">Bảo trì</span>
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            <!-- Trạng thái phê duyệt tin -->
+                                            @if (r.ApprovalStatus == QuanLyPhongTro.Models.RoomApprovalStatus.Published)
+                                            {
+                                                <span class="badge bg-success-light text-success border border-success mb-1 d-inline-block">
+                                                    <i class="bi bi-check-circle me-1"></i>Đã duyệt
+                                                </span>
+                                            }
+                                            else if (r.ApprovalStatus == QuanLyPhongTro.Models.RoomApprovalStatus.Pending)
+                                            {
+                                                <span class="badge bg-warning-light text-warning border border-warning mb-1 d-inline-block">
+                                                    <i class="bi bi-clock me-1"></i>Chờ duyệt
+                                                </span>
+                                            }
+                                            else if (r.ApprovalStatus == QuanLyPhongTro.Models.RoomApprovalStatus.Rejected)
+                                            {
+                                                <span class="badge bg-danger-light text-danger border border-danger mb-1 d-inline-block">
+                                                    <i class="bi bi-x-circle me-1"></i>Bị từ chối
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-light text-muted border mb-1 d-inline-block">Bản nháp</span>
+                                            }
+
+                                            <!-- Nút Bật/Ẩn hiển thị tin & Duyệt SuperAdmin -->
+                                            <div class="d-flex justify-content-center gap-1 flex-wrap">
+                                                @if (isSuperAdmin && r.ApprovalStatus == QuanLyPhongTro.Models.RoomApprovalStatus.Pending)
+                                                {
+                                                    <form asp-action="Approve" asp-route-id="@r.RoomId" method="post" class="d-inline" onsubmit="return confirm('Duyệt tin đăng phòng này?');">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="btn btn-success btn-sm py-0 px-2" title="Duyệt tin đăng">
+                                                            <i class="bi bi-check-lg"></i> Duyệt
+                                                        </button>
+                                                    </form>
+                                                    <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2" data-bs-toggle="modal" data-bs-target="#rejectRoomModal-@r.RoomId" title="Từ chối tin đăng">
+                                                        <i class="bi bi-x-lg"></i> Từ chối
+                                                    </button>
+                                                }
+                                                else if (isSuperAdmin && r.ApprovalStatus == QuanLyPhongTro.Models.RoomApprovalStatus.Published)
+                                                {
+                                                    <button type="button" class="btn btn-outline-warning text-dark btn-sm py-0 px-2" data-bs-toggle="modal" data-bs-target="#unpublishRoomModal-@r.RoomId" title="Gỡ tin đăng khỏi sàn">
+                                                        <i class="bi bi-slash-circle"></i> Gỡ tin
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    if (r.IsPublished)
+                                                    {
+                                                        <form asp-action="Hide" asp-route-id="@r.RoomId" method="post" class="d-inline">
+                                                            @Html.AntiForgeryToken()
+                                                            <button type="submit" class="btn btn-outline-secondary btn-sm py-0 px-1" title="Ẩn tin trên web">
+                                                                <i class="bi bi-eye-slash"></i> Ẩn tin
+                                                            </button>
+                                                        </form>
+                                                    }
+                                                    else
+                                                    {
+                                                        <form asp-action="Publish" asp-route-id="@r.RoomId" method="post" class="d-inline">
+                                                            @Html.AntiForgeryToken()
+                                                            <button type="submit" class="btn btn-outline-success btn-sm py-0 px-1" title="Đăng tin lên web">
+                                                                <i class="bi bi-send"></i> Đăng tin
+                                                             </button>
+                                                        </form>
+                                                    }
+                                                }
+                                            </div>
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="btn-group">
+                                                <a asp-action="Details" asp-route-id="@r.RoomId" class="btn btn-sm btn-outline-info" title="Xem chi tiết">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <a asp-action="Edit" asp-route-id="@r.RoomId" class="btn btn-sm btn-outline-primary" title="Chỉnh sửa">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" title="Xóa"
+                                                        data-bs-toggle="modal" data-bs-target="#delModal-@r.RoomId">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+
+                                            <!-- Modal xóa phòng -->
+                                            <div class="modal fade" id="delModal-@r.RoomId" tabindex="-1">
+                                                <div class="modal-dialog modal-dialog-centered">
+                                                    <div class="modal-content text-start">
+                                                        <div class="modal-header border-0 pb-0">
+                                                             <h5 class="modal-title fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Xác nhận xóa phòng</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <div class="modal-body py-3">
+                                                            Bạn có chắc muốn xóa phòng <strong>@r.RoomCode - @r.RoomName</strong> không? Toàn bộ ảnh đính kèm sẽ được dọn dẹp.
+                                                        </div>
+                                                        <div class="modal-footer border-0 pt-0">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                                            <form asp-action="Delete" asp-route-id="@r.RoomId" method="post" class="d-inline">
+                                                                @Html.AntiForgeryToken()
+                                                                <button type="submit" class="btn btn-danger">Xác nhận xóa</button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            @if (isSuperAdmin)
+                                            {
+                                                <!-- Modal Từ chối tin (SuperAdmin) -->
+                                                <div class="modal fade" id="rejectRoomModal-@r.RoomId" tabindex="-1">
+                                                    <div class="modal-dialog modal-dialog-centered">
+                                                        <div class="modal-content text-start">
+                                                            <form asp-action="Reject" asp-route-id="@r.RoomId" method="post">
+                                                                @Html.AntiForgeryToken()
+                                                                <div class="modal-header border-0 pb-0">
+                                                                    <h5 class="modal-title fw-bold text-danger">Từ chối tin: @r.RoomCode</h5>
+                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                                </div>
+                                                                <div class="modal-body py-3">
+                                                                    <label class="form-label small fw-semibold">Lý do từ chối tin <span class="text-danger">*</span></label>
+                                                                    <textarea name="reason" class="form-control form-control-sm" rows="3" placeholder="Nhập lý do không đạt yêu cầu..." required></textarea>
+                                                                </div>
+                                                                <div class="modal-footer border-0 pt-0">
+                                                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                                                                    <button type="submit" class="btn btn-danger btn-sm">Xác nhận từ chối</button>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Modal Gỡ tin (SuperAdmin) -->
+                                                <div class="modal fade" id="unpublishRoomModal-@r.RoomId" tabindex="-1">
+                                                    <div class="modal-dialog modal-dialog-centered">
+                                                        <div class="modal-content text-start">
+                                                            <form asp-action="Unpublish" asp-route-id="@r.RoomId" method="post">
+                                                                @Html.AntiForgeryToken()
+                                                                <div class="modal-header border-0 pb-0">
+                                                                    <h5 class="modal-title fw-bold text-warning text-dark">Gỡ tin đăng: @r.RoomCode</h5>
+                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                                </div>
+                                                                <div class="modal-body py-3">
+                                                                    <label class="form-label small fw-semibold">Lý do gỡ tin khỏi sàn</label>
+                                                                    <textarea name="reason" class="form-control form-control-sm" rows="3" placeholder="Lý do gỡ tin (phòng vi phạm, hết phòng, sai thông tin)..."></textarea>
+                                                                </div>
+                                                                <div class="modal-footer border-0 pt-0">
+                                                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                                                                    <button type="submit" class="btn btn-warning btn-sm">Xác nhận gỡ tin</button>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             }
                                         </td>
-                                        <td><code>@room.RoomCode</code></td>
-                                        <td>@room.RoomName</td>
-                                        <td>@room.RoomType?.RoomTypeName</td>
-                                        <td>Tầng @room.Floor</td>
-                                        <td class="text-end fw-semibold">@room.RoomPrice.ToString("N0") đ</td>
-                                        <td>
-                                            @switch (room.Status)
-                                            {
-                                                case QuanLyPhongTro.Models.RoomStatus.Available:
-                                                    <span class="badge bg-success">Trống</span>
-                                                    break;
-                                                case QuanLyPhongTro.Models.RoomStatus.Occupied:
-                                                    <span class="badge bg-primary">Đang thuê</span>
-                                                    break;
-                                                case QuanLyPhongTro.Models.RoomStatus.Maintenance:
-                                                    <span class="badge bg-warning text-dark">Bảo trì</span>
-                                                    break;
-                                            }
-                                        </td>
-                                        <td>
-                                            <a asp-area="Admin" asp-controller="Room" asp-action="Detail"
-                                               asp-route-id="@room.RoomId"
-                                               class="btn btn-sm btn-outline-info" title="Chi tiết">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
-                                            <a asp-area="Admin" asp-controller="Room" asp-action="Edit"
-                                               asp-route-id="@room.RoomId"
-                                               class="btn btn-sm btn-outline-primary" title="Sửa">
-                                                <i class="bi bi-pencil"></i>
-                                            </a>
-                                            <form asp-area="Admin" asp-controller="Room" asp-action="Delete"
-                                                  asp-route-id="@room.RoomId"
-                                                  method="post" class="d-inline"
-                                                  onsubmit="return confirm('Xóa phòng «@room.RoomName»?')">
-                                                @Html.AntiForgeryToken()
-                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </form>
-                                        </td>
                                     </tr>
+                                    stt++;
                                 }
-                                @if (!Model.Any())
-                                {
-                                    <tr><td colspan="9" class="text-center text-muted py-4">Không có dữ liệu</td></tr>
-                                }
-                            </tbody>
-                        </table>
-
-                        <!-- Phân trang (dùng href thay asp-route-page để tránh xung đột Razor directive) -->
-                        @if (totalPages > 1)
-                        {
-                            <nav>
-                                <ul class="pagination justify-content-center">
-                                    <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
-                                        <a class="page-link"
-                                           href="?page=@(currentPage-1)&searchTerm=@searchQ&roomTypeId=@rtId&status=@st">
-                                            &laquo;
-                                        </a>
-                                    </li>
-                                    @for (int i = 1; i <= totalPages; i++)
-                                    {
-                                        <li class="page-item @(i == currentPage ? "active" : "")">
-                                            <a class="page-link"
-                                               href="?page=@(i)&searchTerm=@searchQ&roomTypeId=@rtId&status=@st">
-                                                @i
-                                            </a>
-                                        </li>
-                                    }
-                                    <li class="page-item @(currentPage >= totalPages ? "disabled" : "")">
-                                        <a class="page-link"
-                                           href="?page=@(currentPage+1)&searchTerm=@searchQ&roomTypeId=@rtId&status=@st">
-                                            &raquo;
-                                        </a>
-                                    </li>
-                                </ul>
-                            </nav>
-                            <p class="text-center text-muted small">
-                                Trang @(currentPage) / @totalPages &mdash; Tổng @totalItems phòng
-                            </p>
-                        }
-
-                    </div>
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="7" class="text-center py-4 text-muted">
+                                        <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary"></i>
+                                        Chưa có phòng nào thỏa mãn điều kiện lọc.
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 </div>
+
             </div>
         </div>
     </section>

@@ -1,0 +1,192 @@
+@model List<QuanLyPhongTro.Models.tblAmenity>
+@{
+    ViewData["Title"] = "Quản lý Danh mục Tiện ích";
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<main id="main" class="main">
+
+    <div class="pagetitle d-flex justify-content-between align-items-center">
+        <div>
+            <h1>Danh mục Tiện ích phòng trọ</h1>
+            <nav>
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+                    <li class="breadcrumb-item active">Tiện ích</li>
+                </ol>
+            </nav>
+        </div>
+        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createAmenityModal">
+            <i class="bi bi-plus-lg me-1"></i> Thêm tiện ích mới
+        </button>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-1"></i> @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-1"></i> @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <section class="section">
+        <div class="card shadow-sm border-0">
+            <div class="card-body pt-3">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 50px;">Icon</th>
+                                <th>Tên tiện ích</th>
+                                <th>Mô tả</th>
+                                <th class="text-center">Số phòng áp dụng</th>
+                                <th class="text-center">Trạng thái</th>
+                                <th class="text-end">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model != null && Model.Any())
+                            {
+                                foreach (var a in Model)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center justify-content-center bg-light rounded text-primary fs-5" style="width: 40px; height: 40px;">
+                                                <i class="bi @(string.IsNullOrEmpty(a.Icon) ? "bi-check2-circle" : a.Icon)"></i>
+                                            </div>
+                                        </td>
+                                        <td class="fw-semibold text-dark">@a.Name</td>
+                                        <td class="text-muted small">@(string.IsNullOrEmpty(a.Description) ? "Không có mô tả" : a.Description)</td>
+                                        <td class="text-center">
+                                            <span class="badge bg-info-subtle text-info border">
+                                                @(a.RoomAmenities?.Count ?? 0) phòng
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            @if (a.IsActive)
+                                            {
+                                                <span class="badge bg-success">Hoạt động</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">Vô hiệu</span>
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="btn-group btn-group-sm">
+                                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editModal-@a.AmenityId" title="Sửa">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <form method="post" asp-action="ToggleActive" asp-route-id="@a.AmenityId" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-outline-warning text-dark" title="@(a.IsActive ? "Vô hiệu hóa" : "Kích hoạt")">
+                                                        <i class="bi @(a.IsActive ? "bi-eye-slash" : "bi-eye")"></i>
+                                                    </button>
+                                                </form>
+                                                <form method="post" asp-action="Delete" asp-route-id="@a.AmenityId" class="d-inline" onsubmit="return confirm('Xóa tiện ích @a.Name?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-outline-danger" title="Xóa">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+
+                                            <!-- Edit Modal -->
+                                            <div class="modal fade text-start" id="editModal-@a.AmenityId" tabindex="-1">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <form method="post" asp-action="Edit">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="AmenityId" value="@a.AmenityId" />
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title">Sửa tiện ích: @a.Name</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label fw-semibold">Tên tiện ích <span class="text-danger">*</span></label>
+                                                                    <input type="text" name="Name" class="form-control" value="@a.Name" required />
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label class="form-label fw-semibold">Icon Bootstrap Icons (VD: bi-wifi, bi-tv, bi-snow)</label>
+                                                                    <input type="text" name="Icon" class="form-control font-monospace" value="@a.Icon" placeholder="bi-check-circle" />
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label class="form-label fw-semibold">Mô tả</label>
+                                                                    <input type="text" name="Description" class="form-control" value="@a.Description" />
+                                                                </div>
+                                                                <div class="form-check form-switch">
+                                                                    <input class="form-check-input" type="checkbox" name="IsActive" value="true" @(a.IsActive ? "checked" : "") id="switch-@a.AmenityId" />
+                                                                    <label class="form-check-label" for="switch-@a.AmenityId">Kích hoạt tiện ích</label>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                                                                <button type="submit" class="btn btn-primary btn-sm">Lưu thay đổi</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">Chưa có tiện ích nào trong hệ thống.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Create Modal -->
+    <div class="modal fade" id="createAmenityModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" asp-action="Create">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-header">
+                        <h5 class="modal-title">Thêm tiện ích mới</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Tên tiện ích <span class="text-danger">*</span></label>
+                            <input type="text" name="Name" class="form-control" placeholder="Ví dụ: Máy giặt, Điều hòa, Thang máy..." required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Icon Bootstrap Icons (VD: bi-wifi, bi-snow, bi-tv)</label>
+                            <input type="text" name="Icon" class="form-control font-monospace" placeholder="bi-stars" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Mô tả ngắn</label>
+                            <input type="text" name="Description" class="form-control" placeholder="Mô tả về tiện ích..." />
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="IsActive" value="true" checked id="switchCreate" />
+                            <label class="form-check-label" for="switchCreate">Kích hoạt ngay</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary btn-sm">Tạo tiện ích</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</main>

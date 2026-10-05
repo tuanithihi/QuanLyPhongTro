@@ -7,6 +7,7 @@ namespace QuanLyPhongTro.Models
         // ── Dữ liệu phòng ─────────────────────────────────────────────
         public tblRoom           Room     { get; set; } = null!;
         public List<tblService>  Services { get; set; } = new();
+        public List<ViewModels.RoomCardViewModel> SimilarRooms { get; set; } = new();
 
         // ── Đánh giá phòng ────────────────────────────────────────────
         public List<tblRoomReview> RoomReviews    { get; set; } = new();

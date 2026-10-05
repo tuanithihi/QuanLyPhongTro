@@ -1,0 +1,164 @@
+@model List<QuanLyPhongTro.Areas.Admin.Controllers.ProvinceListItemViewModel>
+@{
+    ViewData["Title"] = "Quản lý Danh mục Vị trí";
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+    var districts = ViewBag.Districts as List<QuanLyPhongTro.Areas.Admin.Controllers.DistrictListItemViewModel>;
+    var wards = ViewBag.Wards as List<QuanLyPhongTro.Models.tblWard>;
+    int? selProvinceId = ViewBag.SelectedProvinceId;
+    int? selDistrictId = ViewBag.SelectedDistrictId;
+}
+
+<main id="main" class="main">
+
+    <div class="pagetitle d-flex justify-content-between align-items-center">
+        <div>
+            <h1>Danh mục Đơn vị hành chính</h1>
+            <nav>
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+                    <li class="breadcrumb-item active">Vị trí</li>
+                </ol>
+            </nav>
+        </div>
+        <span class="badge bg-primary px-3 py-2 fs-6">
+            <i class="bi bi-geo-alt me-1"></i> 63 Tỉnh/Thành Việt Nam
+        </span>
+    </div>
+
+    <section class="section">
+        <div class="row">
+
+            <!-- Cột Tỉnh / Thành phố -->
+            <div class="@(districts != null ? "col-lg-5" : "col-12")">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 fw-bold text-dark"><i class="bi bi-map me-1 text-primary"></i> Tỉnh / Thành phố (@Model.Count)</h6>
+                        <form method="get" asp-action="Index" class="d-flex gap-1" style="max-width: 200px;">
+                            <input type="text" name="search" class="form-control form-control-sm" placeholder="Tìm tỉnh..." value="@ViewBag.Search" />
+                            <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-search"></i></button>
+                        </form>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th class="ps-3">Mã</th>
+                                        <th>Tên Tỉnh / Thành</th>
+                                        <th class="text-center">Quận/Huyện</th>
+                                        <th class="text-center">Khu / Phòng</th>
+                                        <th class="text-end pe-3">Xem</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var p in Model)
+                                    {
+                                        <tr class="@(selProvinceId == p.ProvinceId ? "table-primary" : "")">
+                                            <td class="ps-3 font-monospace small text-muted">@p.Code</td>
+                                            <td class="fw-semibold">
+                                                <i class="bi bi-pin-map text-danger me-1"></i>@p.Name
+                                            </td>
+                                            <td class="text-center"><span class="badge bg-light text-dark border">@p.DistrictCount</span></td>
+                                            <td class="text-center">
+                                                <small class="text-muted">@p.PropertyCount khu &middot; <strong class="text-primary">@p.RoomCount phòng</strong></small>
+                                            </td>
+                                            <td class="text-end pe-3">
+                                                <a asp-action="Index" asp-route-provinceId="@p.ProvinceId" asp-route-search="@ViewBag.Search"
+                                                   class="btn btn-xs @(selProvinceId == p.ProvinceId ? "btn-primary" : "btn-outline-primary") btn-sm py-0 px-2">
+                                                    Chi tiết <i class="bi bi-chevron-right ms-1"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cột Quận / Huyện (nếu đã chọn Tỉnh) -->
+            @if (districts != null)
+            {
+                <div class="@(wards != null ? "col-lg-4" : "col-lg-7")">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                            <h6 class="m-0 fw-bold text-dark">
+                                <i class="bi bi-buildings me-1 text-success"></i> Quận / Huyện (@districts.Count)
+                            </h6>
+                            <a asp-action="Index" class="btn btn-outline-secondary btn-sm py-0 px-2"><i class="bi bi-x"></i> Đóng</a>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th class="ps-3">Tên Quận / Huyện</th>
+                                            <th class="text-center">Phường/Xã</th>
+                                            <th class="text-center">Khu trọ</th>
+                                            <th class="text-end pe-3">Xem</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var d in districts)
+                                        {
+                                            <tr class="@(selDistrictId == d.DistrictId ? "table-success" : "")">
+                                                <td class="ps-3 fw-semibold">@d.Name</td>
+                                                <td class="text-center"><span class="badge bg-light text-dark border">@d.WardCount</span></td>
+                                                <td class="text-center">@d.PropertyCount khu</td>
+                                                <td class="text-end pe-3">
+                                                    <a asp-action="Index" asp-route-provinceId="@selProvinceId" asp-route-districtId="@d.DistrictId"
+                                                       class="btn btn-xs @(selDistrictId == d.DistrictId ? "btn-success" : "btn-outline-success") btn-sm py-0 px-2">
+                                                        Phường/Xã <i class="bi bi-chevron-right ms-1"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Cột Phường / Xã (nếu đã chọn Quận) -->
+            @if (wards != null)
+            {
+                <div class="col-lg-3">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                            <h6 class="m-0 fw-bold text-dark">
+                                <i class="bi bi-geo me-1 text-info"></i> Phường / Xã (@wards.Count)
+                            </h6>
+                            <a asp-action="Index" asp-route-provinceId="@selProvinceId" class="btn btn-outline-secondary btn-sm py-0 px-2"><i class="bi bi-x"></i> Đóng</a>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th class="ps-3">Tên Phường / Xã</th>
+                                            <th class="text-end pe-3">Mã</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var w in wards)
+                                        {
+                                            <tr>
+                                                <td class="ps-3">@w.Name</td>
+                                                <td class="text-end pe-3 font-monospace small text-muted">@w.Code</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+        </div>
+    </section>
+
+</main>

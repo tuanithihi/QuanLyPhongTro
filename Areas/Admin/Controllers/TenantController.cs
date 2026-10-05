@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using QuanLyPhongTro.Areas.Admin.Attributes;
 using QuanLyPhongTro.Areas.Admin.Data;
 using QuanLyPhongTro.Models;
+using QuanLyPhongTro.Services;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -14,12 +15,20 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
     {
         private readonly DataContext _context;
         private readonly IWebHostEnvironment _env;
+        private readonly ICurrentLandlordService _currentLandlordService;
+        private readonly IFileUploadService _fileUploadService;
         private const string IMAGE_FOLDER = "images/tenants";
 
-        public TenantController(DataContext context, IWebHostEnvironment env)
+        public TenantController(
+            DataContext context, 
+            IWebHostEnvironment env,
+            ICurrentLandlordService currentLandlordService,
+            IFileUploadService fileUploadService)
         {
             _context = context;
             _env     = env;
+            _currentLandlordService = currentLandlordService;
+            _fileUploadService = fileUploadService;
         }
 
         private static string HashPassword(string password)
@@ -36,6 +45,12 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
         {
             const int pageSize = 15;
             var query = _context.Tenants.Include(t => t.Contracts).AsQueryable();
+
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int currentLandlordId = _currentLandlordService.GetCurrentLandlordId() ?? 0;
+                query = query.Where(t => t.LandlordId == currentLandlordId);
+            }
 
             if (!string.IsNullOrWhiteSpace(search))
                 query = query.Where(t => t.FullName.Contains(search)
@@ -71,6 +86,10 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 .Include(t => t.Contracts).ThenInclude(c => c.Room)
                 .FirstOrDefaultAsync(t => t.TenantId == id);
             if (tenant == null) return NotFound();
+
+            if (!_currentLandlordService.IsSuperAdmin() && tenant.LandlordId != _currentLandlordService.GetCurrentLandlordId())
+                return StatusCode(StatusCodes.Status403Forbidden);
+
             return View(tenant);
         }
 
@@ -103,6 +122,7 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 return View(model);
             }
 
+            model.LandlordId = _currentLandlordService.GetCurrentLandlordId();
             model.Username = string.IsNullOrWhiteSpace(model.Username) ? null : model.Username.Trim();
 
             // Nếu liên kết từ tài khoản website → dùng PasswordHash của user đó
@@ -118,9 +138,13 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                                      ? HashPassword(password) : null;
             }
 
-            // Avatar: nếu không upload mới nhưng có linked user → dùng avatar của user
+            // Upload ảnh an toàn
             if (avatarFile != null)
-                model.Avatar = await SaveImage(avatarFile);
+            {
+                var up = await _fileUploadService.UploadImageAsync(avatarFile, "tenants");
+                if (up.IsValid) model.Avatar = up.RelativePath;
+                else ModelState.AddModelError("", up.ErrorMessage ?? "Lỗi upload ảnh đại diện.");
+            }
             else if (linkedUserId.HasValue && string.IsNullOrEmpty(model.Avatar))
             {
                 var linkedUser = await _context.Users.FindAsync(linkedUserId.Value);
@@ -129,9 +153,19 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             else
                 model.Avatar = null;
 
-            model.IdentityFrontImage = await SaveImage(frontFile);
-            model.IdentityBackImage  = await SaveImage(backFile);
-            model.CreatedAt          = DateTime.Now;
+            if (frontFile != null)
+            {
+                var up = await _fileUploadService.UploadImageAsync(frontFile, "tenants");
+                if (up.IsValid) model.IdentityFrontImage = up.RelativePath;
+            }
+
+            if (backFile != null)
+            {
+                var up = await _fileUploadService.UploadImageAsync(backFile, "tenants");
+                if (up.IsValid) model.IdentityBackImage = up.RelativePath;
+            }
+
+            model.CreatedAt = DateTime.Now;
 
             _context.Tenants.Add(model);
             try
@@ -186,6 +220,10 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
         {
             var tenant = await _context.Tenants.FindAsync(id);
             if (tenant == null) return NotFound();
+
+            if (!_currentLandlordService.IsSuperAdmin() && tenant.LandlordId != _currentLandlordService.GetCurrentLandlordId())
+                return StatusCode(StatusCodes.Status403Forbidden);
+
             return View(tenant);
         }
 
@@ -199,6 +237,9 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
 
             var existing = await _context.Tenants.FindAsync(id);
             if (existing == null) return NotFound();
+
+            if (!_currentLandlordService.IsSuperAdmin() && existing.LandlordId != _currentLandlordService.GetCurrentLandlordId())
+                return StatusCode(StatusCodes.Status403Forbidden);
 
             if (!string.IsNullOrWhiteSpace(model.Username))
             {
@@ -224,9 +265,24 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             else if (string.IsNullOrEmpty(existing.Username))
                 existing.PasswordHash = null;
 
-            if (avatarFile != null) { DeleteImage(existing.Avatar); existing.Avatar = await SaveImage(avatarFile); }
-            if (frontFile  != null) { DeleteImage(existing.IdentityFrontImage); existing.IdentityFrontImage = await SaveImage(frontFile); }
-            if (backFile   != null) { DeleteImage(existing.IdentityBackImage);  existing.IdentityBackImage  = await SaveImage(backFile); }
+            if (avatarFile != null)
+            {
+                DeleteImage(existing.Avatar);
+                var up = await _fileUploadService.UploadImageAsync(avatarFile, "tenants");
+                if (up.IsValid) existing.Avatar = up.RelativePath;
+            }
+            if (frontFile != null)
+            {
+                DeleteImage(existing.IdentityFrontImage);
+                var up = await _fileUploadService.UploadImageAsync(frontFile, "tenants");
+                if (up.IsValid) existing.IdentityFrontImage = up.RelativePath;
+            }
+            if (backFile != null)
+            {
+                DeleteImage(existing.IdentityBackImage);
+                var up = await _fileUploadService.UploadImageAsync(backFile, "tenants");
+                if (up.IsValid) existing.IdentityBackImage = up.RelativePath;
+            }
 
             existing.UpdatedAt = DateTime.Now;
             try
@@ -254,6 +310,9 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 .FirstOrDefaultAsync(t => t.TenantId == id);
             if (tenant == null) return NotFound();
 
+            if (!_currentLandlordService.IsSuperAdmin() && tenant.LandlordId != _currentLandlordService.GetCurrentLandlordId())
+                return StatusCode(StatusCodes.Status403Forbidden);
+
             if (tenant.Contracts.Any())
             {
                 TempData["Error"] = "Không thể xóa người thuê đã có lịch sử hợp đồng. Dữ liệu được giữ lại để lưu trữ.";
@@ -273,7 +332,6 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
         // ── Helpers ──────────────────────────────────────────────────────
         private async Task LoadUserList()
         {
-            // Chỉ lấy user thường, chưa có tenant trùng username
             var usedUsernames = await _context.Tenants
                 .Where(t => t.Username != null)
                 .Select(t => t.Username!)
@@ -287,19 +345,6 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
 
             ViewBag.UserList = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(
                 users, "UserId", "Display");
-        }
-
-        private async Task<string?> SaveImage(IFormFile? file)
-        {
-            if (file == null || file.Length == 0) return null;
-            var folder = Path.Combine(_env.WebRootPath, IMAGE_FOLDER);
-            Directory.CreateDirectory(folder);
-            var ext      = Path.GetExtension(file.FileName).ToLowerInvariant();
-            var fileName = $"{Guid.NewGuid()}{ext}";
-            var path     = Path.Combine(folder, fileName);
-            await using var stream = new FileStream(path, FileMode.Create);
-            await file.CopyToAsync(stream);
-            return $"/{IMAGE_FOLDER}/{fileName}";
         }
 
         private void DeleteImage(string? imgPath)

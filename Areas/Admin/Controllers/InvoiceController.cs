@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using QuanLyPhongTro.Areas.Admin.Attributes;
 using QuanLyPhongTro.Areas.Admin.Data;
 using QuanLyPhongTro.Models;
+using QuanLyPhongTro.Services;
 using MiniSoftware;
 
 namespace QuanLyPhongTro.Areas.Admin.Controllers
@@ -14,11 +15,19 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
     {
         private readonly DataContext _context;
         private readonly IWebHostEnvironment _env;
+        private readonly ICurrentLandlordService _currentLandlordService;
+        private readonly IConfiguration _config;
 
-        public InvoiceController(DataContext context, IWebHostEnvironment env)
+        public InvoiceController(
+            DataContext context,
+            IWebHostEnvironment env,
+            ICurrentLandlordService currentLandlordService,
+            IConfiguration config)
         {
             _context = context;
             _env = env;
+            _currentLandlordService = currentLandlordService;
+            _config = config;
         }
 
         // ── INDEX ────────────────────────────────────────────────────────
@@ -30,6 +39,13 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 .Include(i => i.Room)
                 .Include(i => i.Contract).ThenInclude(c => c!.Tenant)
                 .AsQueryable();
+
+            // Cô lập dữ liệu theo chủ trọ nếu không phải SuperAdmin
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int? currentLandlordId = _currentLandlordService.GetCurrentLandlordId();
+                query = query.Where(i => i.LandlordId == currentLandlordId);
+            }
 
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -62,7 +78,7 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             ViewBag.Search     = search ?? "";
             ViewBag.Status     = status ?? "";
             ViewBag.Month      = month;
-            ViewBag.Year       = year ?? DateTime.Now.Year;
+            ViewBag.Year       = year;
 
             ViewBag.StatusList = new SelectList(new[]
             {
@@ -74,7 +90,7 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             return View(list);
         }
 
-        // ── DETAILS ──────────────────────────────────────────────────────
+        // ── DETAILS (Chống IDOR) ─────────────────────────────────────────
         public async Task<IActionResult> Details(int id)
         {
             var invoice = await _context.Invoices
@@ -84,6 +100,17 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 .FirstOrDefaultAsync(i => i.InvoiceId == id);
 
             if (invoice == null) return NotFound();
+
+            // Chống IDOR
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int? currentLandlordId = _currentLandlordService.GetCurrentLandlordId();
+                if (invoice.LandlordId != currentLandlordId)
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden);
+                }
+            }
+
             return View(invoice);
         }
 
@@ -91,11 +118,20 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
         public async Task<IActionResult> DueThisMonth()
         {
             var today = DateTime.Today;
-            var contracts = await _context.Contracts
+            var query = _context.Contracts
                 .Include(c => c.Room).ThenInclude(r => r!.RoomType)
                 .Include(c => c.Tenant)
                 .Include(c => c.Invoices.Where(i => i.BillingMonth == today.Month && i.BillingYear == today.Year))
                 .Where(c => c.Status == ContractStatus.Active)
+                .AsQueryable();
+
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int? currentLandlordId = _currentLandlordService.GetCurrentLandlordId();
+                query = query.Where(c => c.LandlordId == currentLandlordId);
+            }
+
+            var contracts = await query
                 .OrderBy(c => c.PaymentDayOfMonth)
                 .ToListAsync();
 
@@ -117,6 +153,16 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             {
                 TempData["Error"] = "Hợp đồng không tồn tại hoặc không còn hiệu lực.";
                 return RedirectToAction(nameof(DueThisMonth));
+            }
+
+            // Chống IDOR
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int? currentLandlordId = _currentLandlordService.GetCurrentLandlordId();
+                if (contract.LandlordId != currentLandlordId)
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden);
+                }
             }
 
             var lastInvoice = await _context.Invoices
@@ -144,9 +190,22 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
 
             var dueDate  = new DateTime(billingYear, billingMonth,
                 Math.Min(contract.PaymentDayOfMonth, DateTime.DaysInMonth(billingYear, billingMonth)));
-            var services  = await _context.Services.Where(s => s.IsActive).OrderBy(s => s.ServiceType).ToListAsync();
-            var elecSvc   = services.FirstOrDefault(s => s.ServiceType == ServiceType.Electric);
-            var waterSvc  = services.FirstOrDefault(s => s.ServiceType == ServiceType.Water);
+            
+            int? targetLandlordId = contract.LandlordId ?? _currentLandlordService.GetCurrentLandlordId();
+            var servicesQuery = _context.Services.Where(s => s.IsActive).AsQueryable();
+            if (targetLandlordId.HasValue)
+            {
+                servicesQuery = servicesQuery.Where(s => s.LandlordId == targetLandlordId.Value || s.LandlordId == null);
+            }
+            else if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int? currentLandlordId = _currentLandlordService.GetCurrentLandlordId();
+                servicesQuery = servicesQuery.Where(s => s.LandlordId == currentLandlordId || s.LandlordId == null);
+            }
+
+            var services  = await servicesQuery.OrderBy(s => s.ServiceType).ToListAsync();
+            var elecSvc   = services.Where(s => s.ServiceType == ServiceType.Electric).OrderByDescending(s => s.LandlordId.HasValue).FirstOrDefault();
+            var waterSvc  = services.Where(s => s.ServiceType == ServiceType.Water).OrderByDescending(s => s.LandlordId.HasValue).FirstOrDefault();
 
             ViewBag.Contract       = contract;
             ViewBag.ElectricStart  = electricStart;
@@ -177,7 +236,19 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             string[]?  miscDescriptions,
             decimal[]? miscAmounts)
         {
-            // null-safe arrays
+            var contract = await _context.Contracts.FindAsync(contractId);
+            if (contract == null) return NotFound();
+
+            // Chống IDOR
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int? currentLandlordId = _currentLandlordService.GetCurrentLandlordId();
+                if (contract.LandlordId != currentLandlordId)
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden);
+                }
+            }
+
             serviceIds       ??= Array.Empty<int>();
             quantities       ??= Array.Empty<double>();
             unitPrices       ??= Array.Empty<decimal>();
@@ -196,7 +267,6 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 return RedirectToAction(nameof(DueThisMonth));
             }
 
-            // Server-side index validation
             if (model.ElectricIndexEnd < model.ElectricIndexStart)
             {
                 TempData["Error"] = $"Lỗi: Chỉ số điện cuối kỳ ({model.ElectricIndexEnd} kWh) không được nhỏ hơn chỉ số đầu kỳ ({model.ElectricIndexStart} kWh).";
@@ -211,12 +281,14 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
 
             var details = new List<tblInvoiceDetail>();
 
-            // Điện — tính trực tiếp từ chỉ số đầu/cuối kỳ
             double elecQty = Math.Max(0, model.ElectricIndexEnd - model.ElectricIndexStart);
             if (elecQty > 0 && elecUnitPrice > 0)
             {
                 var elecSvc = await _context.Services
-                    .FirstOrDefaultAsync(s => s.IsActive && s.ServiceType == ServiceType.Electric);
+                    .Where(s => s.IsActive && s.ServiceType == ServiceType.Electric && (s.LandlordId == contract.LandlordId || s.LandlordId == null))
+                    .OrderByDescending(s => s.LandlordId.HasValue)
+                    .FirstOrDefaultAsync();
+
                 details.Add(new tblInvoiceDetail
                 {
                     ServiceId   = elecSvc?.ServiceId,
@@ -227,12 +299,14 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 });
             }
 
-            // Nước — tính trực tiếp từ chỉ số đầu/cuối kỳ
             double waterQty = Math.Max(0, model.WaterIndexEnd - model.WaterIndexStart);
             if (waterQty > 0 && waterUnitPrice > 0)
             {
                 var waterSvc = await _context.Services
-                    .FirstOrDefaultAsync(s => s.IsActive && s.ServiceType == ServiceType.Water);
+                    .Where(s => s.IsActive && s.ServiceType == ServiceType.Water && (s.LandlordId == contract.LandlordId || s.LandlordId == null))
+                    .OrderByDescending(s => s.LandlordId.HasValue)
+                    .FirstOrDefaultAsync();
+
                 details.Add(new tblInvoiceDetail
                 {
                     ServiceId   = waterSvc?.ServiceId,
@@ -243,7 +317,6 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 });
             }
 
-            // Dịch vụ cố định khác
             for (int i = 0; i < serviceIds.Length; i++)
             {
                 double  qty   = i < quantities.Length  ? quantities[i]  : 0;
@@ -259,7 +332,6 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 });
             }
 
-            // Chi phí phát sinh (ServiceId = null)
             for (int i = 0; i < miscDescriptions.Length; i++)
             {
                 decimal amt = i < miscAmounts.Length ? miscAmounts[i] : 0;
@@ -274,7 +346,9 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 });
             }
 
+            model.LandlordId         = _currentLandlordService.GetCurrentLandlordId() ?? contract.LandlordId;
             model.ContractId         = contractId;
+            model.RoomId             = contract.RoomId;
             model.TotalServiceAmount = details.Sum(d => d.Amount);
             model.TotalAmount        = model.RoomRentAmount + model.TotalServiceAmount - model.Discount;
             model.CreatedAt          = DateTime.Now;
@@ -287,91 +361,7 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             return RedirectToAction(nameof(Details), new { id = model.InvoiceId });
         }
 
-        // ── SELECT ROOM ──────────────────────────────────────────────────
-        public async Task<IActionResult> SelectRoom()
-        {
-            var contracts = await _context.Contracts
-                .Include(c => c.Room).ThenInclude(r => r!.RoomType)
-                .Include(c => c.Tenant)
-                .Include(c => c.Invoices)
-                .Where(c => c.Status == ContractStatus.Active)
-                .OrderBy(c => c.Room!.RoomCode)
-                .ToListAsync();
-
-            return View(contracts);
-        }
-
-        // ── CREATE GET — redirect sang Generate (dùng chung form) ──────
-        public IActionResult Create(int contractId)
-            => RedirectToAction(nameof(Generate), new { contractId, from = "select" });
-
-        // ── CREATE POST ──────────────────────────────────────────────────
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(
-            tblInvoice model,
-            int[]    serviceIds,
-            double[] quantities,
-            decimal[] unitPrices,
-            string[] descriptions)
-        {
-            // Kiểm tra trùng kỳ
-            bool duplicate = await _context.Invoices.AnyAsync(i =>
-                i.ContractId    == model.ContractId &&
-                i.BillingMonth  == model.BillingMonth &&
-                i.BillingYear   == model.BillingYear);
-            if (duplicate)
-                ModelState.AddModelError("", $"Hóa đơn tháng {model.BillingMonth}/{model.BillingYear} đã tồn tại.");
-
-            // Server-side index validation
-            if (model.ElectricIndexEnd < model.ElectricIndexStart)
-            {
-                ModelState.AddModelError("ElectricIndexEnd", $"Chỉ số điện cuối kỳ ({model.ElectricIndexEnd} kWh) không được nhỏ hơn chỉ số đầu kỳ ({model.ElectricIndexStart} kWh).");
-            }
-
-            if (model.WaterIndexEnd < model.WaterIndexStart)
-            {
-                ModelState.AddModelError("WaterIndexEnd", $"Chỉ số nước cuối kỳ ({model.WaterIndexEnd} m³) không được nhỏ hơn chỉ số đầu kỳ ({model.WaterIndexStart} m³).");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                var contract2 = await _context.Contracts.Include(c => c.Room).Include(c => c.Tenant)
-                    .FirstOrDefaultAsync(c => c.ContractId == model.ContractId);
-                var services2 = await _context.Services.Where(s => s.IsActive).OrderBy(s => s.ServiceType).ToListAsync();
-                ViewBag.Contract = contract2;
-                ViewBag.Services = services2;
-                return View(model);
-            }
-
-            // Tạo InvoiceDetails từ mảng dữ liệu form
-            var details = new List<tblInvoiceDetail>();
-            for (int i = 0; i < serviceIds.Length; i++)
-            {
-                if (quantities[i] <= 0 && unitPrices[i] <= 0) continue;
-                details.Add(new tblInvoiceDetail
-                {
-                    ServiceId   = serviceIds[i],
-                    Quantity    = quantities[i],
-                    UnitPrice   = unitPrices[i],
-                    Amount      = (decimal)quantities[i] * unitPrices[i],
-                    Description = descriptions.ElementAtOrDefault(i)
-                });
-            }
-
-            model.TotalServiceAmount = details.Sum(d => d.Amount);
-            model.TotalAmount        = model.RoomRentAmount + model.TotalServiceAmount - model.Discount;
-            model.CreatedAt          = DateTime.Now;
-            model.InvoiceDetails     = details;
-
-            _context.Invoices.Add(model);
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] = $"Đã lập hóa đơn {model.InvoiceCode} thành công.";
-            return RedirectToAction(nameof(Details), new { id = model.InvoiceId });
-        }
-
-        // ── EDIT GET ─────────────────────────────────────────────────────
+        // ── EDIT GET (Chống IDOR) ────────────────────────────────────────
         public async Task<IActionResult> Edit(int id)
         {
             var invoice = await _context.Invoices
@@ -382,17 +372,37 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
 
             if (invoice == null) return NotFound();
 
+            // Chống IDOR
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int? currentLandlordId = _currentLandlordService.GetCurrentLandlordId();
+                if (invoice.LandlordId != currentLandlordId)
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden);
+                }
+            }
+
             ViewBag.StatusList = BuildStatusList(invoice.Status);
             return View(invoice);
         }
 
-        // ── EDIT POST ────────────────────────────────────────────────────
+        // ── EDIT POST (Chống IDOR) ───────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, tblInvoice model)
         {
             var invoice = await _context.Invoices.FindAsync(id);
             if (invoice == null) return NotFound();
+
+            // Chống IDOR
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int? currentLandlordId = _currentLandlordService.GetCurrentLandlordId();
+                if (invoice.LandlordId != currentLandlordId)
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden);
+                }
+            }
 
             if (model.Status == InvoiceStatus.Paid && model.PaidDate == null)
                 ModelState.AddModelError("PaidDate", "Vui lòng nhập ngày thanh toán.");
@@ -417,13 +427,23 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
-        // ── MARK PAID (quick) ────────────────────────────────────────────
+        // ── MARK PAID (Chống IDOR) ───────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkPaid(int id)
         {
             var invoice = await _context.Invoices.FindAsync(id);
             if (invoice == null) return NotFound();
+
+            // Chống IDOR
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int? currentLandlordId = _currentLandlordService.GetCurrentLandlordId();
+                if (invoice.LandlordId != currentLandlordId)
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden);
+                }
+            }
 
             invoice.Status    = InvoiceStatus.Paid;
             invoice.PaidDate  = DateTime.Today;
@@ -434,7 +454,7 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
-        // ── DELETE ──────────────────────────────────────────────────────
+        // ── DELETE (Chống IDOR) ──────────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
@@ -444,8 +464,17 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 .FirstOrDefaultAsync(i => i.InvoiceId == id);
             if (invoice == null) return NotFound();
 
+            // Chống IDOR
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int? currentLandlordId = _currentLandlordService.GetCurrentLandlordId();
+                if (invoice.LandlordId != currentLandlordId)
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden);
+                }
+            }
+
             int contractId = invoice.ContractId;
-            // InvoiceDetail có CASCADE DELETE → tự xóa khi xóa Invoice
             _context.Invoices.Remove(invoice);
             await _context.SaveChangesAsync();
 
@@ -453,34 +482,28 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             return RedirectToAction("Details", "Contract", new { id = contractId });
         }
 
-        // ── AJAX: lấy chỉ số kỳ trước ────────────────────────────────────
-        [HttpGet]
-        public async Task<IActionResult> GetPreviousIndex(int contractId, int month, int year)
-        {
-            var prev = await _context.Invoices
-                .Where(i => i.ContractId == contractId &&
-                            (i.BillingYear < year || (i.BillingYear == year && i.BillingMonth < month)))
-                .OrderByDescending(i => i.BillingYear).ThenByDescending(i => i.BillingMonth)
-                .Select(i => new { i.ElectricIndexEnd, i.WaterIndexEnd })
-                .FirstOrDefaultAsync();
-
-            if (prev != null) return Json(new { ok = true,  electricStart = prev.ElectricIndexEnd, waterStart = prev.WaterIndexEnd });
-
-            var contract = await _context.Contracts.FindAsync(contractId);
-            return Json(new { ok = true, electricStart = contract?.InitialElectricIndex ?? 0, waterStart = contract?.InitialWaterIndex ?? 0 });
-        }
-
-        // ── EXPORT WORD ──────────────────────────────────────────────────
+        // ── EXPORT WORD (Chống IDOR) ─────────────────────────────────────
         [HttpGet]
         public async Task<IActionResult> ExportWord(int id)
         {
             var invoice = await _context.Invoices
-                .Include(i => i.Room)
+                .Include(i => i.Room).ThenInclude(r => r!.Property)
                 .Include(i => i.Contract).ThenInclude(c => c!.Tenant)
+                .Include(i => i.Landlord)
                 .Include(i => i.InvoiceDetails).ThenInclude(d => d.Service)
                 .FirstOrDefaultAsync(i => i.InvoiceId == id);
 
             if (invoice == null) return NotFound();
+
+            // Chống IDOR
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int? currentLandlordId = _currentLandlordService.GetCurrentLandlordId();
+                if (invoice.LandlordId != currentLandlordId)
+                {
+                    return StatusCode(StatusCodes.Status403Forbidden);
+                }
+            }
 
             string templatePath = Path.Combine(_env.WebRootPath, "templates", "HoaDon_Template.docx");
             if (!System.IO.File.Exists(templatePath))
@@ -488,6 +511,10 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 TempData["Error"] = "Không tìm thấy file template hóa đơn (HoaDon_Template.docx) trong thư mục wwwroot/templates.";
                 return RedirectToAction(nameof(Details), new { id });
             }
+
+            var landlord = invoice.Landlord 
+                ?? (invoice.LandlordId.HasValue ? await _context.Landlords.FindAsync(invoice.LandlordId.Value) : null)
+                ?? (invoice.Room?.Property?.LandlordId != null ? await _context.Landlords.FindAsync(invoice.Room.Property.LandlordId) : null);
 
             var rows = invoice.InvoiceDetails.Select(d => new Dictionary<string, object>
             {
@@ -506,6 +533,13 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 ["RoomCode"] = invoice.Room?.RoomCode ?? "",
                 ["RoomName"] = invoice.Room?.RoomName ?? "",
                 ["TenantName"] = invoice.Contract?.Tenant?.FullName ?? "",
+
+                ["LandlordName"] = landlord?.FullName ?? _config["Landlord:Name"] ?? "",
+                ["LandlordPhone"] = landlord?.Phone ?? _config["Landlord:Phone"] ?? "",
+                ["BankName"] = landlord?.BankName ?? _config["BankPayment:BankName"] ?? "",
+                ["BankId"] = landlord?.BankId ?? _config["BankPayment:BankId"] ?? "",
+                ["AccountNumber"] = landlord?.AccountNumber ?? _config["BankPayment:AccountNumber"] ?? "",
+                ["AccountName"] = landlord?.AccountName ?? _config["BankPayment:AccountName"] ?? "",
                 
                 ["ElectricStart"] = invoice.ElectricIndexStart.ToString("N1"),
                 ["ElectricEnd"] = invoice.ElectricIndexEnd.ToString("N1"),
@@ -549,12 +583,14 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             return $"{prefix}{seq:D3}";
         }
 
-        private SelectList BuildStatusList(InvoiceStatus current) =>
-            new SelectList(new[]
+        private SelectList BuildStatusList(InvoiceStatus current)
+        {
+            return new SelectList(new[]
             {
                 new { Value = "0", Text = "Chưa thanh toán" },
                 new { Value = "1", Text = "Đã thanh toán" },
                 new { Value = "2", Text = "Quá hạn" }
             }, "Value", "Text", ((int)current).ToString());
+        }
     }
 }

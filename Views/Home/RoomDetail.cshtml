@@ -1,0 +1,420 @@
+@model RoomDetailViewModel
+@{
+    var room = Model.Room;
+    ViewData["Title"] = room.Title ?? room.RoomName;
+    ViewData["Description"] = $"Cho thuê {room.RoomName} tại {room.Property?.Address ?? room.Address}. Giá {room.RoomPrice:N0} đ/tháng, diện tích {room.Area}m².";
+
+    var images = room.RoomImages != null && room.RoomImages.Any()
+        ? room.RoomImages.OrderBy(i => i.SortOrder).Select(i => i.Url).ToList()
+        : new List<string> { room.ThumbnailImage ?? "/images/no-image.png" };
+
+    string landlordName = room.Property?.Landlord?.FullName ?? "Chủ trọ";
+    string landlordPhone = room.Property?.Landlord?.Phone ?? "0988888888";
+    string landlordSlug = QuanLyPhongTro.Services.SlugHelper.ToSlug(landlordName);
+    double lat = room.Latitude ?? room.Property?.Latitude ?? 21.0285;
+    double lng = room.Longitude ?? room.Property?.Longitude ?? 105.8542;
+}
+
+@{
+    ViewData["OgImage"] = images.FirstOrDefault();
+    ViewData["CanonicalUrl"] = $"{Context.Request.Scheme}://{Context.Request.Host}/phong/{room.Slug}-{room.RoomId}";
+}
+
+@section SeoHead {
+    <!-- JSON-LD Structured Data for Real Estate / Apartment -->
+    <script type="application/ld+json">
+    {
+        "@@context": "https://schema.org",
+        "@@type": "Accommodation",
+        "name": @Html.Raw(System.Text.Json.JsonSerializer.Serialize(room.Title ?? room.RoomName)),
+        "description": @Html.Raw(System.Text.Json.JsonSerializer.Serialize(room.Description ?? $"Cho thuê phòng trọ {room.RoomName}")),
+        "floorSize": {
+            "@@type": "QuantitativeValue",
+            "value": @(room.Area > 0 ? room.Area : 20),
+            "unitCode": "MTK"
+        },
+        "address": {
+            "@@type": "PostalAddress",
+            "streetAddress": @Html.Raw(System.Text.Json.JsonSerializer.Serialize(room.Property?.Address ?? room.Address ?? "")),
+            "addressLocality": @Html.Raw(System.Text.Json.JsonSerializer.Serialize(room.Property?.District?.Name ?? "")),
+            "addressRegion": @Html.Raw(System.Text.Json.JsonSerializer.Serialize(room.Property?.Province?.Name ?? "Việt Nam")),
+            "addressCountry": "VN"
+        },
+        "offers": {
+            "@@type": "Offer",
+            "price": "@(room.RoomPrice)",
+            "priceCurrency": "VND",
+            "availability": "https://schema.org/InStock",
+            "url": "@(ViewData["CanonicalUrl"])"
+        }
+    }
+    </script>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/pages/detail.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+}
+
+<div class="detail-page">
+    <div id="room-detail-context" data-room-id="@room.RoomId" class="d-none"></div>
+    <!-- Breadcrumb -->
+    <div class="breadcrumb-wrap bg-white border-bottom mb-4">
+        <div class="container-xl">
+            <ul class="breadcrumb-list">
+                <li class="breadcrumb-item"><a href="/"><i class="bi bi-house me-1"></i>Trang chủ</a></li>
+                <li class="breadcrumb-separator">/</li>
+                <li class="breadcrumb-item"><a href="/phong-tro">Cho thuê phòng trọ</a></li>
+                @if (room.Property?.Province != null)
+                {
+                    <li class="breadcrumb-separator">/</li>
+                    <li class="breadcrumb-item"><a href="/phong-tro/@QuanLyPhongTro.Services.SlugHelper.ToSlug(room.Property.Province.Name)">@room.Property.Province.Name</a></li>
+                }
+                @if (room.Property?.District != null)
+                {
+                    <li class="breadcrumb-separator">/</li>
+                    <li class="breadcrumb-item"><a href="/phong-tro/@QuanLyPhongTro.Services.SlugHelper.ToSlug(room.Property.Province?.Name ?? "")/@QuanLyPhongTro.Services.SlugHelper.ToSlug(room.Property.District.Name)">@room.Property.District.Name</a></li>
+                }
+                <li class="breadcrumb-separator">/</li>
+                <li class="breadcrumb-item active text-truncate" style="max-width: 250px;">@room.RoomName</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="container-xl">
+        <div class="row g-4">
+
+            <!-- ── LEFT COLUMN: MAIN CONTENT ──────────────────────── -->
+            <div class="col-lg-8">
+
+                <!-- 1. Photo Gallery -->
+                <div class="detail-gallery">
+                    <div class="gallery-main-wrap">
+                        <img id="mainGalleryImg" src="@images[0]" alt="@room.RoomName" class="gallery-main-img" />
+                    </div>
+                    @if (images.Count > 1)
+                    {
+                        <div class="gallery-thumbs-strip">
+                            @for (int i = 0; i < images.Count; i++)
+                            {
+                                <div class="gallery-thumb-item @(i == 0 ? "active" : "")" onclick="changeGalleryImage('@images[i]', this)">
+                                    <img src="@images[i]" alt="Thumbnail @i" class="gallery-thumb-img" />
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <!-- 2. Header & Price Info -->
+                <div class="detail-header-card">
+                    <h1 class="detail-title">@(string.IsNullOrWhiteSpace(room.Title) ? room.RoomName : room.Title)</h1>
+                    <div class="detail-address">
+                        <i class="bi bi-geo-alt-fill text-danger"></i>
+                        <span>@(room.Property?.Address ?? room.Address)</span>
+                    </div>
+
+                    <div class="detail-price-box">
+                        <div>
+                            <span class="small text-muted d-block">Giá thuê hàng tháng</span>
+                            <span class="detail-price-num">@QuanLyPhongTro.Services.DisplayHelper.FormatPrice(room.RoomPrice)</span>
+                        </div>
+                        <div class="text-end">
+                            <span class="small text-muted d-block">Tiền cọc giữ phòng</span>
+                            <span class="fw-bold fs-6 text-dark">@(room.DefaultDeposit > 0 ? $"{room.DefaultDeposit:N0} đ" : "1 tháng tiền phòng")</span>
+                        </div>
+                    </div>
+
+                    <!-- Specs Grid -->
+                    <div class="detail-specs-grid">
+                        <div class="spec-item">
+                            <span class="spec-label">Diện tích</span>
+                            <span class="spec-value"><i class="bi bi-aspect-ratio text-primary me-1"></i>@(room.Area > 0 ? $"{room.Area:0.#} m²" : "--")</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Sức chứa</span>
+                            <span class="spec-value"><i class="bi bi-people text-success me-1"></i>@(room.Capacity > 0 ? room.Capacity : room.MaxOccupants) người</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Tầng</span>
+                            <span class="spec-value"><i class="bi bi-layers text-secondary me-1"></i>Tầng @room.Floor</span>
+                        </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Lượt xem</span>
+                            <span class="spec-value"><i class="bi bi-eye text-info me-1"></i>@room.ViewCount lượt</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Room Description -->
+                <div class="detail-content-section">
+                    <h2 class="detail-section-heading">
+                        <i class="bi bi-card-text text-primary"></i>Mô tả chi tiết phòng trọ
+                    </h2>
+                    <div class="text-secondary" style="line-height:1.7; white-space:pre-line;">
+                        @(string.IsNullOrWhiteSpace(room.Description) 
+                            ? "Phòng trọ mới xây, thoáng mát, vệ sinh khép kín, an ninh trật tự tốt, giờ giấc tự do không chung chủ. Khu vực thuận tiện giao thông, gần chợ, siêu thị và các trường đại học." 
+                            : room.Description)
+                    </div>
+                </div>
+
+                <!-- 4. Amenities -->
+                <div class="detail-content-section">
+                    <h2 class="detail-section-heading">
+                        <i class="bi bi-stars text-warning"></i>Tiện nghi &amp; Dịch vụ phòng
+                    </h2>
+                    @if (room.RoomAmenities != null && room.RoomAmenities.Any())
+                    {
+                        <div class="amenities-display-grid">
+                            @foreach (var ra in room.RoomAmenities)
+                            {
+                                <div class="amenity-chip">
+                                    <i class="bi bi-check-circle-fill text-success"></i>
+                                    <span>@ra.Amenity?.Name</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted small">Phòng có sẵn các tiện nghi cơ bản: WC khép kín, đồng hồ điện nước riêng, khóa vân tay.</p>
+                    }
+                </div>
+
+                <!-- 5. Utility Price Table (Theo bảng giá chủ trọ sở hữu) -->
+                <div class="detail-content-section">
+                    <h2 class="detail-section-heading">
+                        <i class="bi bi-receipt text-danger"></i>Bảng giá dịch vụ hàng tháng
+                    </h2>
+                    <p class="small text-muted mb-3">Đơn giá được quy định minh bạch bởi chủ trọ sở hữu khu nhà:</p>
+                    <div class="table-responsive">
+                        <table class="table-services">
+                            <thead>
+                                <tr>
+                                    <th>Dịch vụ</th>
+                                    <th>Đơn giá</th>
+                                    <th>Cách tính</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.Services != null && Model.Services.Any())
+                                {
+                                    @foreach (var s in Model.Services)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold text-dark">
+                                                <i class="bi bi-check2 text-primary me-2"></i>@s.ServiceName
+                                            </td>
+                                            <td class="fw-bold" style="color:var(--brand-primary);">
+                                                @s.UnitPrice.ToString("N0") đ / @s.Unit
+                                            </td>
+                                            <td class="text-muted">
+                                                @(s.PricingMethod == QuanLyPhongTro.Models.PricingMethod.PerUnit ? "Theo đơn vị tiêu thụ" : "Cố định mỗi tháng")
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td>Điện sinh hoạt</td>
+                                        <td class="fw-bold" style="color:var(--brand-primary);">3.500 đ / kWh</td>
+                                        <td class="text-muted">Theo công tơ riêng</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Nước sinh hoạt</td>
+                                        <td class="fw-bold" style="color:var(--brand-primary);">30.000 đ / khối</td>
+                                        <td class="text-muted">Theo công tơ riêng</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Internet / Wifi tốc độ cao</td>
+                                        <td class="fw-bold" style="color:var(--brand-primary);">100.000 đ / phòng</td>
+                                        <td class="text-muted">Cố định hàng tháng</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 6. Map Location -->
+                <div class="detail-content-section">
+                    <h2 class="detail-section-heading">
+                        <i class="bi bi-geo-alt text-danger"></i>Vị trí phòng trọ trên bản đồ
+                    </h2>
+                    <p class="small text-muted mb-3">@(room.Property?.Address ?? room.Address)</p>
+                    <div style="height: 320px; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border-color);">
+                        <div id="roomDetailMap" style="width:100%; height:100%;"></div>
+                    </div>
+                </div>
+
+                <!-- 7. Similar Rooms -->
+                @if (Model.SimilarRooms != null && Model.SimilarRooms.Any())
+                {
+                    <div class="detail-content-section">
+                        <h2 class="detail-section-heading">
+                            <i class="bi bi-buildings text-primary"></i>Phòng trọ tương tự cùng khu vực
+                        </h2>
+                        <div class="row g-3">
+                            @foreach (var sRoom in Model.SimilarRooms)
+                            {
+                                <div class="col-12 col-md-4">
+                                    @await Html.PartialAsync("_RoomCard", sRoom)
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+            </div>
+
+            <!-- ── RIGHT COLUMN: LANDLORD CARD & ACTIONS ───────────── -->
+            <div class="col-lg-4">
+                <div class="landlord-contact-card">
+                    <!-- Landlord Profile -->
+                    <div class="landlord-profile-header">
+                        @if (!string.IsNullOrEmpty(room.Property?.Landlord?.Avatar))
+                        {
+                            <img src="@room.Property.Landlord.Avatar" alt="@landlordName" class="landlord-avatar-circle" />
+                        }
+                        else
+                        {
+                            <div class="landlord-avatar-circle d-flex align-items-center justify-content-center text-muted">
+                                <i class="bi bi-person-fill fs-3"></i>
+                            </div>
+                        }
+                        <div>
+                            <div class="landlord-meta-name">@landlordName</div>
+                            <div class="landlord-meta-sub">
+                                <span class="badge-status badge-status-verified">
+                                    <i class="bi bi-patch-check-fill me-1"></i>Chủ trọ xác thực
+                                </span>
+                            </div>
+                            <a href="/chu-tro/@landlordSlug" class="small text-danger text-decoration-none d-block mt-1">
+                                Xem tất cả phòng của chủ trọ &rarr;
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Call & Action Buttons -->
+                    <div class="landlord-actions-stack">
+                        <a href="tel:@landlordPhone" class="btn btn-brand btn-lg w-100">
+                            <i class="bi bi-telephone-fill me-2"></i>Gọi ngay: @landlordPhone
+                        </a>
+
+                        <button type="button" class="btn btn-neutral btn-lg w-100" onclick="window.aiSendQuick('Tôi muốn tìm hiểu phòng @room.RoomName')">
+                            <i class="bi bi-chat-dots-fill text-primary me-2"></i>Nhắn tin tư vấn
+                        </button>
+
+                        <button type="button" class="btn btn-brand-outline btn-lg w-100" data-bs-toggle="modal" data-bs-target="#bookingViewingModal">
+                            <i class="bi bi-calendar-event me-2"></i>Đặt lịch xem phòng
+                        </button>
+                    </div>
+
+                    <!-- Safe Renting Guarantee -->
+                    <div class="mt-4 p-3 bg-light rounded" style="border: 1px dashed var(--border-color); font-size: var(--text-xs);">
+                        <div class="fw-bold text-dark mb-1"><i class="bi bi-shield-check text-success me-1"></i>Cam kết sàn Phòng Trọ Mới</div>
+                        <ul class="mb-0 ps-3 text-muted">
+                            <li>Phòng trọ thật, địa chỉ rõ ràng</li>
+                            <li>Không thu phí xem phòng</li>
+                            <li>Hỗ trợ hợp đồng mẫu chuẩn Bộ Xây dựng</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ── MOBILE STICKY BOTTOM ACTION BAR ───────────────────────────── -->
+<div class="mobile-bottom-bar">
+    <div>
+        <span class="small text-muted d-block" style="font-size:11px;">Giá thuê</span>
+        <span class="fw-bold" style="color:var(--brand-primary); font-size:1.1rem;">@QuanLyPhongTro.Services.DisplayHelper.FormatPriceCompact(room.RoomPrice)</span>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="tel:@landlordPhone" class="btn btn-brand btn-sm">
+            <i class="bi bi-telephone-fill me-1"></i>Gọi
+        </a>
+        <button type="button" class="btn btn-brand-outline btn-sm" data-bs-toggle="modal" data-bs-target="#bookingViewingModal">
+            <i class="bi bi-calendar-event me-1"></i>Đặt lịch
+        </button>
+    </div>
+</div>
+
+<!-- ── MODAL ĐẶT LỊCH XEM PHÒNG ──────────────────────────────────── -->
+<div class="modal fade" id="bookingViewingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+        <div class="modal-content" style="border-radius: var(--radius-lg); border: 1px solid var(--border-color); box-shadow: var(--shadow-drawer);">
+            <div class="modal-header border-0 pb-1">
+                <h5 class="modal-title fw-bold fs-6">
+                    <i class="bi bi-calendar-check text-danger me-2"></i>Đặt lịch xem phòng trọ
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <p class="small text-muted mb-3">
+                    Phòng: <strong>@room.RoomName</strong> - Chủ trọ: <strong>@landlordName</strong>
+                </p>
+
+                <form asp-controller="Home" asp-action="BookViewing" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="roomId" value="@room.RoomId" />
+
+                    <div class="mb-3">
+                        <label class="form-label">Họ và tên của bạn <span class="text-danger">*</span></label>
+                        <input type="text" name="bookingName" class="form-control" placeholder="Nguyễn Văn A" value="@Model.BookingName" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Số điện thoại liên hệ <span class="text-danger">*</span></label>
+                        <input type="tel" name="bookingPhone" class="form-control" placeholder="09xxxxxxxx" value="@Model.BookingPhone" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Thời gian muốn đến xem</label>
+                        <input type="text" name="bookingDate" class="form-control" placeholder="Ví dụ: 17h30 chiều mai..." />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Ghi chú thêm</label>
+                        <textarea name="bookingNote" class="form-control" rows="2" placeholder="Số lượng người ở, có xe máy không..."></textarea>
+                    </div>
+
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-brand">
+                            <i class="bi bi-send-fill me-1"></i>Gửi yêu cầu đặt lịch
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script>
+        function changeGalleryImage(src, element) {
+            document.getElementById('mainGalleryImg').src = src;
+            document.querySelectorAll('.gallery-thumb-item').forEach(function(el) {
+                el.classList.remove('active');
+            });
+            element.classList.add('active');
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Leaflet detail map
+            var lat = @lat;
+            var lng = @lng;
+            var map = L.map('roomDetailMap').setView([lat, lng], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            L.marker([lat, lng]).addTo(map)
+                .bindPopup('<strong>@room.RoomName</strong><br>@(room.Property?.Address ?? room.Address)')
+                .openPopup();
+        });
+    </script>
+}

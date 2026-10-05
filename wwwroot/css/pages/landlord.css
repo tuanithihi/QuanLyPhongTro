@@ -1,0 +1,69 @@
+@import url('../variables.css');
+
+/* ── Landlord Public Profile Page ────────────────────────────── */
+.landlord-hero {
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--border-color);
+  padding: var(--space-8) 0;
+  margin-bottom: var(--space-8);
+}
+
+.landlord-hero-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.landlord-profile-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #ffffff;
+  box-shadow: var(--shadow-card);
+  background-color: var(--gray-100);
+}
+
+.landlord-profile-info {
+  flex: 1;
+}
+
+.landlord-profile-title {
+  font-size: 1.5rem;
+  font-weight: var(--font-bold);
+  color: var(--gray-900);
+  margin-bottom: var(--space-1);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.landlord-profile-bio {
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-3);
+  max-width: 600px;
+}
+
+.landlord-stats-row {
+  display: flex;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.stat-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-box-val {
+  font-size: 1.25rem;
+  font-weight: var(--font-bold);
+  color: var(--brand-primary);
+}
+
+.stat-box-lbl {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}

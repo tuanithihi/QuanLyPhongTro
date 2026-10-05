@@ -22,6 +22,38 @@ namespace QuanLyPhongTro.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("QuanLyPhongTro.Models.tblAmenity", b =>
+                {
+                    b.Property<int>("AmenityId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AmenityId"));
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Icon")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("AmenityId");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("tblAmenity");
+                });
+
             modelBuilder.Entity("QuanLyPhongTro.Models.tblBookingRequest", b =>
                 {
                     b.Property<int>("RequestId")
@@ -49,6 +81,9 @@ namespace QuanLyPhongTro.Migrations
                     b.Property<bool>("IsGuestNotified")
                         .HasColumnType("bit");
 
+                    b.Property<int?>("LandlordId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Message")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
@@ -71,7 +106,12 @@ namespace QuanLyPhongTro.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("ViewingTime")
+                        .HasColumnType("datetime2");
+
                     b.HasKey("RequestId");
+
+                    b.HasIndex("LandlordId");
 
                     b.HasIndex("RoomId");
 
@@ -137,6 +177,9 @@ namespace QuanLyPhongTro.Migrations
                     b.Property<bool>("IsOpen")
                         .HasColumnType("bit");
 
+                    b.Property<int?>("LandlordId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("LastMsgAt")
                         .HasColumnType("datetime2");
 
@@ -152,6 +195,8 @@ namespace QuanLyPhongTro.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("SessionId");
+
+                    b.HasIndex("LandlordId");
 
                     b.HasIndex("SessionKey")
                         .IsUnique();
@@ -194,6 +239,9 @@ namespace QuanLyPhongTro.Migrations
                     b.Property<double>("InitialWaterIndex")
                         .HasColumnType("float");
 
+                    b.Property<int?>("LandlordId")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("MonthlyRent")
                         .HasColumnType("decimal(18,2)");
 
@@ -231,11 +279,79 @@ namespace QuanLyPhongTro.Migrations
                     b.HasIndex("ContractCode")
                         .IsUnique();
 
+                    b.HasIndex("LandlordId");
+
                     b.HasIndex("RoomId");
 
                     b.HasIndex("TenantId");
 
                     b.ToTable("tblContract");
+                });
+
+            modelBuilder.Entity("QuanLyPhongTro.Models.tblDistrict", b =>
+                {
+                    b.Property<int>("DistrictId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DistrictId"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("ProvinceId")
+                        .HasColumnType("int");
+
+                    b.HasKey("DistrictId");
+
+                    b.HasIndex("Code");
+
+                    b.HasIndex("ProvinceId");
+
+                    b.ToTable("tblDistrict");
+                });
+
+            modelBuilder.Entity("QuanLyPhongTro.Models.tblFavorite", b =>
+                {
+                    b.Property<int>("FavoriteId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("FavoriteId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("RoomId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("FavoriteId");
+
+                    b.HasIndex("RoomId");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("tblFavorite");
                 });
 
             modelBuilder.Entity("QuanLyPhongTro.Models.tblInvoice", b =>
@@ -274,6 +390,9 @@ namespace QuanLyPhongTro.Migrations
                         .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
+
+                    b.Property<int?>("LandlordId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Notes")
                         .HasMaxLength(500)
@@ -317,6 +436,8 @@ namespace QuanLyPhongTro.Migrations
                     b.HasIndex("InvoiceCode")
                         .IsUnique();
 
+                    b.HasIndex("LandlordId");
+
                     b.HasIndex("RoomId");
 
                     b.ToTable("tblInvoice");
@@ -356,6 +477,83 @@ namespace QuanLyPhongTro.Migrations
                     b.HasIndex("ServiceId");
 
                     b.ToTable("tblInvoiceDetail");
+                });
+
+            modelBuilder.Entity("QuanLyPhongTro.Models.tblLandlord", b =>
+                {
+                    b.Property<int>("LandlordId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LandlordId"));
+
+                    b.Property<string>("AccountName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("AccountNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Avatar")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("BankId")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("BankName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("IdentityNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("RejectReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("LandlordId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("tblLandlord");
                 });
 
             modelBuilder.Entity("QuanLyPhongTro.Models.tblMenu", b =>
@@ -472,6 +670,106 @@ namespace QuanLyPhongTro.Migrations
                     b.ToTable("tblPost");
                 });
 
+            modelBuilder.Entity("QuanLyPhongTro.Models.tblProperty", b =>
+                {
+                    b.Property<int>("PropertyId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PropertyId"));
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("DistrictId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LandlordId")
+                        .HasColumnType("int");
+
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("float");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int?>("ProvinceId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("WardId")
+                        .HasColumnType("int");
+
+                    b.HasKey("PropertyId");
+
+                    b.HasIndex("DistrictId");
+
+                    b.HasIndex("LandlordId");
+
+                    b.HasIndex("ProvinceId");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.HasIndex("WardId");
+
+                    b.ToTable("tblProperty");
+                });
+
+            modelBuilder.Entity("QuanLyPhongTro.Models.tblProvince", b =>
+                {
+                    b.Property<int>("ProvinceId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProvinceId"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("ProvinceId");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("tblProvince");
+                });
+
             modelBuilder.Entity("QuanLyPhongTro.Models.tblReview", b =>
                 {
                     b.Property<int>("ReviewId")
@@ -484,6 +782,9 @@ namespace QuanLyPhongTro.Migrations
                         .IsRequired()
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int?>("ContractId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -515,6 +816,8 @@ namespace QuanLyPhongTro.Migrations
 
                     b.HasKey("ReviewId");
 
+                    b.HasIndex("ContractId");
+
                     b.ToTable("tblReview");
                 });
 
@@ -530,8 +833,14 @@ namespace QuanLyPhongTro.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
+                    b.Property<int>("ApprovalStatus")
+                        .HasColumnType("int");
+
                     b.Property<double>("Area")
                         .HasColumnType("float");
+
+                    b.Property<int>("Capacity")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -551,6 +860,9 @@ namespace QuanLyPhongTro.Migrations
                     b.Property<string>("IncludedAmenities")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsFeatured")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsPublished")
                         .HasColumnType("bit");
 
@@ -562,6 +874,16 @@ namespace QuanLyPhongTro.Migrations
 
                     b.Property<int>("MaxOccupants")
                         .HasColumnType("int");
+
+                    b.Property<int?>("PropertyId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("PublishedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RejectReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("RoomCode")
                         .IsRequired()
@@ -579,6 +901,11 @@ namespace QuanLyPhongTro.Migrations
                     b.Property<int>("RoomTypeId")
                         .HasColumnType("int");
 
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -586,17 +913,86 @@ namespace QuanLyPhongTro.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
+                    b.Property<string>("Title")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("ViewCount")
+                        .HasColumnType("int");
+
                     b.HasKey("RoomId");
+
+                    b.HasIndex("ApprovalStatus");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("IsFeatured");
+
+                    b.HasIndex("PropertyId");
 
                     b.HasIndex("RoomCode")
                         .IsUnique();
 
+                    b.HasIndex("RoomPrice");
+
                     b.HasIndex("RoomTypeId");
 
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.HasIndex("IsPublished", "ApprovalStatus", "Status");
+
                     b.ToTable("tblRoom");
+                });
+
+            modelBuilder.Entity("QuanLyPhongTro.Models.tblRoomAmenity", b =>
+                {
+                    b.Property<int>("RoomId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("AmenityId")
+                        .HasColumnType("int");
+
+                    b.HasKey("RoomId", "AmenityId");
+
+                    b.HasIndex("AmenityId");
+
+                    b.ToTable("tblRoomAmenity");
+                });
+
+            modelBuilder.Entity("QuanLyPhongTro.Models.tblRoomImage", b =>
+                {
+                    b.Property<int>("ImageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ImageId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("RoomId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("ImageId");
+
+                    b.HasIndex("RoomId");
+
+                    b.ToTable("tblRoomImage");
                 });
 
             modelBuilder.Entity("QuanLyPhongTro.Models.tblRoomReview", b =>
@@ -697,6 +1093,9 @@ namespace QuanLyPhongTro.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<int?>("LandlordId")
+                        .HasColumnType("int");
+
                     b.Property<int>("PricingMethod")
                         .HasColumnType("int");
 
@@ -719,6 +1118,8 @@ namespace QuanLyPhongTro.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("ServiceId");
+
+                    b.HasIndex("LandlordId");
 
                     b.ToTable("tblService");
                 });
@@ -770,6 +1171,9 @@ namespace QuanLyPhongTro.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<int?>("LandlordId")
+                        .HasColumnType("int");
+
                     b.Property<string>("PasswordHash")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -793,6 +1197,8 @@ namespace QuanLyPhongTro.Migrations
 
                     b.HasIndex("IdentityNumber")
                         .IsUnique();
+
+                    b.HasIndex("LandlordId");
 
                     b.HasIndex("Username")
                         .IsUnique()
@@ -861,13 +1267,55 @@ namespace QuanLyPhongTro.Migrations
                     b.ToTable("tblUser");
                 });
 
+            modelBuilder.Entity("QuanLyPhongTro.Models.tblWard", b =>
+                {
+                    b.Property<int>("WardId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("WardId"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("DistrictId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("WardId");
+
+                    b.HasIndex("Code");
+
+                    b.HasIndex("DistrictId");
+
+                    b.ToTable("tblWard");
+                });
+
             modelBuilder.Entity("QuanLyPhongTro.Models.tblBookingRequest", b =>
                 {
+                    b.HasOne("QuanLyPhongTro.Models.tblLandlord", "Landlord")
+                        .WithMany("BookingRequests")
+                        .HasForeignKey("LandlordId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("QuanLyPhongTro.Models.tblRoom", "Room")
                         .WithMany()
                         .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Landlord");
 
                     b.Navigation("Room");
                 });
@@ -885,6 +1333,11 @@ namespace QuanLyPhongTro.Migrations
 
             modelBuilder.Entity("QuanLyPhongTro.Models.tblChatSession", b =>
                 {
+                    b.HasOne("QuanLyPhongTro.Models.tblLandlord", "Landlord")
+                        .WithMany("ChatSessions")
+                        .HasForeignKey("LandlordId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("QuanLyPhongTro.Models.tblTenant", "Tenant")
                         .WithMany()
                         .HasForeignKey("TenantId")
@@ -895,6 +1348,8 @@ namespace QuanLyPhongTro.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.Navigation("Landlord");
+
                     b.Navigation("Tenant");
 
                     b.Navigation("User");
@@ -902,6 +1357,11 @@ namespace QuanLyPhongTro.Migrations
 
             modelBuilder.Entity("QuanLyPhongTro.Models.tblContract", b =>
                 {
+                    b.HasOne("QuanLyPhongTro.Models.tblLandlord", "Landlord")
+                        .WithMany("Contracts")
+                        .HasForeignKey("LandlordId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("QuanLyPhongTro.Models.tblRoom", "Room")
                         .WithMany("Contracts")
                         .HasForeignKey("RoomId")
@@ -914,9 +1374,47 @@ namespace QuanLyPhongTro.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("Landlord");
+
                     b.Navigation("Room");
 
                     b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("QuanLyPhongTro.Models.tblDistrict", b =>
+                {
+                    b.HasOne("QuanLyPhongTro.Models.tblProvince", "Province")
+                        .WithMany("Districts")
+                        .HasForeignKey("ProvinceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Province");
+                });
+
+            modelBuilder.Entity("QuanLyPhongTro.Models.tblFavorite", b =>
+                {
+                    b.HasOne("QuanLyPhongTro.Models.tblRoom", "Room")
+                        .WithMany("Favorites")
+                        .HasForeignKey("RoomId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("QuanLyPhongTro.Models.tblTenant", "Tenant")
+                        .WithMany("Favorites")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("QuanLyPhongTro.Models.tblUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Room");
+
+                    b.Navigation("Tenant");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("QuanLyPhongTro.Models.tblInvoice", b =>
@@ -927,6 +1425,11 @@ namespace QuanLyPhongTro.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("QuanLyPhongTro.Models.tblLandlord", "Landlord")
+                        .WithMany("Invoices")
+                        .HasForeignKey("LandlordId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("QuanLyPhongTro.Models.tblRoom", "Room")
                         .WithMany("Invoices")
                         .HasForeignKey("RoomId")
@@ -934,6 +1437,8 @@ namespace QuanLyPhongTro.Migrations
                         .IsRequired();
 
                     b.Navigation("Contract");
+
+                    b.Navigation("Landlord");
 
                     b.Navigation("Room");
                 });
@@ -956,6 +1461,16 @@ namespace QuanLyPhongTro.Migrations
                     b.Navigation("Service");
                 });
 
+            modelBuilder.Entity("QuanLyPhongTro.Models.tblLandlord", b =>
+                {
+                    b.HasOne("QuanLyPhongTro.Models.tblUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("QuanLyPhongTro.Models.tblMenu", b =>
                 {
                     b.HasOne("QuanLyPhongTro.Models.tblMenu", "ParentMenu")
@@ -966,15 +1481,94 @@ namespace QuanLyPhongTro.Migrations
                     b.Navigation("ParentMenu");
                 });
 
+            modelBuilder.Entity("QuanLyPhongTro.Models.tblProperty", b =>
+                {
+                    b.HasOne("QuanLyPhongTro.Models.tblDistrict", "District")
+                        .WithMany("Properties")
+                        .HasForeignKey("DistrictId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("QuanLyPhongTro.Models.tblLandlord", "Landlord")
+                        .WithMany("Properties")
+                        .HasForeignKey("LandlordId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("QuanLyPhongTro.Models.tblProvince", "Province")
+                        .WithMany("Properties")
+                        .HasForeignKey("ProvinceId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("QuanLyPhongTro.Models.tblWard", "Ward")
+                        .WithMany("Properties")
+                        .HasForeignKey("WardId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("District");
+
+                    b.Navigation("Landlord");
+
+                    b.Navigation("Province");
+
+                    b.Navigation("Ward");
+                });
+
+            modelBuilder.Entity("QuanLyPhongTro.Models.tblReview", b =>
+                {
+                    b.HasOne("QuanLyPhongTro.Models.tblContract", "Contract")
+                        .WithMany("Reviews")
+                        .HasForeignKey("ContractId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Contract");
+                });
+
             modelBuilder.Entity("QuanLyPhongTro.Models.tblRoom", b =>
                 {
+                    b.HasOne("QuanLyPhongTro.Models.tblProperty", "Property")
+                        .WithMany("Rooms")
+                        .HasForeignKey("PropertyId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("QuanLyPhongTro.Models.tblRoomType", "RoomType")
                         .WithMany("Rooms")
                         .HasForeignKey("RoomTypeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("Property");
+
                     b.Navigation("RoomType");
+                });
+
+            modelBuilder.Entity("QuanLyPhongTro.Models.tblRoomAmenity", b =>
+                {
+                    b.HasOne("QuanLyPhongTro.Models.tblAmenity", "Amenity")
+                        .WithMany("RoomAmenities")
+                        .HasForeignKey("AmenityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("QuanLyPhongTro.Models.tblRoom", "Room")
+                        .WithMany("RoomAmenities")
+                        .HasForeignKey("RoomId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Amenity");
+
+                    b.Navigation("Room");
+                });
+
+            modelBuilder.Entity("QuanLyPhongTro.Models.tblRoomImage", b =>
+                {
+                    b.HasOne("QuanLyPhongTro.Models.tblRoom", "Room")
+                        .WithMany("RoomImages")
+                        .HasForeignKey("RoomId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Room");
                 });
 
             modelBuilder.Entity("QuanLyPhongTro.Models.tblRoomReview", b =>
@@ -988,6 +1582,42 @@ namespace QuanLyPhongTro.Migrations
                     b.Navigation("Room");
                 });
 
+            modelBuilder.Entity("QuanLyPhongTro.Models.tblService", b =>
+                {
+                    b.HasOne("QuanLyPhongTro.Models.tblLandlord", "Landlord")
+                        .WithMany("Services")
+                        .HasForeignKey("LandlordId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Landlord");
+                });
+
+            modelBuilder.Entity("QuanLyPhongTro.Models.tblTenant", b =>
+                {
+                    b.HasOne("QuanLyPhongTro.Models.tblLandlord", "Landlord")
+                        .WithMany("Tenants")
+                        .HasForeignKey("LandlordId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Landlord");
+                });
+
+            modelBuilder.Entity("QuanLyPhongTro.Models.tblWard", b =>
+                {
+                    b.HasOne("QuanLyPhongTro.Models.tblDistrict", "District")
+                        .WithMany("Wards")
+                        .HasForeignKey("DistrictId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("District");
+                });
+
+            modelBuilder.Entity("QuanLyPhongTro.Models.tblAmenity", b =>
+                {
+                    b.Navigation("RoomAmenities");
+                });
+
             modelBuilder.Entity("QuanLyPhongTro.Models.tblChatSession", b =>
                 {
                     b.Navigation("Messages");
@@ -996,6 +1626,15 @@ namespace QuanLyPhongTro.Migrations
             modelBuilder.Entity("QuanLyPhongTro.Models.tblContract", b =>
                 {
                     b.Navigation("Invoices");
+
+                    b.Navigation("Reviews");
+                });
+
+            modelBuilder.Entity("QuanLyPhongTro.Models.tblDistrict", b =>
+                {
+                    b.Navigation("Properties");
+
+                    b.Navigation("Wards");
                 });
 
             modelBuilder.Entity("QuanLyPhongTro.Models.tblInvoice", b =>
@@ -1003,16 +1642,51 @@ namespace QuanLyPhongTro.Migrations
                     b.Navigation("InvoiceDetails");
                 });
 
+            modelBuilder.Entity("QuanLyPhongTro.Models.tblLandlord", b =>
+                {
+                    b.Navigation("BookingRequests");
+
+                    b.Navigation("ChatSessions");
+
+                    b.Navigation("Contracts");
+
+                    b.Navigation("Invoices");
+
+                    b.Navigation("Properties");
+
+                    b.Navigation("Services");
+
+                    b.Navigation("Tenants");
+                });
+
             modelBuilder.Entity("QuanLyPhongTro.Models.tblMenu", b =>
                 {
                     b.Navigation("ChildMenus");
+                });
+
+            modelBuilder.Entity("QuanLyPhongTro.Models.tblProperty", b =>
+                {
+                    b.Navigation("Rooms");
+                });
+
+            modelBuilder.Entity("QuanLyPhongTro.Models.tblProvince", b =>
+                {
+                    b.Navigation("Districts");
+
+                    b.Navigation("Properties");
                 });
 
             modelBuilder.Entity("QuanLyPhongTro.Models.tblRoom", b =>
                 {
                     b.Navigation("Contracts");
 
+                    b.Navigation("Favorites");
+
                     b.Navigation("Invoices");
+
+                    b.Navigation("RoomAmenities");
+
+                    b.Navigation("RoomImages");
 
                     b.Navigation("RoomReviews");
                 });
@@ -1030,6 +1704,13 @@ namespace QuanLyPhongTro.Migrations
             modelBuilder.Entity("QuanLyPhongTro.Models.tblTenant", b =>
                 {
                     b.Navigation("Contracts");
+
+                    b.Navigation("Favorites");
+                });
+
+            modelBuilder.Entity("QuanLyPhongTro.Models.tblWard", b =>
+                {
+                    b.Navigation("Properties");
                 });
 #pragma warning restore 612, 618
         }

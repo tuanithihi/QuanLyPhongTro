@@ -1,0 +1,168 @@
+@model QuanLyPhongTro.Models.tblLandlord
+@{
+    ViewData["Title"] = "Trạng thái Hồ sơ Chủ trọ";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<section class="py-5" style="background-color: var(--color-bg-page, #f8f9fa); min-height: 70vh;">
+    <div class="container-xl">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-xl-7">
+
+                @if (TempData["Success"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
+                        <i class="bi bi-check-circle-fill me-2"></i> @TempData["Success"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                @if (TempData["Error"] != null)
+                {
+                    <div class="alert alert-warning alert-dismissible fade show mb-4 border-0 shadow-sm" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["Error"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                    <div class="card-body p-4 p-md-5 text-center">
+
+                        @if (Model.Status == QuanLyPhongTro.Models.LandlordStatus.Pending)
+                        {
+                            <div class="mb-4">
+                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle"
+                                     style="width: 80px; height: 80px; background-color: var(--brand-primary-light, #fef2f2); border: 2px solid var(--brand-primary-border, #fecaca);">
+                                    <i class="bi bi-hourglass-split fs-1" style="color: var(--brand-primary, #e03c31);"></i>
+                                </div>
+                            </div>
+
+                            <span class="badge px-3 py-2 rounded-pill mb-2 fw-semibold" style="background-color: var(--brand-primary-light, #fef2f2); color: var(--brand-primary, #e03c31); border: 1px solid var(--brand-primary-border, #fecaca);">
+                                <i class="bi bi-clock-history me-1"></i> Hồ sơ đang chờ Ban Quản Trị phê duyệt
+                            </span>
+
+                            <h3 class="fw-bold text-dark mb-2">Đăng Ký Chủ Trọ Thành Công!</h3>
+                            <p class="text-muted mb-4" style="max-width: 500px; margin: 0 auto;">
+                                Cảm ơn bạn <strong>@Model.FullName</strong> đã gửi hồ sơ đăng ký đối tác cho thuê. Ban Quản Trị sàn đang kiểm tra và xác thực thông tin. Chúng tôi sẽ phê duyệt trong vòng 24 giờ.
+                            </p>
+
+                            <div class="text-start bg-light rounded-3 p-3 p-md-4 mb-4 border">
+                                <h6 class="fw-bold text-dark mb-3 border-bottom pb-2">
+                                    <i class="bi bi-file-earmark-person text-danger me-2" style="color: var(--brand-primary) !important;"></i>Thông tin hồ sơ đã gửi:
+                                </h6>
+                                <div class="row g-2 small">
+                                    <div class="col-sm-4 text-muted">Họ và tên:</div>
+                                    <div class="col-sm-8 fw-semibold text-dark">@Model.FullName</div>
+
+                                    <div class="col-sm-4 text-muted">Số điện thoại:</div>
+                                    <div class="col-sm-8 fw-semibold text-dark">@Model.Phone</div>
+
+                                    <div class="col-sm-4 text-muted">Email:</div>
+                                    <div class="col-sm-8 fw-semibold text-dark">@Model.Email</div>
+
+                                    <div class="col-sm-4 text-muted">Số CCCD/CMND:</div>
+                                    <div class="col-sm-8 fw-semibold text-dark">@Model.IdentityNumber</div>
+
+                                    @if (!string.IsNullOrEmpty(Model.Address))
+                                    {
+                                        <div class="col-sm-4 text-muted">Địa chỉ:</div>
+                                        <div class="col-sm-8 fw-semibold text-dark">@Model.Address</div>
+                                    }
+
+                                    @if (!string.IsNullOrEmpty(Model.BankName))
+                                    {
+                                        <div class="col-sm-4 text-muted">Tài khoản VietQR:</div>
+                                        <div class="col-sm-8 fw-semibold text-dark">@Model.BankName - @Model.AccountNumber (@Model.AccountName)</div>
+                                    }
+
+                                    <div class="col-sm-4 text-muted">Thời gian gửi:</div>
+                                    <div class="col-sm-8 fw-semibold text-dark">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex flex-wrap justify-content-center gap-3">
+                                <a href="/" class="btn btn-outline-secondary px-4">
+                                    <i class="bi bi-house me-1"></i> Về trang chủ
+                                </a>
+                                <a href="/phong-tro" class="btn px-4 text-white" style="background-color: var(--brand-primary, #e03c31);">
+                                    <i class="bi bi-search me-1"></i> Khám phá phòng trọ
+                                </a>
+                            </div>
+                        }
+                        else if (Model.Status == QuanLyPhongTro.Models.LandlordStatus.Approved)
+                        {
+                            <div class="mb-4">
+                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle"
+                                     style="width: 80px; height: 80px; background-color: #e8f5e9; border: 2px solid #a5d6a7;">
+                                    <i class="bi bi-check-circle-fill fs-1 text-success"></i>
+                                </div>
+                            </div>
+
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill mb-2 fw-semibold">
+                                <i class="bi bi-shield-check me-1"></i> Đối tác Chủ trọ đã được phê duyệt
+                            </span>
+
+                            <h3 class="fw-bold text-dark mb-2">Hồ Sơ Đã Được Phê Duyệt!</h3>
+                            <p class="text-muted mb-4" style="max-width: 500px; margin: 0 auto;">
+                                Chúc mừng bạn <strong>@Model.FullName</strong>! Tài khoản của bạn đã được kích hoạt đầy đủ quyền đăng tin và sử dụng Kênh Quản Lý Chủ Trọ.
+                            </p>
+
+                            <div class="d-flex flex-wrap justify-content-center gap-3">
+                                <a asp-area="Admin" asp-controller="Room" asp-action="Create" class="btn text-white px-4 py-2 fw-bold" style="background-color: var(--brand-primary, #e03c31);">
+                                    <i class="bi bi-plus-circle me-1"></i> Đăng tin phòng mới ngay
+                                </a>
+                                <a asp-area="Admin" asp-controller="Home" asp-action="Index" class="btn btn-outline-dark px-4 py-2">
+                                    <i class="bi bi-speedometer2 me-1"></i> Vào Kênh Quản Lý Chủ Trọ
+                                </a>
+                            </div>
+                        }
+                        else if (Model.Status == QuanLyPhongTro.Models.LandlordStatus.Rejected)
+                        {
+                            <div class="mb-4">
+                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle"
+                                     style="width: 80px; height: 80px; background-color: #fee2e2; border: 2px solid #fecaca;">
+                                    <i class="bi bi-x-circle-fill fs-1 text-danger"></i>
+                                </div>
+                            </div>
+
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 rounded-pill mb-2 fw-semibold">
+                                Hồ sơ không được phê duyệt
+                            </span>
+
+                            <h3 class="fw-bold text-dark mb-2">Hồ Sơ Bị Từ Chối</h3>
+                            <p class="text-danger mb-4" style="max-width: 500px; margin: 0 auto;">
+                                <strong>Lý do từ Ban Quản Trị:</strong> @(Model.RejectReason ?? "Thông tin xác minh chưa hợp lệ.")
+                            </p>
+
+                            <div class="d-flex flex-wrap justify-content-center gap-3">
+                                <a href="/dang-tin" class="btn btn-primary px-4">
+                                    <i class="bi bi-pencil-square me-1"></i> Đăng ký lại hồ sơ
+                                </a>
+                                <a href="/Contact" class="btn btn-outline-secondary px-4">
+                                    <i class="bi bi-telephone me-1"></i> Liên hệ Ban Quản Trị
+                                </a>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="mb-4">
+                                <div class="d-inline-flex align-items-center justify-content-center rounded-circle"
+                                     style="width: 80px; height: 80px; background-color: #fff3cd; border: 2px solid #ffeeba;">
+                                    <i class="bi bi-lock-fill fs-1 text-warning"></i>
+                                </div>
+                            </div>
+
+                            <h3 class="fw-bold text-dark mb-2">Tài Khoản Tạm Khóa</h3>
+                            <p class="text-muted mb-4">
+                                Tài khoản chủ trọ đang bị tạm ngừng hoạt động. Vui lòng liên hệ hotline hỗ trợ.
+                            </p>
+                            <a href="/Contact" class="btn btn-outline-secondary px-4">Liên hệ hỗ trợ</a>
+                        }
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>

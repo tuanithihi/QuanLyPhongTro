@@ -1,0 +1,251 @@
+@model QuanLyPhongTro.Models.tblLandlord
+@{
+    ViewData["Title"] = "Hồ sơ đối tác Chủ trọ - " + Model.FullName;
+    Layout = "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<main id="main" class="main">
+
+    <div class="pagetitle d-flex justify-content-between align-items-center">
+        <div>
+            <h1>Hồ sơ Chủ trọ: @Model.FullName</h1>
+            <nav>
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a asp-action="Index">Chủ trọ</a></li>
+                    <li class="breadcrumb-item active">@Model.FullName</li>
+                </ol>
+            </nav>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách
+        </a>
+    </div>
+
+    <section class="section profile">
+        <div class="row">
+            <div class="col-xl-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body profile-card pt-4 d-flex flex-column align-items-center">
+                        <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold fs-2 mb-3" style="width: 100px; height: 100px;">
+                            @(!string.IsNullOrEmpty(Model.FullName) ? Model.FullName.Substring(0, 1).ToUpper() : "C")
+                        </div>
+                        <h4 class="fw-bold mb-1">@Model.FullName</h4>
+                        <div class="mb-2">
+                            @switch (Model.Status)
+                            {
+                                case QuanLyPhongTro.Models.LandlordStatus.Pending:
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Chờ phê duyệt</span>
+                                    break;
+                                case QuanLyPhongTro.Models.LandlordStatus.Approved:
+                                    <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Đã phê duyệt</span>
+                                    break;
+                                case QuanLyPhongTro.Models.LandlordStatus.Suspended:
+                                    <span class="badge bg-danger"><i class="bi bi-slash-circle me-1"></i>Đã tạm khóa</span>
+                                    break;
+                                case QuanLyPhongTro.Models.LandlordStatus.Rejected:
+                                    <span class="badge bg-dark"><i class="bi bi-x-circle me-1"></i>Từ chối</span>
+                                    break;
+                            }
+                        </div>
+                        <small class="text-muted">Đăng ký: @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+
+                        @if (!string.IsNullOrEmpty(Model.RejectReason))
+                        {
+                            <div class="alert alert-danger w-100 mt-3 p-2 small">
+                                <strong>Lý do từ chối / ghi chú:</strong><br />
+                                @Model.RejectReason
+                            </div>
+                        }
+
+                        <hr class="w-100 my-3" />
+
+                        <!-- Actions -->
+                        <div class="d-grid gap-2 w-100">
+                            @if (Model.Status == QuanLyPhongTro.Models.LandlordStatus.Pending)
+                            {
+                                <form method="post" asp-action="Approve" asp-route-id="@Model.LandlordId" onsubmit="return confirm('Phê duyệt chủ trọ này?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-success w-100 btn-sm">
+                                        <i class="bi bi-check-lg me-1"></i> Phê duyệt chủ trọ
+                                    </button>
+                                </form>
+                                <button type="button" class="btn btn-danger w-100 btn-sm" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                                    <i class="bi bi-x-lg me-1"></i> Từ chối kèm lý do
+                                </button>
+                            }
+                            else if (Model.Status == QuanLyPhongTro.Models.LandlordStatus.Approved)
+                            {
+                                <button type="button" class="btn btn-outline-danger w-100 btn-sm" data-bs-toggle="modal" data-bs-target="#suspendModal">
+                                    <i class="bi bi-lock me-1"></i> Tạm khóa tài khoản
+                                </button>
+                            }
+                            else
+                            {
+                                <form method="post" asp-action="Reactivate" asp-route-id="@Model.LandlordId" onsubmit="return confirm('Kích hoạt lại chủ trọ này?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-outline-success w-100 btn-sm">
+                                        <i class="bi bi-unlock me-1"></i> Kích hoạt lại
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-8">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body pt-3">
+                        <ul class="nav nav-tabs nav-tabs-bordered">
+                            <li class="nav-item">
+                                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#profile-overview">Thông tin hồ sơ</button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#profile-properties">
+                                    Khu trọ (@(Model.Properties?.Count ?? 0))
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content pt-3">
+                            <div class="tab-pane fade show active" id="profile-overview">
+                                <h6 class="fw-bold mb-3 text-primary">Thông tin cá nhân & Liên hệ</h6>
+                                <div class="row mb-2">
+                                    <div class="col-lg-3 col-md-4 label text-muted">Số điện thoại:</div>
+                                    <div class="col-lg-9 col-md-8 fw-semibold">@(Model.Phone ?? "Chưa cập nhật")</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-lg-3 col-md-4 label text-muted">Email:</div>
+                                    <div class="col-lg-9 col-md-8">@(Model.Email ?? "Chưa cập nhật")</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-lg-3 col-md-4 label text-muted">Số CCCD / CMND:</div>
+                                    <div class="col-lg-9 col-md-8 font-monospace">@(Model.IdentityNumber ?? "Chưa cập nhật")</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-lg-3 col-md-4 label text-muted">Địa chỉ liên hệ:</div>
+                                    <div class="col-lg-9 col-md-8">@(Model.Address ?? "Chưa cập nhật")</div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-lg-3 col-md-4 label text-muted">Giới thiệu:</div>
+                                    <div class="col-lg-9 col-md-8">@(Model.Description ?? "Không có mô tả.")</div>
+                                </div>
+
+                                <h6 class="fw-bold mb-3 text-primary border-top pt-3">Tài khoản ngân hàng nhận tiền thuê (VietQR)</h6>
+                                <div class="row mb-2">
+                                    <div class="col-lg-3 col-md-4 label text-muted">Ngân hàng:</div>
+                                    <div class="col-lg-9 col-md-8 fw-semibold">@(Model.BankName ?? Model.BankId ?? "Chưa cập nhật")</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-lg-3 col-md-4 label text-muted">Số tài khoản:</div>
+                                    <div class="col-lg-9 col-md-8 font-monospace text-primary fw-bold">@(Model.AccountNumber ?? "Chưa cập nhật")</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-lg-3 col-md-4 label text-muted">Tên chủ tài khoản:</div>
+                                    <div class="col-lg-9 col-md-8 text-uppercase">@(Model.AccountName ?? "Chưa cập nhật")</div>
+                                </div>
+                            </div>
+
+                            <div class="tab-pane fade" id="profile-properties">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Tên khu trọ</th>
+                                                <th>Địa chỉ</th>
+                                                <th>Số phòng</th>
+                                                <th>Trạng thái</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @if (Model.Properties != null && Model.Properties.Any())
+                                            {
+                                                foreach (var p in Model.Properties)
+                                                {
+                                                    <tr>
+                                                        <td class="fw-semibold">@p.Name</td>
+                                                        <td class="small text-muted">@p.Address</td>
+                                                        <td><span class="badge bg-primary">@(p.Rooms?.Count ?? 0) phòng</span></td>
+                                                        <td>
+                                                            @if (p.Status == QuanLyPhongTro.Models.PropertyStatus.Active)
+                                                            {
+                                                                <span class="badge bg-success">Hoạt động</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="badge bg-secondary">Tạm ngưng</span>
+                                                            }
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <tr>
+                                                    <td colspan="4" class="text-center py-3 text-muted">Chủ trọ này chưa tạo khu trọ nào.</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modal Từ chối -->
+    <div class="modal fade" id="rejectModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" asp-action="Reject" asp-route-id="@Model.LandlordId">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-header">
+                        <h5 class="modal-title">Từ chối hồ sơ chủ trọ</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Lý do từ chối <span class="text-danger">*</span></label>
+                            <textarea name="reason" class="form-control" rows="3" placeholder="Nhập lý do không đạt yêu cầu..." required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-danger btn-sm">Xác nhận từ chối</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Tạm khóa -->
+    <div class="modal fade" id="suspendModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" asp-action="Suspend" asp-route-id="@Model.LandlordId">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-header">
+                        <h5 class="modal-title">Tạm khóa tài khoản chủ trọ</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Lý do tạm khóa</label>
+                            <textarea name="reason" class="form-control" rows="3" placeholder="Lý do khóa tài khoản..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-danger btn-sm">Xác nhận tạm khóa</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</main>

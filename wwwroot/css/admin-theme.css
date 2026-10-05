@@ -1,0 +1,270 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   ADMIN UNIFIED BRAND THEME (ĐỒNG BỘ MÀU THƯƠNG HIỆU SÀN TRANG CHỦ)
+   Tone chủ đạo: Đỏ cam thương hiệu (#e03c31) + Dải xám trung tính hiện đại
+   Triệt tiêu hoàn toàn phong cách đa sắc màu lộn xộn
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Reset nền & Font toàn bộ hệ thống Admin ────────────────────── */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--color-bg-page, #f8f9fa) !important;
+  color: var(--gray-800, #1f2937);
+}
+
+a {
+  color: var(--brand-primary, #e03c31);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+a:hover {
+  color: var(--brand-primary-hover, #c93126);
+}
+
+h1, h2, h3, h4, h5, h6,
+.pagetitle h1 {
+  color: var(--gray-900, #111827) !important;
+  font-family: inherit;
+  font-weight: 700;
+}
+
+/* ── 2. Header Admin ───────────────────────────────────────────────── */
+.header {
+  background-color: #ffffff !important;
+  border-bottom: 1px solid var(--gray-200, #e5e7eb) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  height: 60px;
+}
+
+.logo span {
+  color: var(--brand-primary, #e03c31) !important;
+  font-weight: 700 !important;
+  font-family: inherit !important;
+}
+
+.header .toggle-sidebar-btn {
+  color: var(--gray-700, #374151) !important;
+  transition: color 0.15s ease;
+}
+
+.header .toggle-sidebar-btn:hover {
+  color: var(--brand-primary, #e03c31) !important;
+}
+
+.header-nav .nav-profile {
+  color: var(--gray-800, #1f2937) !important;
+}
+
+.header-nav .dropdown-menu {
+  border: 1px solid var(--gray-200, #e5e7eb) !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08) !important;
+  border-radius: 8px !important;
+}
+
+.header-nav .profile .dropdown-header h6 {
+  color: var(--gray-900, #111827) !important;
+  font-weight: 700;
+}
+
+.header-nav .profile .dropdown-item {
+  color: var(--gray-700, #374151) !important;
+  transition: all 0.15s ease;
+}
+
+.header-nav .profile .dropdown-item:hover {
+  background-color: var(--brand-primary-light, #fef2f2) !important;
+  color: var(--brand-primary, #e03c31) !important;
+}
+
+.header-nav .profile .dropdown-item:hover i {
+  color: var(--brand-primary, #e03c31) !important;
+}
+
+/* ── 3. Sidebar Admin ──────────────────────────────────────────────── */
+.sidebar {
+  background-color: #ffffff !important;
+  border-right: 1px solid var(--gray-200, #e5e7eb) !important;
+  box-shadow: none !important;
+  padding: 16px 12px;
+}
+
+.sidebar-nav .nav-heading {
+  color: var(--gray-400, #9ca3af) !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  padding: 8px 12px 4px 12px;
+}
+
+/* Mục đang chọn / Active */
+.sidebar-nav .nav-link:not(.collapsed) {
+  background-color: var(--brand-primary-light, #fef2f2) !important;
+  color: var(--brand-primary, #e03c31) !important;
+  font-weight: 600 !important;
+  border-left: 3px solid var(--brand-primary, #e03c31) !important;
+  border-radius: 6px !important;
+}
+
+.sidebar-nav .nav-link:not(.collapsed) i {
+  color: var(--brand-primary, #e03c31) !important;
+}
+
+/* Mục chưa chọn / Collapsed */
+.sidebar-nav .nav-link.collapsed {
+  background: transparent !important;
+  color: var(--gray-700, #374151) !important;
+  font-weight: 500 !important;
+  border-left: 3px solid transparent !important;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.sidebar-nav .nav-link.collapsed i {
+  color: var(--gray-500, #6b7280) !important;
+}
+
+/* Hover */
+.sidebar-nav .nav-link:hover {
+  background-color: var(--brand-primary-light, #fef2f2) !important;
+  color: var(--brand-primary, #e03c31) !important;
+}
+
+.sidebar-nav .nav-link:hover i {
+  color: var(--brand-primary, #e03c31) !important;
+}
+
+/* Submenu */
+.sidebar-nav .nav-content a {
+  color: var(--gray-600, #4b5563) !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  transition: all 0.15s ease;
+}
+
+.sidebar-nav .nav-content a:hover,
+.sidebar-nav .nav-content a.active {
+  color: var(--brand-primary, #e03c31) !important;
+}
+
+.sidebar-nav .nav-content a.active i,
+.sidebar-nav .nav-content a:hover i {
+  background-color: var(--brand-primary, #e03c31) !important;
+}
+
+/* Badge số lượng thông báo trên sidebar đồng bộ màu thương hiệu */
+.sidebar-badge-count {
+  background-color: var(--brand-primary, #e03c31) !important;
+  color: #ffffff !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  padding: 2px 7px !important;
+  border-radius: 9999px !important;
+  line-height: 1.2 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── 4. Form Controls & Buttons ────────────────────────────────────── */
+.btn-primary {
+  background-color: var(--brand-primary, #e03c31) !important;
+  border-color: var(--brand-primary, #e03c31) !important;
+  color: #ffffff !important;
+  font-weight: 500;
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+  background-color: var(--brand-primary-hover, #c93126) !important;
+  border-color: var(--brand-primary-hover, #c93126) !important;
+  color: #ffffff !important;
+}
+
+.btn-outline-primary {
+  color: var(--brand-primary, #e03c31) !important;
+  border-color: var(--brand-primary, #e03c31) !important;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus,
+.btn-outline-primary:active {
+  background-color: var(--brand-primary, #e03c31) !important;
+  border-color: var(--brand-primary, #e03c31) !important;
+  color: #ffffff !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--brand-primary, #e03c31) !important;
+  box-shadow: 0 0 0 0.2rem var(--brand-primary-focus, rgba(224, 60, 49, 0.25)) !important;
+}
+
+.form-check-input:checked {
+  background-color: var(--brand-primary, #e03c31) !important;
+  border-color: var(--brand-primary, #e03c31) !important;
+}
+
+/* ── 5. Tabs, Breadcrumbs, Back-To-Top & Pagination ────────────────── */
+.nav-tabs-bordered .nav-link {
+  color: var(--gray-600, #4b5563) !important;
+}
+
+.nav-tabs-bordered .nav-link:hover,
+.nav-tabs-bordered .nav-link:focus {
+  color: var(--brand-primary, #e03c31) !important;
+}
+
+.nav-tabs-bordered .nav-link.active {
+  color: var(--brand-primary, #e03c31) !important;
+  border-bottom: 2px solid var(--brand-primary, #e03c31) !important;
+}
+
+.breadcrumb-item a {
+  color: var(--gray-500, #6b7280) !important;
+}
+
+.breadcrumb-item a:hover {
+  color: var(--brand-primary, #e03c31) !important;
+}
+
+.page-item.active .page-link {
+  background-color: var(--brand-primary, #e03c31) !important;
+  border-color: var(--brand-primary, #e03c31) !important;
+}
+
+.page-link {
+  color: var(--brand-primary, #e03c31) !important;
+}
+
+.back-to-top {
+  background: var(--brand-primary, #e03c31) !important;
+  border-radius: 6px !important;
+}
+
+.back-to-top:hover {
+  background: var(--brand-primary-hover, #c93126) !important;
+}
+
+/* ── 6. Triệt tiêu các card màu lòe loẹt cũ của template gốc NiceAdmin ── */
+.dashboard .sales-card .card-icon,
+.dashboard .revenue-card .card-icon,
+.dashboard .customers-card .card-icon {
+  color: var(--brand-primary, #e03c31) !important;
+  background-color: var(--brand-primary-light, #fef2f2) !important;
+  border: 1px solid var(--brand-primary-border, #fecaca) !important;
+  border-radius: 8px !important;
+}
+
+.dashboard .info-card h6 {
+  color: var(--gray-900, #111827) !important;
+}
+
+/* ── 7. Footer ─────────────────────────────────────────────────────── */
+.footer {
+  border-top: 1px solid var(--gray-200, #e5e7eb) !important;
+  background: #ffffff !important;
+  color: var(--gray-500, #6b7280) !important;
+  padding: 16px 0 !important;
+}

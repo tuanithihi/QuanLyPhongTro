@@ -1,0 +1,107 @@
+@model QuanLyPhongTro.Models.ViewModels.RoomCardViewModel
+@{
+    string detailUrl = !string.IsNullOrWhiteSpace(Model.Slug)
+        ? $"/phong/{Model.Slug}-{Model.RoomId}"
+        : $"/phong/phong-tro-{Model.RoomId}";
+    string landlordUrl = !string.IsNullOrWhiteSpace(Model.LandlordSlug)
+        ? $"/chu-tro/{Model.LandlordSlug}"
+        : $"/chu-tro/{Model.LandlordId}";
+    string thumb = !string.IsNullOrWhiteSpace(Model.ThumbnailUrl)
+        ? Model.ThumbnailUrl
+        : "/images/no-image.png";
+}
+
+<div class="room-card" data-room-id="@Model.RoomId" data-price="@Model.RoomPrice" data-area="@(Model.Area ?? 0)" data-lat="@(Model.Latitude ?? 0)" data-lng="@(Model.Longitude ?? 0)">
+    <div class="room-card-img-wrap">
+        <a href="@detailUrl" tabindex="-1" aria-label="@Model.Title">
+            <img src="@thumb" 
+                 alt="@Model.Title" 
+                 class="room-card-img" 
+                 loading="lazy" 
+                 onerror="this.src='https://placehold.co/600x450/f3f4f6/9ca3af?text=Phong+Tro+Moi';" />
+        </a>
+
+        <div class="room-card-badge-top">
+            @if (Model.IsFeatured)
+            {
+                <span class="badge-status badge-status-featured">
+                    <i class="bi bi-star-fill text-danger me-1"></i>Nổi bật
+                </span>
+            }
+            <span class="badge-status badge-status-available">
+                <i class="bi bi-check-circle-fill me-1"></i>Đang trống
+            </span>
+        </div>
+
+        <button type="button" class="room-card-favorite-btn @(Model.IsFavorite ? "active" : "")" 
+                onclick="toggleFavorite(@Model.RoomId, this)" 
+                title="Lưu tin yêu thích" 
+                aria-label="Yêu thích">
+            <i class="bi @(Model.IsFavorite ? "bi-heart-fill text-danger" : "bi-heart")"></i>
+        </button>
+
+        @if (Model.ImageCount > 0)
+        {
+            <div class="room-card-img-count">
+                <i class="bi bi-camera"></i>
+                <span>@Model.ImageCount</span>
+            </div>
+        }
+    </div>
+
+    <div class="room-card-body">
+        <h3 class="room-card-title">
+            <a href="@detailUrl" title="@Model.Title">
+                @Model.Title
+            </a>
+        </h3>
+
+        <div class="room-card-meta">
+            <span class="room-card-price">@Model.FormattedPrice</span>
+            <span class="room-card-area">&bull; @Model.FormattedArea</span>
+            @if (Model.ReviewCount > 0)
+            {
+                <span class="ms-auto small d-flex align-items-center gap-1 text-muted">
+                    <i class="bi bi-star-fill text-warning"></i>
+                    <strong class="text-dark">@Model.AverageRating.ToString("0.0")</strong>
+                    <span>(@Model.ReviewCount)</span>
+                </span>
+            }
+        </div>
+
+        <div class="room-card-location" title="@Model.FullAddress">
+            <i class="bi bi-geo-alt text-danger"></i>
+            <span>@Model.ShortAddress</span>
+        </div>
+
+        @if (Model.AmenityNames != null && Model.AmenityNames.Any())
+        {
+            <div class="room-card-amenities">
+                @foreach (var am in Model.AmenityNames.Take(3))
+                {
+                    <span class="room-card-amenity-pill">@am</span>
+                }
+            </div>
+        }
+
+        <div class="room-card-footer">
+            <a href="@landlordUrl" class="room-card-landlord" title="Xem trang chủ trọ @Model.LandlordName">
+                @if (!string.IsNullOrEmpty(Model.LandlordAvatar))
+                {
+                    <img src="@Model.LandlordAvatar" alt="@Model.LandlordName" class="room-card-landlord-avatar" />
+                }
+                else
+                {
+                    <span class="room-card-landlord-avatar d-flex align-items-center justify-content-center text-muted small">
+                        <i class="bi bi-person-fill"></i>
+                    </span>
+                }
+                <span class="text-truncate" style="max-width: 140px;">@Model.LandlordName</span>
+            </a>
+
+            <span>
+                <i class="bi bi-clock me-1"></i>@(Model.PublishedAt?.ToString("dd/MM") ?? Model.CreatedAt.ToString("dd/MM"))
+            </span>
+        </div>
+    </div>
+</div>
