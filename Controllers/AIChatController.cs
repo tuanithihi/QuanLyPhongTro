@@ -15,6 +15,7 @@ namespace QuanLyPhongTro.Controllers
     /// </summary>
     [Route("api/chat")]
     [ApiController]
+    [IgnoreAntiforgeryToken]
     public class AIChatController : ControllerBase
     {
         private readonly DataContext _db;
@@ -147,7 +148,7 @@ namespace QuanLyPhongTro.Controllers
             var sb = new StringBuilder();
             var vn = CultureInfo.GetCultureInfo("vi-VN");
 
-            sb.AppendLine("Bạn là Trợ lý AI chuyên nghiệp của sàn bất động sản cho thuê 'Phòng Trọ Mới'.");
+            sb.AppendLine("Bạn là Trợ lý AI chuyên nghiệp của sàn bất động sản cho thuê 'Z-Stay'.");
             sb.AppendLine("QUY TẮC CỐT LÕI (BẮT BUỘC TUÂN THỦ):");
             sb.AppendLine("1. Xưng hô lịch sự, chuyên nghiệp: 'dạ', 'em' và gọi khách là 'anh/chị'.");
             sb.AppendLine("2. CHỈ tư vấn và giới thiệu các phòng CÓ THẬT trong danh sách dữ liệu được cung cấp dưới đây.");

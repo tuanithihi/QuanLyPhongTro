@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
@@ -479,5 +480,441 @@ namespace QuanLyPhongTro.Tests
                 Assert.True(hasAttr, $"Controller {ctrl.Name} phải được bảo vệ bởi attribute [SuperAdminOnly] để ngăn chủ trọ truy cập.");
             }
         }
+
+        [Fact]
+        public async Task Flow8_TenantCreation_OnlyShowsBookingRequests_AndPrePopulatesFromBooking()
+        {
+            var context = TestHelper.CreateInMemoryContext();
+            TestHelper.SeedStandardTestData(context);
+
+            var envMock = new Mock<Microsoft.AspNetCore.Hosting.IWebHostEnvironment>();
+            var landlordServiceMock = new Mock<ICurrentLandlordService>();
+            var fileUploadMock = new Mock<IFileUploadService>();
+
+            // Giả lập đăng nhập là Landlord 1
+            landlordServiceMock.Setup(s => s.IsSuperAdmin()).Returns(false);
+            landlordServiceMock.Setup(s => s.GetCurrentLandlordId()).Returns(1);
+
+            var controller = new QuanLyPhongTro.Areas.Admin.Controllers.TenantController(
+                context, envMock.Object, landlordServiceMock.Object, fileUploadMock.Object)
+            {
+                TempData = new Microsoft.AspNetCore.Mvc.ViewFeatures.TempDataDictionary(
+                    new Microsoft.AspNetCore.Http.DefaultHttpContext(),
+                    Mock.Of<Microsoft.AspNetCore.Mvc.ViewFeatures.ITempDataProvider>())
+            };
+
+            // Thêm booking của Landlord 1 và booking của Landlord 2
+            var bkLandlord1 = new tblBookingRequest
+            {
+                RequestId = 501,
+                LandlordId = 1,
+                RoomId = 1,
+                FullName = "Trần Thị Thuê Nhà",
+                Phone = "0933445566",
+                Email = "thuenha@gmail.com",
+                RequestType = BookingRequestType.ViewingRequest,
+                Status = BookingRequestStatus.Pending,
+                PreferredDate = "2026-10-15"
+            };
+            var bkLandlord2 = new tblBookingRequest
+            {
+                RequestId = 502,
+                LandlordId = 2,
+                RoomId = 5,
+                FullName = "Khách của chủ trọ khác",
+                Phone = "0944556677",
+                Email = "khachkhac@gmail.com",
+                RequestType = BookingRequestType.ViewingRequest,
+                Status = BookingRequestStatus.Pending,
+                PreferredDate = "2026-10-16"
+            };
+            context.BookingRequests.AddRange(bkLandlord1, bkLandlord2);
+            await context.SaveChangesAsync();
+
+            // 1. Khi mở trang Create của Landlord 1: chỉ hiển thị booking của Landlord 1 (gồm 501 và booking seed 1), KHÔNG có của Landlord 2 (502, 2)
+            await controller.Create();
+            var bookingList = controller.ViewBag.BookingList as Microsoft.AspNetCore.Mvc.Rendering.SelectList;
+            Assert.NotNull(bookingList);
+            var items = bookingList.Cast<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>().ToList();
+            Assert.Contains(items, i => i.Value == "501");
+            Assert.DoesNotContain(items, i => i.Value == "502");
+            Assert.DoesNotContain(items, i => i.Value == "2");
+
+            // 2. Gọi GetBookingInfo cho booking 501
+            var jsonResult = await controller.GetBookingInfo(501) as Microsoft.AspNetCore.Mvc.JsonResult;
+            Assert.NotNull(jsonResult);
+            Assert.NotNull(jsonResult.Value);
+            var fullNameVal = jsonResult.Value.GetType().GetProperty("fullName")?.GetValue(jsonResult.Value)?.ToString();
+            var phoneVal = jsonResult.Value.GetType().GetProperty("phone")?.GetValue(jsonResult.Value)?.ToString();
+            Assert.Equal("Trần Thị Thuê Nhà", fullNameVal);
+            Assert.Equal("0933445566", phoneVal);
+
+            // 3. Không cho phép Landlord 1 truy cập thông tin booking của Landlord 2 (403 Forbidden)
+            var forbiddenResult = await controller.GetBookingInfo(502) as Microsoft.AspNetCore.Mvc.StatusCodeResult;
+            Assert.NotNull(forbiddenResult);
+            Assert.Equal(403, forbiddenResult.StatusCode);
+
+            // 4. Tạo người thuê từ booking 501
+            var tenantModel = new tblTenant
+            {
+                FullName = "Trần Thị Thuê Nhà",
+                IdentityNumber = "012345678999",
+                Phone = "0933445566",
+                Email = "thuenha@gmail.com",
+                IsActive = true
+            };
+            var createResult = await controller.Create(tenantModel, null, null, null, null, null, 501);
+            var redirect = Assert.IsType<Microsoft.AspNetCore.Mvc.RedirectToActionResult>(createResult);
+            Assert.Equal("Index", redirect.ActionName);
+
+            // Kiểm tra tenant đã được lưu trong DB
+            var createdTenant = await context.Tenants.FirstOrDefaultAsync(t => t.IdentityNumber == "012345678999");
+            Assert.NotNull(createdTenant);
+            Assert.Equal(1, createdTenant.LandlordId);
+
+            // Kiểm tra trạng thái booking đã chuyển thành Accepted
+            var updatedBooking = await context.BookingRequests.FindAsync(501);
+            Assert.NotNull(updatedBooking);
+            Assert.Equal(BookingRequestStatus.Accepted, updatedBooking.Status);
+            Assert.Contains("Đã tạo hồ sơ người thuê", updatedBooking.AdminNote);
+        }
+
+        [Fact]
+        public async Task Flow8_Regression_RoomType_CategoryTab_Favorite_Notification_Compare()
+        {
+            var context = TestHelper.CreateInMemoryContext();
+            TestHelper.SeedStandardTestData(context);
+
+            // 1. Kiểm tra SeedRoomTypesAsync đảm bảo có Nhà nguyên căn và Căn hộ mini
+            await DataSeeder.SeedRoomTypesAsync(context);
+            var roomTypes = await context.RoomTypes.ToListAsync();
+            Assert.Contains(roomTypes, rt => rt.RoomTypeName.Contains("Nhà nguyên căn") && rt.IsActive);
+            Assert.Contains(roomTypes, rt => (rt.RoomTypeName.Contains("Căn hộ") || rt.RoomTypeName.Contains("mini")) && rt.IsActive);
+
+            // 2. Kiểm tra AccountController.MarkBookingNotified hỗ trợ Session Admin / Landlord
+            var configMock = new Mock<IConfiguration>();
+            var landlordMock = new Mock<ICurrentLandlordService>();
+            var accountController = new QuanLyPhongTro.Controllers.AccountController(
+                context,
+                configMock.Object,
+                landlordMock.Object)
+            {
+                ControllerContext = new Microsoft.AspNetCore.Mvc.ControllerContext
+                {
+                    HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext()
+                }
+            };
+            accountController.HttpContext.Session = new TestSession();
+            accountController.HttpContext.Session.SetString("AdminUser", "chutro1");
+
+            var user = new tblUser
+            {
+                UserId = 1,
+                Username = "chutro1",
+                Email = "chutro1@gmail.com",
+                FullName = "Chủ trọ Test",
+                Phone = "0912345678",
+                PasswordHash = "hash",
+                IsActive = true
+            };
+            context.Users.Add(user);
+
+            var bk = new tblBookingRequest
+            {
+                RequestId = 801,
+                UserId = 1,
+                RoomId = 1,
+                Phone = "0912345678",
+                FullName = "Nguyễn Test",
+                RequestType = BookingRequestType.ViewingRequest,
+                Status = BookingRequestStatus.Accepted,
+                IsGuestNotified = false,
+                CreatedAt = DateTime.Now
+            };
+            context.BookingRequests.Add(bk);
+            await context.SaveChangesAsync();
+
+            var markResult = await accountController.MarkBookingNotified(new QuanLyPhongTro.Controllers.BookingNotificationMarkRequest
+            {
+                RequestIds = new List<int> { 801 }
+            }) as Microsoft.AspNetCore.Mvc.JsonResult;
+            Assert.NotNull(markResult);
+            var updatedBk = await context.BookingRequests.FindAsync(801);
+            Assert.NotNull(updatedBk);
+            Assert.True(updatedBk.IsGuestNotified);
+
+            // 3. Kiểm tra FavoriteController hỗ trợ Session Admin / Landlord
+            var cache = new MemoryCache(new MemoryCacheOptions());
+            var searchService = new RoomSearchService(context, cache, NullLogger<RoomSearchService>.Instance);
+            var favController = new QuanLyPhongTro.Controllers.FavoriteController(
+                context,
+                searchService,
+                NullLogger<QuanLyPhongTro.Controllers.FavoriteController>.Instance)
+            {
+                ControllerContext = new Microsoft.AspNetCore.Mvc.ControllerContext
+                {
+                    HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext()
+                }
+            };
+            favController.HttpContext.Session = new TestSession();
+            favController.HttpContext.Session.SetString("AdminUser", "chutro1");
+
+            var toggleResult = await favController.Toggle(new QuanLyPhongTro.Controllers.FavoriteToggleRequest { RoomId = 1 }) as Microsoft.AspNetCore.Mvc.OkObjectResult;
+            Assert.NotNull(toggleResult);
+
+            // Kiểm tra API GetMyFavoriteIds
+            var myIdsResult = await favController.GetMyFavoriteIds() as Microsoft.AspNetCore.Mvc.OkObjectResult;
+            Assert.NotNull(myIdsResult);
+
+            var byIdsResult = await favController.GetCardsByIds(new QuanLyPhongTro.Controllers.FavoriteSyncRequest
+            {
+                RoomIds = new List<int> { 1 }
+            }) as Microsoft.AspNetCore.Mvc.JsonResult;
+            Assert.NotNull(byIdsResult);
+
+            // 4. Kiểm tra HomeController.GetRoomsByTab lọc theo Nhà nguyên căn và Căn hộ mini
+            var homeController = new QuanLyPhongTro.Controllers.HomeController(
+                context,
+                searchService,
+                NullLogger<QuanLyPhongTro.Controllers.HomeController>.Instance)
+            {
+                ControllerContext = new Microsoft.AspNetCore.Mvc.ControllerContext
+                {
+                    HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext()
+                }
+            };
+
+            var tabResult = await homeController.GetRoomsByTab("Nhà nguyên căn", null) as Microsoft.AspNetCore.Mvc.JsonResult;
+            Assert.NotNull(tabResult);
+            Assert.NotNull(tabResult.Value);
+            var titleVal = tabResult.Value.GetType().GetProperty("title")?.GetValue(tabResult.Value)?.ToString();
+            Assert.Contains("Nhà nguyên căn", titleVal);
+
+            var miniResult = await homeController.GetRoomsByTab("Căn hộ mini", null) as Microsoft.AspNetCore.Mvc.JsonResult;
+            Assert.NotNull(miniResult);
+
+            // 5. Kiểm tra HomeController.Compare
+            var compareResult = await homeController.Compare("1,2") as Microsoft.AspNetCore.Mvc.ViewResult;
+            Assert.NotNull(compareResult);
+            var compareModel = compareResult.Model as List<RoomDetailViewModel>;
+            Assert.NotNull(compareModel);
+
+            // 6. Kiểm tra RoomService.GetRoomsByLandlordAsync hỗ trợ lọc theo roomTypeId
+            var roomService = CreateRoomService(context);
+            var landlordRooms = await roomService.GetRoomsByLandlordAsync(
+                landlordId: 1,
+                roomTypeId: 1);
+            Assert.NotNull(landlordRooms);
+        }
+
+        [Fact]
+        public async Task Flow9_LandlordConsultationChat_And_ReplyNotification_Flow()
+        {
+            var context = TestHelper.CreateInMemoryContext();
+            TestHelper.SeedStandardTestData(context);
+
+            var guestHttp = new Microsoft.AspNetCore.Http.DefaultHttpContext();
+            guestHttp.Session = new TestSession();
+            guestHttp.Session.SetString("NormalUser", "101");
+            guestHttp.Session.SetString("UserName", "KhachThueTest");
+
+            var guestChatController = new QuanLyPhongTro.Controllers.ChatController(context)
+            {
+                ControllerContext = new Microsoft.AspNetCore.Mvc.ControllerContext { HttpContext = guestHttp }
+            };
+
+            // 1. Khách bấm 'Nhắn tin tư vấn' cho phòng 1 (thuộc chủ trọ 1)
+            var startRes = await guestChatController.Start(new QuanLyPhongTro.Controllers.StartChatRequest
+            {
+                RoomId = 1,
+                GuestName = "Khách Thuê Test",
+                GuestPhone = "0912345678"
+            }) as Microsoft.AspNetCore.Mvc.JsonResult;
+
+            Assert.NotNull(startRes);
+            Assert.NotNull(startRes.Value);
+            var success = (bool?)startRes.Value.GetType().GetProperty("success")?.GetValue(startRes.Value);
+            var sessionKey = (string?)startRes.Value.GetType().GetProperty("sessionKey")?.GetValue(startRes.Value);
+            var sessionId = (int?)startRes.Value.GetType().GetProperty("sessionId")?.GetValue(startRes.Value);
+
+            Assert.True(success);
+            Assert.False(string.IsNullOrEmpty(sessionKey));
+            Assert.True(sessionId.HasValue && sessionId.Value > 0);
+
+            // 2. Khách gửi tin nhắn hỏi phòng
+            var sendRes = await guestChatController.Send(new QuanLyPhongTro.Controllers.SendChatRequest
+            {
+                SessionKey = sessionKey!,
+                Content = "Chào chủ trọ, phòng 101 còn trống không ạ?"
+            }) as Microsoft.AspNetCore.Mvc.JsonResult;
+
+            Assert.NotNull(sendRes);
+            var sendSuccess = (bool?)sendRes.Value?.GetType().GetProperty("success")?.GetValue(sendRes.Value);
+            Assert.True(sendSuccess);
+
+            // 3. Chủ trọ trả lời từ Kênh Quản lý Admin/Chat
+            var landlordMock = new Mock<ICurrentLandlordService>();
+            landlordMock.Setup(l => l.GetCurrentLandlordId()).Returns(1);
+            landlordMock.Setup(l => l.IsSuperAdmin()).Returns(false);
+
+            var adminChatController = new QuanLyPhongTro.Areas.Admin.Controllers.ChatController(context, landlordMock.Object)
+            {
+                ControllerContext = new Microsoft.AspNetCore.Mvc.ControllerContext
+                {
+                    HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext()
+                }
+            };
+
+            var adminSendRes = await adminChatController.Reply(new QuanLyPhongTro.Areas.Admin.Controllers.AdminSendRequest
+            {
+                SessionId = sessionId.Value,
+                Content = "Chào bạn, phòng vẫn còn trống nhé! Bạn có thể qua xem phòng lúc 18h."
+            }) as Microsoft.AspNetCore.Mvc.JsonResult;
+
+            Assert.NotNull(adminSendRes);
+            var adminSuccess = (bool?)adminSendRes.Value?.GetType().GetProperty("success")?.GetValue(adminSendRes.Value);
+            Assert.True(adminSuccess);
+
+            // 4. Kiểm tra tài khoản khách nhận thông báo phản hồi từ chủ trọ (GetAllNotifications)
+            var configMock = new Mock<IConfiguration>();
+            var accountController = new QuanLyPhongTro.Controllers.AccountController(
+                context,
+                configMock.Object,
+                landlordMock.Object)
+            {
+                ControllerContext = new Microsoft.AspNetCore.Mvc.ControllerContext { HttpContext = guestHttp }
+            };
+
+            var notifRes = await accountController.GetAllNotifications() as Microsoft.AspNetCore.Mvc.JsonResult;
+            Assert.NotNull(notifRes);
+            Assert.NotNull(notifRes.Value);
+
+            var unreadCount = (int?)notifRes.Value.GetType().GetProperty("unreadCount")?.GetValue(notifRes.Value);
+            Assert.True(unreadCount.HasValue && unreadCount.Value >= 1);
+
+            var notifs = notifRes.Value.GetType().GetProperty("notifications")?.GetValue(notifRes.Value) as System.Collections.IEnumerable;
+            Assert.NotNull(notifs);
+
+            bool foundChatNotif = false;
+            foreach (var n in notifs)
+            {
+                var type = n.GetType().GetProperty("type")?.GetValue(n)?.ToString();
+                if (type == "chat")
+                {
+                    foundChatNotif = true;
+                    var content = n.GetType().GetProperty("content")?.GetValue(n)?.ToString();
+                    Assert.Contains("Chào bạn, phòng vẫn còn trống nhé", content);
+                    break;
+                }
+            }
+            Assert.True(foundChatNotif, "Phải tìm thấy thông báo tin nhắn chat từ chủ trọ");
+
+            // 5. Khách xem tin nhắn (Poll) và hệ thống cập nhật đã đọc
+            var pollRes = await guestChatController.Poll(sessionKey!, after: 0) as Microsoft.AspNetCore.Mvc.JsonResult;
+            Assert.NotNull(pollRes);
+            var msgs = pollRes.Value?.GetType().GetProperty("messages")?.GetValue(pollRes.Value) as System.Collections.IEnumerable;
+            Assert.NotNull(msgs);
+
+            // Đánh dấu đã đọc thành công
+            var markRes = await guestChatController.MarkRead(new QuanLyPhongTro.Controllers.MarkReadChatRequest { SessionKey = sessionKey! }) as Microsoft.AspNetCore.Mvc.JsonResult;
+            Assert.NotNull(markRes);
+            var markSuccess = (bool?)markRes.Value?.GetType().GetProperty("success")?.GetValue(markRes.Value);
+            Assert.True(markSuccess);
+        }
+
+        [Fact]
+        public async Task Flow10_LandlordDirectory_ListAndSearch_Flow()
+        {
+            var context = TestHelper.CreateInMemoryContext();
+            TestHelper.SeedStandardTestData(context);
+
+            var mockSearch = new Mock<IRoomSearchService>();
+            var mockLogger = new Mock<Microsoft.Extensions.Logging.ILogger<QuanLyPhongTro.Controllers.HomeController>>();
+
+            var homeController = new QuanLyPhongTro.Controllers.HomeController(context, mockSearch.Object, mockLogger.Object)
+            {
+                ControllerContext = new Microsoft.AspNetCore.Mvc.ControllerContext
+                {
+                    HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext()
+                }
+            };
+
+            // 1. Tải danh sách chủ trọ uy tín
+            var result = await homeController.LandlordList(q: null, provinceId: null, sortBy: "properties", page: 1) as Microsoft.AspNetCore.Mvc.ViewResult;
+            Assert.NotNull(result);
+            var model = result.Model as QuanLyPhongTro.Models.ViewModels.LandlordListViewModel;
+            Assert.NotNull(model);
+            Assert.NotEmpty(model.Landlords);
+            Assert.True(model.TotalItems > 0);
+
+            // 2. Tìm kiếm theo tên chủ trọ
+            string firstLandlordName = model.Landlords.First().FullName;
+            var searchResult = await homeController.LandlordList(q: firstLandlordName, provinceId: null, sortBy: null, page: 1) as Microsoft.AspNetCore.Mvc.ViewResult;
+            Assert.NotNull(searchResult);
+            var searchModel = searchResult.Model as QuanLyPhongTro.Models.ViewModels.LandlordListViewModel;
+            Assert.NotNull(searchModel);
+            Assert.Contains(searchModel.Landlords, l => l.FullName == firstLandlordName);
+
+            // 3. Tìm kiếm không tồn tại
+            var emptyResult = await homeController.LandlordList(q: "ChuTroKhongTonTai_99999", provinceId: null, sortBy: null, page: 1) as Microsoft.AspNetCore.Mvc.ViewResult;
+            Assert.NotNull(emptyResult);
+            var emptyModel = emptyResult.Model as QuanLyPhongTro.Models.ViewModels.LandlordListViewModel;
+            Assert.NotNull(emptyModel);
+            Assert.Empty(emptyModel.Landlords);
+        }
+
+        [Fact]
+        public async Task Flow11_ContactPage_And_SubmitInquiry_Flow()
+        {
+            var context = TestHelper.CreateInMemoryContext();
+            TestHelper.SeedStandardTestData(context);
+
+            var contactController = new QuanLyPhongTro.Controllers.ContactController(context)
+            {
+                ControllerContext = new Microsoft.AspNetCore.Mvc.ControllerContext
+                {
+                    HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext
+                    {
+                        Session = new TestSession()
+                    }
+                },
+                TempData = new Microsoft.AspNetCore.Mvc.ViewFeatures.TempDataDictionary(
+                    new Microsoft.AspNetCore.Http.DefaultHttpContext(),
+                    Mock.Of<Microsoft.AspNetCore.Mvc.ViewFeatures.ITempDataProvider>())
+            };
+
+            // 1. Tải trang liên hệ GET
+            var getResult = await contactController.Index() as Microsoft.AspNetCore.Mvc.ViewResult;
+            Assert.NotNull(getResult);
+            var getModel = getResult.Model as QuanLyPhongTro.Models.ContactViewModel;
+            Assert.NotNull(getModel);
+
+            // 2. Gửi biểu mẫu liên hệ POST
+            var submitModel = new QuanLyPhongTro.Models.ContactViewModel
+            {
+                FullName = "Nguyễn Văn Liên Hệ",
+                Phone = "0987654321",
+                Email = "lienhe@example.com",
+                Subject = "Hỗ trợ tìm kiếm & thuê phòng trọ",
+                Message = "Tôi đang cần tìm phòng trọ tại TP. Vinh tầm giá 2 triệu, nhờ admin hỗ trợ."
+            };
+
+            var postResult = await contactController.Index(submitModel) as Microsoft.AspNetCore.Mvc.RedirectToActionResult;
+            Assert.NotNull(postResult);
+            Assert.Equal("Index", postResult.ActionName);
+            Assert.NotNull(contactController.TempData["Success"]);
+
+            // 3. Kiểm tra tin nhắn liên hệ đã được lưu vào hệ thống
+            var savedReq = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+                context.BookingRequests,
+                r => r.Phone == "0987654321" && r.RequestType == QuanLyPhongTro.Models.BookingRequestType.ChatMessage);
+
+            Assert.NotNull(savedReq);
+            Assert.Equal("Nguyễn Văn Liên Hệ", savedReq.FullName);
+            Assert.Contains("Hỗ trợ tìm kiếm & thuê phòng trọ", savedReq.Message);
+        }
     }
 }
+
+
+

@@ -8,10 +8,12 @@ namespace QuanLyPhongTro.Models
     public class HomeIndexViewModel
     {
         // ── Dữ liệu hiển thị mới (Card ViewModels) ───────────────────────
-        public List<RoomCardViewModel> FeaturedCardRooms { get; set; } = new();
-        public List<RoomCardViewModel> RecentCardRooms   { get; set; } = new();
-        public List<tblProvince>       PopularProvinces  { get; set; } = new();
-        public List<tblLandlord>       FeaturedLandlords { get; set; } = new();
+        public List<RoomCardViewModel> FeaturedCardRooms  { get; set; } = new();
+        public List<RoomCardViewModel> RecentCardRooms    { get; set; } = new();
+        public List<tblProvince>       PopularProvinces   { get; set; } = new();
+        public List<tblProvince>       AvailableProvinces { get; set; } = new();
+        public List<tblAmenity>        AvailableAmenities { get; set; } = new();
+        public List<tblLandlord>       FeaturedLandlords  { get; set; } = new();
 
         // ── Dữ liệu tương thích cũ ──────────────────────────────────────
         public List<tblRoom>     AvailableRooms { get; set; } = new();

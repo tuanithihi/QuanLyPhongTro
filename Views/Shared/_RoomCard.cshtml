@@ -34,10 +34,17 @@
         </div>
 
         <button type="button" class="room-card-favorite-btn @(Model.IsFavorite ? "active" : "")" 
-                onclick="toggleFavorite(@Model.RoomId, this)" 
-                title="Lưu tin yêu thích" 
+                onclick="toggleFavorite(@Model.RoomId, this, event)" 
+                title="@(Model.IsFavorite ? "Bỏ lưu tin" : "Lưu tin yêu thích")" 
                 aria-label="Yêu thích">
             <i class="bi @(Model.IsFavorite ? "bi-heart-fill text-danger" : "bi-heart")"></i>
+        </button>
+
+        <button type="button" class="room-card-compare-btn" 
+                onclick="toggleCompare(@Model.RoomId, this, event)" 
+                title="So sánh phòng" 
+                aria-label="So sánh">
+            <i class="bi bi-arrow-left-right"></i>
         </button>
 
         @if (Model.ImageCount > 0)

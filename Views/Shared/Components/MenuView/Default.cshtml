@@ -54,23 +54,28 @@
 <header class="site-header">
     <div class="container-xl">
         <div class="site-navbar">
-            <!-- Brand Logo -->
+            <!-- Brand Logo: Z-Stay -->
             <a href="/" class="navbar-brand">
-                <span class="brand-icon">
-                    <i class="bi bi-buildings"></i>
-                </span>
-                <span class="d-flex flex-column leading-tight">
-                    <span style="font-size:1.15rem; font-weight:700; color:var(--gray-900); letter-spacing:-0.3px;">PHONGTRO<span style="color:var(--brand-primary);">MOI</span></span>
-                    <span style="font-size:10px; font-weight:600; color:var(--color-text-muted); text-transform:uppercase; letter-spacing:0.5px;">Sàn Cho Thuê Phòng Trọ</span>
-                </span>
+                <img src="~/assets/img/logo.png" asp-append-version="true" alt="Z-Stay" class="brand-logo-img" />
             </a>
 
             <!-- Quick Navigation Links -->
             <ul class="navbar-nav-links d-none d-lg-flex">
                 <li><a href="/" class="nav-link">Trang chủ</a></li>
-                <li><a href="/phong-tro" class="nav-link">Thuê phòng trọ</a></li>
-                <li><a href="/phong-da-luu" class="nav-link"><i class="bi bi-heart me-1 text-danger"></i>Đã lưu</a></li>
-                <li><a href="/so-sanh" class="nav-link"><i class="bi bi-arrow-left-right me-1"></i>So sánh</a></li>
+                <li class="nav-item dropdown">
+                    <a href="/phong-tro" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                        Thuê phòng
+                    </a>
+                    <ul class="dropdown-menu shadow-sm border-0" style="border-radius:12px; font-size:0.9rem;">
+                        <li><a class="dropdown-item" href="/phong-tro"><i class="bi bi-grid me-2 text-primary"></i>Tất cả phòng</a></li>
+                        <li><a class="dropdown-item" href="/phong-tro?roomTypeName=Ph%C3%B2ng+tr%E1%BB%8D"><i class="bi bi-houses me-2 text-success"></i>Cho thuê phòng trọ</a></li>
+                        <li><a class="dropdown-item" href="/phong-tro?roomTypeName=C%C4%83n+h%E1%BB%99+mini"><i class="bi bi-building me-2 text-warning"></i>Căn hộ mini / Studio</a></li>
+                        <li><a class="dropdown-item" href="/phong-tro?roomTypeName=Nh%C3%A0+nguy%C3%AAn+c%C4%83n"><i class="bi bi-house-door me-2 text-danger"></i>Nhà nguyên căn</a></li>
+                    </ul>
+                </li>
+                <li><a href="/danh-sach-chu-tro" class="nav-link">Chủ trọ uy tín</a></li>
+                <li><a href="/phong-da-luu" class="nav-link">Đã lưu <span id="navFavBadge" class="badge bg-danger rounded-pill ms-1 d-none" style="font-size:0.65rem;">0</span></a></li>
+                <li><a href="/so-sanh" class="nav-link">So sánh <span id="navCompareBadge" class="badge bg-primary rounded-pill ms-1 d-none" style="font-size:0.65rem;">0</span></a></li>
                 <li><a href="/Blog" class="nav-link">Cẩm nang</a></li>
                 <li><a href="/Contact" class="nav-link">Liên hệ</a></li>
             </ul>
@@ -84,6 +89,40 @@
 
                 @if (isLoggedIn)
                 {
+                    <!-- Ô thông báo lịch hẹn xem phòng cho người dùng -->
+                    <div class="dropdown me-1 position-relative" id="userNotificationDropdown">
+                        <button class="btn btn-neutral btn-sm position-relative d-flex align-items-center justify-content-center p-0"
+                                type="button" id="notifBellBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"
+                                style="width: 38px; height: 38px; border-radius: 50%;" title="Thông báo của bạn">
+                            <i class="bi bi-bell fs-5 text-secondary" id="notifBellIcon"></i>
+                            <span id="notifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none"
+                                  style="font-size: 0.65rem; padding: 0.25em 0.5em; border: 2px solid #fff;">
+                                0
+                            </span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 p-0" 
+                             style="width: 360px; max-width: 92vw; border-radius: 14px; overflow: hidden; font-size: 0.875rem;" 
+                             aria-labelledby="notifBellBtn">
+                            <div class="px-3 py-2 bg-light border-bottom d-flex justify-content-between align-items-center">
+                                <span class="fw-bold text-dark d-flex align-items-center gap-2">
+                                    <i class="bi bi-bell-fill text-primary"></i>Thông báo
+                                    <span id="notifUnreadBadge" class="badge bg-primary-subtle text-primary border border-primary-subtle small d-none" style="font-size: 0.7rem;">0 mới</span>
+                                </span>
+                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none small text-primary" id="btnMarkAllNotifsRead" style="font-size: 0.8rem;">
+                                    <i class="bi bi-check2-all me-1"></i>Đã đọc tất cả
+                                </button>
+                            </div>
+                            <div id="notifListContainer" style="max-height: 380px; overflow-y: auto;">
+                                <div class="text-center py-4 text-muted small" id="notifLoading">
+                                    <span class="spinner-border spinner-border-sm me-1 text-primary"></span> Đang tải...
+                                </div>
+                            </div>
+                            <div class="p-2 text-center bg-light border-top">
+                                <small class="text-muted" style="font-size:0.75rem;">Thông báo cập nhật yêu cầu xem phòng</small>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="dropdown">
                         <button class="btn btn-neutral btn-sm d-flex align-items-center gap-2"
                                 type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -112,7 +151,7 @@
                             </li>
                             <li>
                                 <a class="dropdown-item" href="/phong-da-luu">
-                                    <i class="bi bi-heart me-2 text-danger"></i>Phòng đã lưu
+                                    Phòng đã lưu
                                 </a>
                             </li>
                             @if (!string.IsNullOrEmpty(tenantId))
@@ -185,3 +224,352 @@
         </div>
     </div>
 </header>
+
+@if (isLoggedIn)
+{
+    <script>
+        (function() {
+            let _notifData = [];
+
+            async function fetchNotifications() {
+                try {
+                    const res = await fetch('/Account/GetAllNotifications');
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    _notifData = data.notifications || [];
+                    const unreadCount = data.unreadCount || 0;
+                    renderBadge(unreadCount);
+                    renderList(_notifData);
+                } catch (e) {
+                    console.error('Failed to load notifications:', e);
+                }
+            }
+
+            function renderBadge(count) {
+                const badge = document.getElementById('notifBadge');
+                const unreadBadge = document.getElementById('notifUnreadBadge');
+                const bellIcon = document.getElementById('notifBellIcon');
+                if (!badge) return;
+
+                const dropdownMenu = document.querySelector('#userNotificationDropdown .dropdown-menu');
+                const isDropdownOpen = dropdownMenu && dropdownMenu.classList.contains('show');
+                if (isDropdownOpen) {
+                    badge.classList.add('d-none');
+                    if (unreadBadge) unreadBadge.classList.add('d-none');
+                    if (bellIcon) {
+                        bellIcon.classList.remove('text-primary');
+                        bellIcon.classList.add('text-secondary');
+                    }
+                    return;
+                }
+
+                if (count > 0) {
+                    badge.textContent = count > 99 ? '99+' : count;
+                    badge.classList.remove('d-none');
+                    if (unreadBadge) {
+                        unreadBadge.textContent = `${count} mới`;
+                        unreadBadge.classList.remove('d-none');
+                    }
+                    if (bellIcon) {
+                        bellIcon.classList.remove('text-secondary');
+                        bellIcon.classList.add('text-primary');
+                    }
+                } else {
+                    badge.classList.add('d-none');
+                    if (unreadBadge) unreadBadge.classList.add('d-none');
+                    if (bellIcon) {
+                        bellIcon.classList.remove('text-primary');
+                        bellIcon.classList.add('text-secondary');
+                    }
+                }
+            }
+
+            function renderBookingItem(b) {
+                const isAccepted = b.status === 'Accepted';
+                const iconClass = isAccepted ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-danger';
+                const badgeClass = isAccepted ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle';
+                const unreadStyle = !b.isRead ? 'background-color: rgba(13,110,253,0.05); border-left: 3px solid var(--brand-primary,#0d6efd);' : 'opacity:0.88;';
+                const roomUrl = b.roomSlug ? `/phong-tro/${b.roomSlug}` : `/phong-tro/${b.roomId}`;
+
+                return `
+                    <div class="p-3 border-bottom notif-item booking-notif" data-id="${b.id}" data-type="booking" style="transition:background 0.2s;${unreadStyle}">
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi ${iconClass} fs-5 flex-shrink-0 mt-1"></i>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="badge ${badgeClass}" style="font-size:0.7rem;">
+                                        <i class="bi bi-calendar2-check me-1"></i>${escapeHtml(b.statusText)}
+                                    </span>
+                                    <small class="text-muted" style="font-size:0.7rem;"><i class="bi bi-clock me-1"></i>${escapeHtml(b.createdAt)}</small>
+                                </div>
+                                <div class="fw-semibold text-dark mb-1" style="font-size:0.85rem;">
+                                    Lịch xem: <a href="${roomUrl}" class="text-primary text-decoration-none">${escapeHtml(b.roomName)}</a>
+                                </div>
+                                <div class="small text-secondary mb-1" style="font-size:0.8rem;">
+                                    <i class="bi bi-calendar-event me-1 text-primary"></i>Ngày hẹn: <strong>${escapeHtml(b.preferredDate)}</strong>
+                                </div>
+                                ${b.adminNote ? `<div class="small p-2 rounded bg-white border text-dark mt-1" style="font-size:0.78rem;"><i class="bi bi-chat-left-quote text-primary me-1"></i><strong>Chủ trọ nhắn:</strong> ${escapeHtml(b.adminNote)}</div>` : ''}
+                                ${!b.isRead ? `<div class="text-end mt-1"><button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-muted btn-mark-read" data-id="${b.id}" style="font-size:0.72rem;"><i class="bi bi-check2"></i> Đã đọc</button></div>` : ''}
+                            </div>
+                        </div>
+                    </div>`;
+            }
+
+            function renderInvoiceItem(n) {
+                const isOverdue = n.isOverdue;
+                const iconClass = isOverdue ? 'bi-exclamation-circle-fill text-danger' : 'bi-receipt text-warning';
+                const badgeClass = isOverdue ? 'bg-danger text-white' : 'bg-warning text-dark';
+                const borderStyle = isOverdue ? 'border-left: 3px solid #dc3545;' : 'border-left: 3px solid #ffc107;';
+                const bgStyle = isOverdue ? 'background-color: rgba(220,53,69,0.05);' : 'background-color: rgba(255,193,7,0.07);';
+
+                return `
+                    <div class="p-3 border-bottom notif-item invoice-notif" data-id="${n.id}" data-type="invoice" style="transition:background 0.2s;${bgStyle}${borderStyle}">
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi ${iconClass} fs-5 flex-shrink-0 mt-1"></i>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="badge ${badgeClass}" style="font-size:0.7rem;">
+                                        <i class="bi bi-exclamation-triangle me-1"></i>${escapeHtml(n.statusText)}
+                                    </span>
+                                    <small class="text-muted" style="font-size:0.7rem;"><i class="bi bi-clock me-1"></i>${escapeHtml(n.createdAt)}</small>
+                                </div>
+                                <div class="fw-semibold text-dark mb-1" style="font-size:0.85rem;">
+                                    <i class="bi bi-file-earmark-text me-1 text-secondary"></i>
+                                    Hóa đơn <strong>${escapeHtml(n.invoiceCode)}</strong> — T${n.billingMonth}/${n.billingYear}
+                                </div>
+                                <div class="small text-secondary mb-1" style="font-size:0.8rem;">
+                                    <i class="bi bi-door-open me-1"></i>${escapeHtml(n.roomName)}
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-1">
+                                    <span class="small fw-bold text-danger" style="font-size:0.82rem;">
+                                        <i class="bi bi-cash-stack me-1"></i>${escapeHtml(n.totalAmount)} ₫
+                                    </span>
+                                    <small class="text-muted" style="font-size:0.72rem;">
+                                        <i class="bi bi-calendar-x me-1"></i>Hạn: ${escapeHtml(n.dueDate)}
+                                    </small>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="/Account/Invoices" class="btn btn-sm btn-outline-danger py-0 px-2" style="font-size:0.75rem;">
+                                        <i class="bi bi-credit-card me-1"></i>Thanh toán ngay
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+
+            function renderChatItem(n) {
+                const isUnread = !n.isRead;
+                const bgStyle = isUnread ? 'background-color: #eff6ff; border-left: 3px solid #2563eb;' : 'background-color: transparent;';
+                const avatar = n.landlordAvatar && n.landlordAvatar.trim() !== ''
+                    ? `<img src="${escapeHtml(n.landlordAvatar)}" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;" onerror="this.src='/images/no-image.png';" />`
+                    : `<div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width:36px;height:36px;"><i class="bi bi-chat-dots-fill"></i></div>`;
+                return `
+                    <div class="p-3 border-bottom notif-item position-relative" data-id="${n.id}" data-type="chat"
+                         data-session-key="${escapeHtml(n.sessionKey)}" data-landlord-id="${n.landlordId || 0}"
+                         data-landlord-name="${escapeHtml(n.landlordName)}" data-landlord-avatar="${escapeHtml(n.landlordAvatar || '')}"
+                         style="${bgStyle} cursor: pointer; transition: background-color 0.2s;">
+                        <div class="d-flex align-items-start gap-2">
+                            <div class="flex-shrink-0 mt-1">
+                                ${avatar}
+                            </div>
+                            <div class="flex-grow-1 overflow-hidden">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="badge bg-primary text-white" style="font-size:0.7rem;"><i class="bi bi-chat-dots me-1"></i>Tin nhắn mới</span>
+                                    <small class="text-muted" style="font-size:0.7rem;">${escapeHtml(n.createdAt)}</small>
+                                </div>
+                                <div class="fw-bold text-dark mb-1 text-truncate" style="font-size:0.85rem;">
+                                    ${escapeHtml(n.landlordName)} (Chủ trọ)
+                                </div>
+                                <div class="small text-secondary text-truncate mb-1" style="font-size:0.8rem;">
+                                    ${escapeHtml(n.content)}
+                                </div>
+                                <div class="mt-1 d-flex justify-content-between align-items-center">
+                                    <span class="text-primary small fw-semibold" style="font-size:0.75rem;">
+                                        <i class="bi bi-reply-fill me-1"></i>Bấm để mở cuộc trò chuyện
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+
+            function renderList(notifs) {
+                const container = document.getElementById('notifListContainer');
+                if (!container) return;
+
+                if (!notifs || notifs.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-bell-slash fs-2 d-block mb-2 text-secondary opacity-50"></i>
+                            <span class="small">Chưa có thông báo nào</span>
+                        </div>`;
+                    return;
+                }
+
+                container.innerHTML = notifs.map(n => {
+                    if (n.type === 'invoice') return renderInvoiceItem(n);
+                    if (n.type === 'chat') return renderChatItem(n);
+                    return renderBookingItem(n);
+                }).join('');
+
+            }
+
+            // ── Event delegation cho toàn container (tránh Bootstrap bắt click) ──
+            function attachContainerEvents() {
+                const container = document.getElementById('notifListContainer');
+                if (!container || container._eventsAttached) return;
+                container._eventsAttached = true;
+
+                container.addEventListener('click', function(e) {
+                    const btn = e.target.closest('.btn-mark-read');
+                    if (btn) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        e.stopImmediatePropagation();
+                        const id = parseInt(btn.getAttribute('data-id'));
+                        if (!isNaN(id)) {
+                            // Cập nhật giao diện tức thì (Optimistic UI)
+                            btn.remove();
+                            const item = container.querySelector(`.notif-item[data-id="${id}"]`);
+                            if (item) {
+                                item.style.backgroundColor = 'transparent';
+                                item.style.borderLeft = 'none';
+                                item.style.opacity = '0.85';
+                            }
+                            decrementBadge(1);
+                            markBookingAsRead([id]);
+                        }
+                        return;
+                    }
+
+                    // Nếu người dùng bấm vào dòng thông báo hoặc đường link xem phòng
+                    const notifItem = e.target.closest('.notif-item');
+                    if (notifItem) {
+                        const id = parseInt(notifItem.getAttribute('data-id'));
+                        const type = notifItem.getAttribute('data-type');
+                        const markBtn = notifItem.querySelector('.btn-mark-read');
+                        if (markBtn) markBtn.remove();
+                        notifItem.style.backgroundColor = 'transparent';
+                        notifItem.style.borderLeft = 'none';
+                        notifItem.style.opacity = '0.85';
+                        decrementBadge(1);
+
+                        if (type === 'invoice') {
+                            fetch('/Account/MarkInvoicesSeen', { method: 'POST', keepalive: true }).catch(() => {});
+                        } else if (type === 'chat') {
+                            const sessionKey = notifItem.getAttribute('data-session-key');
+                            const landlordName = notifItem.getAttribute('data-landlord-name');
+                            const landlordAvatar = notifItem.getAttribute('data-landlord-avatar');
+                            const landlordId = parseInt(notifItem.getAttribute('data-landlord-id')) || 0;
+                            if (window.openChatSession) {
+                                window.openChatSession(sessionKey, landlordId, landlordName, landlordAvatar);
+                            }
+                        } else if (!isNaN(id)) {
+                            markBookingAsRead([id]);
+                        }
+                    }
+                }, true); // useCapture=true: chặn trước Bootstrap
+            }
+
+            function decrementBadge(amount) {
+                const badge = document.getElementById('notifBadge');
+                if (!badge) return;
+                let cur = parseInt(badge.textContent) || 0;
+                cur = Math.max(0, cur - (amount || 1));
+                renderBadge(cur);
+            }
+
+            async function markBookingAsRead(requestIds) {
+                try {
+                    await fetch('/Account/MarkBookingNotified', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ requestIds: requestIds || [] }),
+                        keepalive: true
+                    });
+                    await fetchNotifications();
+                } catch (e) {
+                    console.error('Failed to mark read:', e);
+                }
+            }
+
+            function escapeHtml(s) {
+                if (!s) return '';
+                return s.toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            }
+
+            function initNotif() {
+                attachContainerEvents(); // gắn delegation 1 lần duy nhất
+                fetchNotifications();
+
+                // "Đã đọc tất cả": đánh dấu cả lịch hẹn và hóa đơn
+                const btnMarkAll = document.getElementById('btnMarkAllNotifsRead');
+                if (btnMarkAll) {
+                    btnMarkAll.addEventListener('click', async function(e) {
+                        e.preventDefault();
+                        renderBadge(0);
+                        const container = document.getElementById('notifListContainer');
+                        if (container) {
+                            container.querySelectorAll('.btn-mark-read').forEach(b => b.remove());
+                            container.querySelectorAll('.notif-item').forEach(it => {
+                                it.style.backgroundColor = 'transparent';
+                                it.style.borderLeft = 'none';
+                                it.style.opacity = '0.85';
+                            });
+                        }
+                        try {
+                            await Promise.all([
+                                fetch('/Account/MarkBookingNotified', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ requestIds: [] }),
+                                    keepalive: true
+                                }),
+                                fetch('/Account/MarkInvoicesSeen', { method: 'POST', keepalive: true })
+                            ]);
+                        } catch (err) {}
+                        await fetchNotifications();
+                    });
+                }
+
+                // Khi bấm vào chuông thông báo để đọc, ngay lập tức xóa số 1 màu đỏ
+                const notifBellBtn = document.getElementById('notifBellBtn');
+                if (notifBellBtn) {
+                    notifBellBtn.addEventListener('click', async function() {
+                        renderBadge(0);
+                        try {
+                            await Promise.all([
+                                fetch('/Account/MarkBookingNotified', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ requestIds: [] }),
+                                    keepalive: true
+                                }),
+                                fetch('/Account/MarkInvoicesSeen', { method: 'POST', keepalive: true })
+                            ]);
+                        } catch (e) {}
+                        await fetchNotifications();
+                    });
+                }
+
+                const userNotificationDropdown = document.getElementById('userNotificationDropdown');
+                if (userNotificationDropdown) {
+                    userNotificationDropdown.addEventListener('show.bs.dropdown', function () {
+                        renderBadge(0);
+                    });
+                }
+
+                // Polling mỗi 30 giây
+                setInterval(fetchNotifications, 30000);
+            }
+
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initNotif);
+            } else {
+                initNotif();
+            }
+        })();
+    </script>
+}

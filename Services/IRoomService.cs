@@ -10,7 +10,8 @@ namespace QuanLyPhongTro.Services
             int? propertyId = null,
             string? search = null,
             RoomStatus? status = null,
-            RoomApprovalStatus? approvalStatus = null);
+            RoomApprovalStatus? approvalStatus = null,
+            int? roomTypeId = null);
 
         Task<tblRoom?> GetRoomByIdAsync(int roomId, int? landlordId = null);
 

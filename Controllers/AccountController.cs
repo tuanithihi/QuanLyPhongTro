@@ -117,44 +117,29 @@ namespace QuanLyPhongTro.Controllers
 
 
 
-            var tenant = await _context.Tenants.FirstOrDefaultAsync(t =>
-
-                t.IsActive && t.PasswordHash == hash &&
-
-                (t.Username == input || t.Email == input));
-
-            if (tenant != null)
-
-            {
-
-                TempData.Clear();
-
-                HttpContext.Session.SetString(SESSION_TENANT, tenant.TenantId.ToString());
-
-                HttpContext.Session.SetString("TenantName", tenant.FullName);
-
-                var url = Url.IsLocalUrl(returnUrl) ? returnUrl! : Url.Action("Index", "Home")!;
-
-                return Json(new { success = true, redirectUrl = url });
-
-            }
-
-
-
+            // 1. Kiểm tra tài khoản Quản trị / Chủ trọ / Người dùng (tblUser) trước
             var user = await _context.Users.FirstOrDefaultAsync(u =>
-
                 u.IsActive && u.PasswordHash == hash &&
-
                 (u.Username == input || u.Email == input));
 
             if (user != null)
-
             {
+                // Xóa sạch toàn bộ Session cũ để không bị lẫn quyền giữa các tài khoản
+                HttpContext.Session.Clear();
+                TempData.Clear();
 
-                // Nếu là Chủ trọ (Landlord)
+                // Nếu là Chủ trọ (Landlord) hoặc tài khoản đã có hồ sơ chủ trọ
+                bool isLandlordUser = string.Equals(user.Role, "Landlord", StringComparison.OrdinalIgnoreCase)
+                    || await _context.Landlords.AnyAsync(l => l.UserId == user.UserId);
 
-                if (string.Equals(user.Role, "Landlord", StringComparison.OrdinalIgnoreCase))
+                if (isLandlordUser)
                 {
+                    if (!string.Equals(user.Role, "Landlord", StringComparison.OrdinalIgnoreCase))
+                    {
+                        user.Role = "Landlord";
+                        await _context.SaveChangesAsync();
+                    }
+
                     var landlord = await _context.Landlords.FirstOrDefaultAsync(l => l.UserId == user.UserId);
                     if (landlord != null && landlord.Status == QuanLyPhongTro.Models.LandlordStatus.Suspended)
                     {
@@ -166,7 +151,6 @@ namespace QuanLyPhongTro.Controllers
                         return Json(new { success = false, message = $"Tài khoản chủ trọ của bạn đã bị từ chối: {landlord.RejectReason ?? "Không đạt yêu cầu"}. Vui lòng liên hệ ban quản trị." });
                     }
 
-                    TempData.Clear();
                     HttpContext.Session.SetString(SESSION_ADMIN, user.Username);
                     HttpContext.Session.SetString("AdminRole", "Landlord");
                     if (landlord != null)
@@ -181,7 +165,6 @@ namespace QuanLyPhongTro.Controllers
                 if (string.Equals(user.Role, "SuperAdmin", StringComparison.OrdinalIgnoreCase) ||
                     string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase))
                 {
-                    TempData.Clear();
                     HttpContext.Session.SetString(SESSION_ADMIN, user.Username);
                     HttpContext.Session.SetString("AdminRole", "SuperAdmin");
 
@@ -196,9 +179,23 @@ namespace QuanLyPhongTro.Controllers
                 }
 
                 // Người dùng thông thường
-                TempData.Clear();
                 HttpContext.Session.SetString(SESSION_USER, user.UserId.ToString());
                 HttpContext.Session.SetString("UserName", user.Username);
+                var url = Url.IsLocalUrl(returnUrl) ? returnUrl! : Url.Action("Index", "Home")!;
+                return Json(new { success = true, redirectUrl = url });
+            }
+
+            // 2. Nếu không tìm thấy trong tblUser, kiểm tra tài khoản Người thuê (tblTenant)
+            var tenant = await _context.Tenants.FirstOrDefaultAsync(t =>
+                t.IsActive && t.PasswordHash == hash &&
+                (t.Username == input || t.Email == input));
+
+            if (tenant != null)
+            {
+                HttpContext.Session.Clear();
+                TempData.Clear();
+                HttpContext.Session.SetString(SESSION_TENANT, tenant.TenantId.ToString());
+                HttpContext.Session.SetString("TenantName", tenant.FullName);
                 var url = Url.IsLocalUrl(returnUrl) ? returnUrl! : Url.Action("Index", "Home")!;
                 return Json(new { success = true, redirectUrl = url });
             }
@@ -892,150 +889,388 @@ namespace QuanLyPhongTro.Controllers
 
 
         // ── API: Thông báo phản hồi lịch hẹn xem phòng ─────────────────────────
-
         [HttpGet]
-
         public async Task<IActionResult> GetBookingNotifications()
-
         {
+            var userIdStr = HttpContext.Session.GetString(SESSION_USER);
+            int? userId = int.TryParse(userIdStr, out int uid) ? uid : (int?)null;
+            var tenantIdStr = HttpContext.Session.GetString(SESSION_TENANT);
+            int? tenantId = int.TryParse(tenantIdStr, out int tid) ? tid : (int?)null;
 
             var phone = await GetLoggedInPhone();
+            var normalizedPhone = !string.IsNullOrWhiteSpace(phone) ? NormalizePhone(phone) : null;
 
-            if (string.IsNullOrWhiteSpace(phone))
+            if (!userId.HasValue && !tenantId.HasValue && string.IsNullOrWhiteSpace(phone))
+                return Json(new { unreadCount = 0, bookings = Array.Empty<object>() });
 
-                return Json(new { bookings = Array.Empty<object>() });
-
-
-
-            var normalizedPhone = NormalizePhone(phone);
-
-
-
-            var rawBookings = await _context.BookingRequests
-
+            var query = _context.BookingRequests
                 .Include(b => b.Room)
-
                 .Where(b => b.RequestType == BookingRequestType.ViewingRequest
+                         && b.Status != BookingRequestStatus.Pending);
 
-                         && b.Status != BookingRequestStatus.Pending
+            if (userId.HasValue && !string.IsNullOrWhiteSpace(phone))
+            {
+                query = query.Where(b => b.UserId == userId.Value 
+                                      || b.Phone.Trim() == phone 
+                                      || (normalizedPhone != null && b.Phone.Replace(" ", "").Replace(".", "").Replace("-", "") == normalizedPhone));
+            }
+            else if (userId.HasValue)
+            {
+                query = query.Where(b => b.UserId == userId.Value);
+            }
+            else if (!string.IsNullOrWhiteSpace(phone))
+            {
+                query = query.Where(b => b.Phone.Trim() == phone 
+                                      || (normalizedPhone != null && b.Phone.Replace(" ", "").Replace(".", "").Replace("-", "") == normalizedPhone));
+            }
 
-                         && !b.IsGuestNotified
-
-                         && (b.Phone.Trim() == phone
-
-                             || b.Phone.Replace(" ", "").Replace(".", "").Replace("-", "") == normalizedPhone))
-
+            var rawBookings = await query
                 .OrderByDescending(b => b.CreatedAt)
-
+                .Take(20)
                 .Select(b => new
-
                 {
-
                     b.RequestId,
-
+                    b.RoomId,
                     RoomName = b.Room != null ? b.Room.RoomName : $"Phòng #{b.RoomId}",
-
+                    RoomSlug = b.Room != null ? b.Room.Slug : null,
                     b.PreferredDate,
-
                     b.Status,
-
                     b.AdminNote,
-
+                    b.IsGuestNotified,
                     b.CreatedAt
-
                 })
-
                 .ToListAsync();
-
-
 
             var bookings = rawBookings.Select(b => new
-
             {
-
                 b.RequestId,
-
+                b.RoomId,
                 b.RoomName,
-
+                b.RoomSlug,
                 PreferredDate = string.IsNullOrWhiteSpace(b.PreferredDate) ? "Chưa chọn" : b.PreferredDate,
-
                 Status = b.Status == BookingRequestStatus.Accepted ? "Accepted" : "Rejected",
-
                 StatusText = b.Status == BookingRequestStatus.Accepted ? "Đã chấp nhận" : "Đã từ chối",
-
                 AdminNote = string.IsNullOrWhiteSpace(b.AdminNote) ? "" : b.AdminNote,
-
+                IsRead = b.IsGuestNotified,
                 CreatedAt = b.CreatedAt.ToString("dd/MM/yyyy HH:mm")
-
             }).ToList();
 
+            int unreadCount = bookings.Count(b => !b.IsRead);
 
-
-            return Json(new { bookings });
-
+            return Json(new { unreadCount, bookings });
         }
-
-
 
         [HttpPost]
-
-        public async Task<IActionResult> MarkBookingNotified([FromBody] BookingNotificationMarkRequest request)
-
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> MarkBookingNotified([FromBody] BookingNotificationMarkRequest? request)
         {
+            var (userId, tenantId, phone) = await GetLoggedInAccountContextAsync();
+            var normalizedPhone = !string.IsNullOrWhiteSpace(phone) ? NormalizePhone(phone) : null;
 
-            if (request.RequestIds == null || request.RequestIds.Count == 0)
-
-                return Json(new { success = true, updated = 0 });
-
-
-
-            var phone = await GetLoggedInPhone();
-
-            if (string.IsNullOrWhiteSpace(phone))
-
+            if (!userId.HasValue && !tenantId.HasValue && string.IsNullOrWhiteSpace(phone))
                 return Unauthorized();
 
-
-
-            var normalizedPhone = NormalizePhone(phone);
-
-            var requestIds = request.RequestIds.Distinct().ToList();
-
-
-
-            var bookings = await _context.BookingRequests
-
-                .Where(b => requestIds.Contains(b.RequestId)
-
-                         && b.RequestType == BookingRequestType.ViewingRequest
-
+            var query = _context.BookingRequests
+                .Where(b => (b.RequestType == BookingRequestType.ViewingRequest || b.RequestType == BookingRequestType.Viewing || b.RequestType == BookingRequestType.Deposit)
                          && b.Status != BookingRequestStatus.Pending
+                         && !b.IsGuestNotified);
 
-                         && !b.IsGuestNotified
+            if (request?.RequestIds != null && request.RequestIds.Count > 0)
+            {
+                var requestIds = request.RequestIds.Distinct().ToList();
+                query = query.Where(b => requestIds.Contains(b.RequestId));
+            }
+            else
+            {
+                // Khi đánh dấu tất cả (requestIds rỗng hoặc null)
+                if (userId.HasValue && !string.IsNullOrWhiteSpace(phone))
+                {
+                    query = query.Where(b => b.UserId == userId.Value 
+                                          || b.Phone.Trim() == phone 
+                                          || (normalizedPhone != null && b.Phone.Replace(" ", "").Replace(".", "").Replace("-", "") == normalizedPhone));
+                }
+                else if (userId.HasValue)
+                {
+                    query = query.Where(b => b.UserId == userId.Value);
+                }
+                else if (!string.IsNullOrWhiteSpace(phone))
+                {
+                    query = query.Where(b => b.Phone.Trim() == phone 
+                                          || (normalizedPhone != null && b.Phone.Replace(" ", "").Replace(".", "").Replace("-", "") == normalizedPhone));
+                }
+            }
 
-                         && (b.Phone.Trim() == phone
-
-                             || b.Phone.Replace(" ", "").Replace(".", "").Replace("-", "") == normalizedPhone))
-
-                .ToListAsync();
-
-
-
+            var bookings = await query.ToListAsync();
             foreach (var booking in bookings)
-
+            {
                 booking.IsGuestNotified = true;
-
-
+            }
 
             await _context.SaveChangesAsync();
-
             return Json(new { success = true, updated = bookings.Count });
-
         }
 
+        // ── API: Thông báo hóa đơn chưa thanh toán (dành cho người thuê) ─────────
+        [HttpGet]
+        public async Task<IActionResult> GetInvoiceNotifications()
+        {
+            var tenantIdStr = HttpContext.Session.GetString(SESSION_TENANT);
+            if (!int.TryParse(tenantIdStr, out int tenantId))
+                return Json(new { invoices = Array.Empty<object>() });
 
+            var invoices = await _context.Invoices
+                .Include(i => i.Room)
+                .Include(i => i.Contract)
+                .Where(i => i.Contract != null && i.Contract.TenantId == tenantId
+                         && i.Status != InvoiceStatus.Paid)
+                .OrderByDescending(i => i.DueDate)
+                .Take(10)
+                .Select(i => new
+                {
+                    i.InvoiceId, i.InvoiceCode, i.BillingMonth, i.BillingYear,
+                    i.TotalAmount, i.Status,
+                    DueDate = i.DueDate,
+                    RoomName = i.Room != null ? i.Room.RoomName : $"Phòng #{i.RoomId}",
+                    i.RoomId, i.CreatedAt
+                })
+                .ToListAsync();
+
+            var result = invoices.Select(i => new
+            {
+                i.InvoiceId, i.InvoiceCode, i.BillingMonth, i.BillingYear,
+                TotalAmount = i.TotalAmount.ToString("N0"),
+                StatusText = i.Status == InvoiceStatus.Overdue ? "Quá hạn" : "Chưa thanh toán",
+                StatusCode = i.Status == InvoiceStatus.Overdue ? "Overdue" : "Unpaid",
+                IsOverdue = i.Status == InvoiceStatus.Overdue,
+                DueDate = i.DueDate.ToString("dd/MM/yyyy"),
+                i.RoomName, i.RoomId,
+                CreatedAt = i.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+            }).ToList();
+
+            return Json(new { invoices = result });
+        }
+
+        // ── API: Tổng hợp tất cả thông báo (đặt lịch + hóa đơn) ──────────────────
+        [HttpGet]
+        public async Task<IActionResult> GetAllNotifications()
+        {
+            var (userId, tenantId, phone) = await GetLoggedInAccountContextAsync();
+            var normalizedPhone = !string.IsNullOrWhiteSpace(phone) ? NormalizePhone(phone) : null;
+
+            // ── Thông báo lịch hẹn xem phòng ──
+            var bookingNotifs = new List<(object item, DateTime sortTime)>();
+            int unreadBookings = 0;
+            if (userId.HasValue || tenantId.HasValue || !string.IsNullOrWhiteSpace(phone))
+            {
+                var bQuery = _context.BookingRequests
+                    .Include(b => b.Room)
+                    .Where(b => (b.RequestType == BookingRequestType.ViewingRequest || b.RequestType == BookingRequestType.Viewing || b.RequestType == BookingRequestType.Deposit)
+                             && b.Status != BookingRequestStatus.Pending);
+
+                if (userId.HasValue && !string.IsNullOrWhiteSpace(phone))
+                    bQuery = bQuery.Where(b => b.UserId == userId.Value
+                        || b.Phone.Trim() == phone
+                        || (normalizedPhone != null && b.Phone.Replace(" ", "").Replace(".", "").Replace("-", "") == normalizedPhone));
+                else if (userId.HasValue)
+                    bQuery = bQuery.Where(b => b.UserId == userId.Value);
+                else if (!string.IsNullOrWhiteSpace(phone))
+                    bQuery = bQuery.Where(b => b.Phone.Trim() == phone
+                        || (normalizedPhone != null && b.Phone.Replace(" ", "").Replace(".", "").Replace("-", "") == normalizedPhone));
+
+                var rawB = await bQuery.OrderByDescending(b => b.CreatedAt).Take(15)
+                    .Select(b => new
+                    {
+                        b.RequestId, b.RoomId,
+                        RoomName = b.Room != null ? b.Room.RoomName : $"Phòng #{b.RoomId}",
+                        RoomSlug = b.Room != null ? b.Room.Slug : null,
+                        b.PreferredDate, b.Status, b.AdminNote, b.IsGuestNotified, b.CreatedAt
+                    }).ToListAsync();
+
+                foreach (var b in rawB)
+                {
+                    var item = new
+                    {
+                        type = "booking",
+                        id = b.RequestId,
+                        roomId = b.RoomId,
+                        roomName = b.RoomName,
+                        roomSlug = b.RoomSlug,
+                        preferredDate = string.IsNullOrWhiteSpace(b.PreferredDate) ? "Chưa chọn" : b.PreferredDate,
+                        status = b.Status == BookingRequestStatus.Accepted ? "Accepted" : "Rejected",
+                        statusText = b.Status == BookingRequestStatus.Accepted ? "Đã chấp nhận" : "Đã từ chối",
+                        adminNote = b.AdminNote ?? "",
+                        isRead = b.IsGuestNotified,
+                        createdAt = b.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                    };
+                    bookingNotifs.Add((item, b.CreatedAt));
+                }
+                unreadBookings = rawB.Count(b => !b.IsGuestNotified);
+            }
+
+            // ── Thông báo hóa đơn chưa thanh toán ──
+            var invoiceNotifs = new List<(object item, DateTime sortTime)>();
+            int unreadInvoices = 0;
+            if (tenantId.HasValue)
+            {
+                var rawI = await _context.Invoices
+                    .Include(i => i.Room)
+                    .Include(i => i.Contract)
+                    .Where(i => i.Contract != null && i.Contract.TenantId == tenantId.Value
+                             && i.Status != InvoiceStatus.Paid)
+                    .OrderByDescending(i => i.DueDate)
+                    .Take(10)
+                    .Select(i => new
+                    {
+                        i.InvoiceId, i.InvoiceCode, i.BillingMonth, i.BillingYear,
+                        i.TotalAmount, i.Status,
+                        DueDate = i.DueDate,
+                        RoomName = i.Room != null ? i.Room.RoomName : $"Phòng #{i.RoomId}",
+                        i.RoomId, i.CreatedAt
+                    }).ToListAsync();
+
+                var seenInvoices = (HttpContext.Session.GetString("SeenInvoiceIds") ?? "")
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => int.TryParse(s, out var id) ? id : 0)
+                    .ToHashSet();
+
+                foreach (var i in rawI)
+                {
+                    bool isSeen = seenInvoices.Contains(i.InvoiceId);
+                    var item = new
+                    {
+                        type = "invoice",
+                        id = i.InvoiceId,
+                        invoiceCode = i.InvoiceCode,
+                        billingMonth = i.BillingMonth,
+                        billingYear = i.BillingYear,
+                        roomId = i.RoomId,
+                        roomName = i.RoomName,
+                        totalAmount = i.TotalAmount.ToString("N0"),
+                        statusCode = i.Status == InvoiceStatus.Overdue ? "Overdue" : "Unpaid",
+                        statusText = i.Status == InvoiceStatus.Overdue ? "Quá hạn" : "Chưa thanh toán",
+                        isOverdue = i.Status == InvoiceStatus.Overdue,
+                        dueDate = i.DueDate.ToString("dd/MM/yyyy"),
+                        isRead = isSeen,
+                        createdAt = i.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                    };
+                    invoiceNotifs.Add((item, i.CreatedAt));
+                    if (!isSeen) unreadInvoices++;
+                }
+            }
+
+            // ── Thông báo tin nhắn phản hồi từ chủ trọ ──
+            var chatNotifs = new List<(object item, DateTime sortTime)>();
+            int unreadChats = 0;
+            var sessionCookie = Request.Cookies["chat_session"];
+
+            if (userId.HasValue || tenantId.HasValue || !string.IsNullOrWhiteSpace(phone) || !string.IsNullOrEmpty(sessionCookie))
+            {
+                var chatQuery = _context.ChatSessions
+                    .Include(s => s.Landlord)
+                    .Include(s => s.Messages)
+                    .Where(s => s.Messages.Any(m => m.SenderType == ChatSenderType.Admin));
+
+                if (userId.HasValue && !string.IsNullOrWhiteSpace(phone))
+                {
+                    chatQuery = chatQuery.Where(s => s.UserId == userId.Value || s.GuestPhone == phone || (normalizedPhone != null && s.GuestPhone == normalizedPhone));
+                }
+                else if (userId.HasValue)
+                {
+                    chatQuery = chatQuery.Where(s => s.UserId == userId.Value);
+                }
+                else if (tenantId.HasValue)
+                {
+                    chatQuery = chatQuery.Where(s => s.TenantId == tenantId.Value);
+                }
+                else if (!string.IsNullOrWhiteSpace(phone))
+                {
+                    chatQuery = chatQuery.Where(s => s.GuestPhone == phone || (normalizedPhone != null && s.GuestPhone == normalizedPhone));
+                }
+                else if (!string.IsNullOrEmpty(sessionCookie))
+                {
+                    chatQuery = chatQuery.Where(s => s.SessionKey == sessionCookie);
+                }
+
+                var rawChats = await chatQuery
+                    .OrderByDescending(s => s.LastMsgAt)
+                    .Take(10)
+                    .ToListAsync();
+
+                foreach (var s in rawChats)
+                {
+                    var lastAdminMsg = s.Messages
+                        .Where(m => m.SenderType == ChatSenderType.Admin)
+                        .OrderByDescending(m => m.MessageId)
+                        .FirstOrDefault();
+
+                    if (lastAdminMsg != null)
+                    {
+                        int unreadCountForSession = s.Messages.Count(m => m.SenderType == ChatSenderType.Admin && !m.IsReadByGuest);
+                        bool isRead = unreadCountForSession == 0;
+                        if (!isRead) unreadChats += unreadCountForSession;
+
+                        var landlordName = s.Landlord?.FullName ?? "Chủ trọ";
+                        var landlordAvatar = s.Landlord?.Avatar ?? "";
+
+                        var item = new
+                        {
+                            type = "chat",
+                            id = lastAdminMsg.MessageId,
+                            sessionId = s.SessionId,
+                            sessionKey = s.SessionKey,
+                            landlordId = s.LandlordId,
+                            landlordName = landlordName,
+                            landlordAvatar = landlordAvatar,
+                            content = lastAdminMsg.Content,
+                            unreadCount = unreadCountForSession,
+                            isRead = isRead,
+                            createdAt = lastAdminMsg.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                        };
+                        chatNotifs.Add((item, lastAdminMsg.CreatedAt));
+                    }
+                }
+            }
+
+            // Gộp & sắp xếp theo thời gian mới nhất
+            var allNotifs = bookingNotifs.Concat(invoiceNotifs).Concat(chatNotifs)
+                .OrderByDescending(x => x.sortTime)
+                .Select(x => x.item)
+                .ToList();
+
+            int totalUnread = unreadBookings + unreadInvoices + unreadChats;
+            return Json(new { unreadCount = totalUnread, notifications = allNotifs });
+        }
+
+        [HttpPost]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> MarkInvoicesSeen()
+        {
+            var (userId, tenantId, phone) = await GetLoggedInAccountContextAsync();
+            var tenantIds = new List<int>();
+            if (tenantId.HasValue) tenantIds.Add(tenantId.Value);
+
+            if (!string.IsNullOrWhiteSpace(phone))
+            {
+                var matchedTenants = await _context.Tenants
+                    .Where(t => t.Phone == phone.Trim())
+                    .Select(t => t.TenantId)
+                    .ToListAsync();
+                tenantIds.AddRange(matchedTenants);
+            }
+
+            if (tenantIds.Count > 0)
+            {
+                var unpaidIds = await _context.Invoices
+                    .Where(i => i.Contract != null && tenantIds.Contains(i.Contract.TenantId) && i.Status != InvoiceStatus.Paid)
+                    .Select(i => i.InvoiceId)
+                    .ToListAsync();
+                HttpContext.Session.SetString("SeenInvoiceIds", string.Join(',', unpaidIds));
+            }
+            return Json(new { success = true });
+        }
 
         // POST: /Account/ClearAdminSession
+
 
         [HttpPost]
 
@@ -1190,10 +1425,24 @@ namespace QuanLyPhongTro.Controllers
             // 3. Nếu chủ trọ nhập thông tin khu trọ ban đầu -> tạo luôn tblProperty
             if (!string.IsNullOrWhiteSpace(model.InitialPropertyName))
             {
+                string baseSlug = SlugHelper.GenerateSlug(model.InitialPropertyName.Trim());
+                if (string.IsNullOrWhiteSpace(baseSlug) || baseSlug == "item")
+                {
+                    baseSlug = $"khu-tro-{landlord.LandlordId}";
+                }
+
+                string uniqueSlug = baseSlug;
+                int counter = 1;
+                while (await _context.Properties.AnyAsync(p => p.Slug == uniqueSlug))
+                {
+                    uniqueSlug = $"{baseSlug}-{counter++}";
+                }
+
                 var property = new tblProperty
                 {
                     LandlordId = landlord.LandlordId,
                     Name = model.InitialPropertyName.Trim(),
+                    Slug = uniqueSlug,
                     Address = model.InitialPropertyAddress?.Trim() ?? model.Address?.Trim() ?? "Đang cập nhật",
                     ProvinceId = model.ProvinceId,
                     DistrictId = model.DistrictId,
@@ -1241,29 +1490,10 @@ namespace QuanLyPhongTro.Controllers
         // GET: /Account/Logout
 
         public IActionResult Logout()
-
         {
-
-            HttpContext.Session.Remove(SESSION_ADMIN);
-
-            HttpContext.Session.Remove("AdminRole");
-
-            HttpContext.Session.Remove("LandlordId");
-
-            HttpContext.Session.Remove("LandlordStatus");
-
-            HttpContext.Session.Remove(SESSION_TENANT);
-
-            HttpContext.Session.Remove("TenantName");
-
-            HttpContext.Session.Remove(SESSION_USER);
-
-            HttpContext.Session.Remove("UserName");
-
+            HttpContext.Session.Clear();
             TempData["Success"] = "Đã đăng xuất thành công.";
-
             return RedirectToAction("Index", "Home");
-
         }
 
 
@@ -1300,7 +1530,57 @@ namespace QuanLyPhongTro.Controllers
 
 
 
+            var adminUser = HttpContext.Session.GetString(SESSION_ADMIN);
+
+            if (!string.IsNullOrEmpty(adminUser))
+
+                return (await _context.Users
+
+                    .Where(u => u.Username == adminUser)
+
+                    .Select(u => u.Phone)
+
+                    .FirstOrDefaultAsync())?.Trim();
+
+
+
             return null;
+
+        }
+
+
+
+        private async Task<(int? userId, int? tenantId, string? phone)> GetLoggedInAccountContextAsync()
+
+        {
+
+            var userIdStr = HttpContext.Session.GetString(SESSION_USER);
+
+            int? userId = int.TryParse(userIdStr, out int uid) ? uid : (int?)null;
+
+            var tenantIdStr = HttpContext.Session.GetString(SESSION_TENANT);
+
+            int? tenantId = int.TryParse(tenantIdStr, out int tid) ? tid : (int?)null;
+
+            var adminUser = HttpContext.Session.GetString(SESSION_ADMIN);
+
+
+
+            if (!userId.HasValue && !string.IsNullOrEmpty(adminUser))
+
+            {
+
+                var usr = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Username == adminUser);
+
+                if (usr != null) userId = usr.UserId;
+
+            }
+
+
+
+            var phone = await GetLoggedInPhone();
+
+            return (userId, tenantId, phone);
 
         }
 

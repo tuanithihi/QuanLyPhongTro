@@ -124,6 +124,22 @@
                         </div>
                     </div>
 
+                    <div class="d-flex align-items-center gap-2 my-3">
+                        @{
+                            bool isFav = ViewBag.IsFavorite == true;
+                        }
+                        <button type="button" class="btn @(isFav ? "btn-danger" : "btn-outline-danger") btn-sm rounded-pill px-3 d-inline-flex align-items-center gap-1"
+                                id="btnDetailFav" onclick="toggleFavorite(@room.RoomId, this, event)" title="@(isFav ? "Bỏ lưu tin" : "Lưu tin yêu thích")">
+                            <i class="bi @(isFav ? "bi-heart-fill" : "bi-heart")"></i>
+                            <span>@(isFav ? "Đã lưu" : "Lưu tin")</span>
+                        </button>
+                        <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3 d-inline-flex align-items-center gap-1"
+                                id="btnDetailCompare" onclick="toggleCompare(@room.RoomId, this, event)">
+                            <i class="bi bi-arrow-left-right"></i>
+                            <span>So sánh</span>
+                        </button>
+                    </div>
+
                     <!-- Specs Grid -->
                     <div class="detail-specs-grid">
                         <div class="spec-item">
@@ -301,7 +317,7 @@
                             <i class="bi bi-telephone-fill me-2"></i>Gọi ngay: @landlordPhone
                         </a>
 
-                        <button type="button" class="btn btn-neutral btn-lg w-100" onclick="window.aiSendQuick('Tôi muốn tìm hiểu phòng @room.RoomName')">
+                        <button type="button" class="btn btn-neutral btn-lg w-100" onclick="openChatWithLandlord()">
                             <i class="bi bi-chat-dots-fill text-primary me-2"></i>Nhắn tin tư vấn
                         </button>
 
@@ -312,7 +328,7 @@
 
                     <!-- Safe Renting Guarantee -->
                     <div class="mt-4 p-3 bg-light rounded" style="border: 1px dashed var(--border-color); font-size: var(--text-xs);">
-                        <div class="fw-bold text-dark mb-1"><i class="bi bi-shield-check text-success me-1"></i>Cam kết sàn Phòng Trọ Mới</div>
+                        <div class="fw-bold text-dark mb-1"><i class="bi bi-shield-check text-success me-1"></i>Cam kết sàn Z-Stay</div>
                         <ul class="mb-0 ps-3 text-muted">
                             <li>Phòng trọ thật, địa chỉ rõ ràng</li>
                             <li>Không thu phí xem phòng</li>
@@ -336,6 +352,9 @@
         <a href="tel:@landlordPhone" class="btn btn-brand btn-sm">
             <i class="bi bi-telephone-fill me-1"></i>Gọi
         </a>
+        <button type="button" class="btn btn-neutral btn-sm" onclick="openChatWithLandlord()">
+            <i class="bi bi-chat-dots-fill text-primary me-1"></i>Nhắn tin
+        </button>
         <button type="button" class="btn btn-brand-outline btn-sm" data-bs-toggle="modal" data-bs-target="#bookingViewingModal">
             <i class="bi bi-calendar-event me-1"></i>Đặt lịch
         </button>
@@ -416,5 +435,18 @@
                 .bindPopup('<strong>@room.RoomName</strong><br>@(room.Property?.Address ?? room.Address)')
                 .openPopup();
         });
+
+        function openChatWithLandlord() {
+            if (window.openLandlordChat) {
+                window.openLandlordChat({
+                    roomId: @room.RoomId,
+                    landlordId: @(room.Property?.LandlordId ?? 0),
+                    landlordName: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(landlordName)),
+                    landlordAvatar: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(room.Property?.Landlord?.Avatar ?? "")),
+                    roomTitle: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(room.RoomName)),
+                    roomPrice: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(QuanLyPhongTro.Services.DisplayHelper.FormatPrice(room.RoomPrice)))
+                });
+            }
+        }
     </script>
 }

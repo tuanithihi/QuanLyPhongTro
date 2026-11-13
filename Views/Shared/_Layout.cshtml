@@ -6,17 +6,17 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
     <!-- SEO Meta Tags -->
-    <title>@(ViewData["Title"] ?? "Phòng Trọ Mới - Nền tảng tìm kiếm và cho thuê phòng trọ uy tín")</title>
-    <meta name="description" content="@(ViewData["Description"] ?? "Phòng Trọ Mới - Sàn giao dịch phòng trọ, căn hộ mini, nhà nguyên căn minh bạch, an toàn tại Việt Nam.")">
-    <meta name="keywords" content="@(ViewData["Keywords"] ?? "thuê phòng trọ, tìm phòng trọ, phòng trọ giá rẻ, căn hộ mini, phòng trọ hà nội, phòng trọ tphcm")">
-    <meta name="author" content="PhongTroMoi">
+    <title>@(ViewData["Title"] ?? "Z-Stay - Nền tảng tìm kiếm và cho thuê phòng trọ uy tín")</title>
+    <meta name="description" content="@(ViewData["Description"] ?? "Z-Stay - Sàn giao dịch phòng trọ, căn hộ mini, nhà nguyên căn minh bạch, an toàn tại Việt Nam.")">
+    <meta name="keywords" content="@(ViewData["Keywords"] ?? "thuê phòng trọ, tìm phòng trọ, phòng trọ giá rẻ, căn hộ mini, phòng trọ hà nội, phòng trọ tphcm, z-stay")">
+    <meta name="author" content="Z-Stay">
 
     <!-- Canonical & Open Graph -->
     <link rel="canonical" href="@(ViewData["CanonicalUrl"] ?? $"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.Path}")" />
     <meta property="og:type" content="@(ViewData["OgType"] ?? "website")">
-    <meta property="og:site_name" content="Phòng Trọ Mới">
+    <meta property="og:site_name" content="Z-Stay">
     <meta property="og:url" content="@(ViewData["CanonicalUrl"] ?? $"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.Path}")">
-    <meta property="og:title" content="@(ViewData["Title"] ?? "Phòng Trọ Mới - Sàn phòng trọ uy tín")">
+    <meta property="og:title" content="@(ViewData["Title"] ?? "Z-Stay - Sàn phòng trọ uy tín")">
     <meta property="og:description" content="@(ViewData["Description"] ?? "Tìm phòng trọ nhanh chóng, an toàn, minh bạch.")">
     <meta property="og:image" content="@(ViewData["OgImage"] ?? $"{Context.Request.Scheme}://{Context.Request.Host}/images/og-default.jpg")">
 
@@ -30,6 +30,7 @@
     <link href="~/css/variables.css" rel="stylesheet">
     <link href="~/css/base.css" rel="stylesheet">
     <link href="~/css/components.css" rel="stylesheet">
+    <link href="~/css/scroll-reveal.css" rel="stylesheet">
 
     <!-- Chatbot CSS -->
     <link href="~/css/chatbot.css" rel="stylesheet">
@@ -99,16 +100,13 @@
     <footer class="site-footer">
         <div class="container-xl footer-top">
             <div class="row gy-4">
-                <!-- Col 1: Brand Info -->
+                <!-- Col 1: Brand Info: Z-Stay -->
                 <div class="col-lg-4 col-md-12">
-                    <a href="/" class="d-flex align-items-center gap-2 mb-3 text-decoration-none">
-                        <span class="brand-icon" style="width:30px; height:30px; font-size:0.95rem;">
-                            <i class="bi bi-buildings"></i>
-                        </span>
-                        <span class="fw-bold" style="font-size:1.1rem; color:var(--gray-900); letter-spacing:-0.3px;">PHONGTRO<span style="color:var(--brand-primary);">MOI</span></span>
+                    <a href="/" class="d-inline-block mb-3 text-decoration-none">
+                        <img src="~/assets/img/logo.png" asp-append-version="true" alt="Z-Stay" class="brand-logo-img" style="height:40px;" />
                     </a>
                     <p class="small text-muted mb-3" style="line-height:1.6;">
-                        Nền tảng tìm kiếm và cho thuê phòng trọ hàng đầu Việt Nam. Kết nối trực tiếp khách thuê và chủ nhà với thông tin xác thực, bản đồ vị trí trực quan, hợp đồng minh bạch và thanh toán an toàn qua VietQR.
+                        Nền tảng tìm kiếm và cho thuê phòng trọ Z-Stay. Kết nối trực tiếp khách thuê và chủ nhà với thông tin xác thực, bản đồ vị trí trực quan, hợp đồng minh bạch và thanh toán an toàn qua VietQR.
                     </p>
                     <div class="d-flex align-items-center gap-3 text-muted small">
                         <span><i class="bi bi-shield-check text-success me-1"></i>Tin thật - Phòng thật</span>
@@ -152,7 +150,7 @@
                         <i class="bi bi-telephone me-2 text-primary"></i>Hotline: <strong>1900 8888</strong> (8h00 - 21h00)
                     </p>
                     <p class="small text-muted mb-3">
-                        <i class="bi bi-envelope me-2 text-warning"></i>Email: <a href="mailto:support@phongtromoi.vn" class="text-decoration-none">support@phongtromoi.vn</a>
+                        <i class="bi bi-envelope me-2 text-warning"></i>Email: <a href="mailto:support@zstay.vn" class="text-decoration-none">support@zstay.vn</a>
                     </p>
                     <div class="d-flex gap-2">
                         <a href="#" class="btn btn-neutral btn-sm" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
@@ -166,7 +164,7 @@
         <div class="footer-bottom">
             <div class="container-xl footer-bottom-content">
                 <div>
-                    &copy; @DateTime.Now.Year Phòng Trọ Mới. Giữ toàn quyền bản quyền nội dung và thiết kế.
+                    &copy; @DateTime.Now.Year Z-Stay. Giữ toàn quyền bản quyền nội dung và thiết kế.
                 </div>
                 <div class="d-flex gap-3">
                     <a href="/Home/Privacy" class="text-muted text-decoration-none">Bảo mật</a>
@@ -371,7 +369,16 @@
     <!-- ── JavaScript Helpers ────────────────────────────────────── -->
     <script>
         // ── Favorite Toggle & LocalStorage Sync ────────────────────────
-        async function toggleFavorite(roomId, btn) {
+        async function toggleFavorite(roomId, btn, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            roomId = parseInt(roomId);
+            if (!roomId || isNaN(roomId)) return;
+
+            let localFavs = JSON.parse(localStorage.getItem('saved_rooms') || '[]');
+
             try {
                 const res = await fetch('/api/favorites/toggle', {
                     method: 'POST',
@@ -379,45 +386,121 @@
                     body: JSON.stringify({ roomId: roomId })
                 });
                 const data = await res.json();
-                const icon = btn.querySelector('i');
+
+                let isNowFav = false;
 
                 if (data.requireLogin) {
-                    // Xử lý tạm bằng localStorage cho khách vãng lai
-                    let localFavs = JSON.parse(localStorage.getItem('saved_rooms') || '[]');
+                    // Khách vãng lai: toggle qua localStorage
                     const idx = localFavs.indexOf(roomId);
-                    let isNowFav = false;
                     if (idx >= 0) {
                         localFavs.splice(idx, 1);
+                        isNowFav = false;
                     } else {
                         localFavs.push(roomId);
                         isNowFav = true;
                     }
                     localStorage.setItem('saved_rooms', JSON.stringify(localFavs));
-
-                    if (isNowFav) {
-                        icon.className = 'bi bi-heart-fill text-danger';
-                        btn.classList.add('active');
-                        alertToast('Đã lưu phòng vào thiết bị này! Đăng nhập để đồng bộ vĩnh viễn.');
-                    } else {
-                        icon.className = 'bi bi-heart';
-                        btn.classList.remove('active');
-                        alertToast('Đã bỏ lưu phòng trên thiết bị.');
-                    }
+                    applyFavoriteStateToElements(roomId, isNowFav);
+                    updateFavoriteBadge(localFavs.length);
+                    alertToast(isNowFav ? 'Đã lưu phòng vào thiết bị này! Đăng nhập để đồng bộ vĩnh viễn.' : 'Đã bỏ lưu phòng trên thiết bị.');
                     return;
                 }
 
                 if (data.success) {
-                    if (data.isFavorite) {
-                        icon.className = 'bi bi-heart-fill text-danger';
-                        btn.classList.add('active');
-                    } else {
-                        icon.className = 'bi bi-heart';
-                        btn.classList.remove('active');
+                    isNowFav = !!data.isFavorite;
+                    const idx = localFavs.indexOf(roomId);
+                    if (isNowFav && idx < 0) {
+                        localFavs.push(roomId);
+                    } else if (!isNowFav && idx >= 0) {
+                        localFavs.splice(idx, 1);
                     }
-                    alertToast(data.message);
+                    localStorage.setItem('saved_rooms', JSON.stringify(localFavs));
+
+                    applyFavoriteStateToElements(roomId, isNowFav);
+                    updateFavoriteBadge(data.totalCount !== undefined ? data.totalCount : localFavs.length);
+                    alertToast(data.message || (isNowFav ? 'Đã lưu phòng yêu thích.' : 'Đã bỏ lưu phòng.'));
+
+                    // Nếu đang ở trang /phong-da-luu và bỏ lưu: xóa card khỏi DOM
+                    if (!isNowFav && window.location.pathname.includes('/phong-da-luu')) {
+                        const cardContainer = document.getElementById('fav-card-' + roomId);
+                        if (cardContainer) {
+                            cardContainer.style.transition = 'all 0.3s ease';
+                            cardContainer.style.opacity = '0';
+                            cardContainer.style.transform = 'scale(0.9)';
+                            setTimeout(() => {
+                                cardContainer.remove();
+                                const countEl = document.getElementById('fav-count');
+                                if (countEl) {
+                                    const c = Math.max(0, parseInt(countEl.textContent || '1') - 1);
+                                    countEl.textContent = c;
+                                    if (c === 0) window.location.reload();
+                                }
+                            }, 300);
+                        }
+                    }
                 }
             } catch (err) {
-                console.error(err);
+                console.error('Error toggling favorite:', err);
+                const idx = localFavs.indexOf(roomId);
+                const isNowFav = idx < 0;
+                if (isNowFav) localFavs.push(roomId);
+                else localFavs.splice(idx, 1);
+                localStorage.setItem('saved_rooms', JSON.stringify(localFavs));
+                applyFavoriteStateToElements(roomId, isNowFav);
+                updateFavoriteBadge(localFavs.length);
+                alertToast(isNowFav ? 'Đã lưu phòng vào thiết bị.' : 'Đã bỏ lưu phòng.');
+            }
+        }
+
+        function applyFavoriteStateToElements(roomId, isFav) {
+            // Cập nhật tất cả các card phòng có cùng roomId trên trang
+            document.querySelectorAll('.room-card[data-room-id="' + roomId + '"]').forEach(card => {
+                const favBtn = card.querySelector('.room-card-favorite-btn');
+                if (favBtn) {
+                    if (isFav) {
+                        favBtn.classList.add('active');
+                        favBtn.innerHTML = '<i class="bi bi-heart-fill text-danger"></i>';
+                        favBtn.setAttribute('title', 'Bỏ lưu tin');
+                    } else {
+                        favBtn.classList.remove('active');
+                        favBtn.innerHTML = '<i class="bi bi-heart"></i>';
+                        favBtn.setAttribute('title', 'Lưu tin yêu thích');
+                    }
+                }
+            });
+
+            // Cập nhật nút trên trang chi tiết
+            const detailContext = document.getElementById('room-detail-context');
+            const detailFavBtn = document.getElementById('btnDetailFav');
+            if (detailContext && detailFavBtn) {
+                const curId = parseInt(detailContext.getAttribute('data-room-id'));
+                if (curId === roomId) {
+                    if (isFav) {
+                        detailFavBtn.className = 'btn btn-danger btn-sm rounded-pill px-3 d-inline-flex align-items-center gap-1';
+                        detailFavBtn.innerHTML = '<i class="bi bi-heart-fill"></i> <span>Đã lưu</span>';
+                        detailFavBtn.setAttribute('title', 'Bỏ lưu tin');
+                    } else {
+                        detailFavBtn.className = 'btn btn-outline-danger btn-sm rounded-pill px-3 d-inline-flex align-items-center gap-1';
+                        detailFavBtn.innerHTML = '<i class="bi bi-heart"></i> <span>Lưu tin</span>';
+                        detailFavBtn.setAttribute('title', 'Lưu tin yêu thích');
+                    }
+                }
+            }
+        }
+
+        function updateFavoriteBadge(count) {
+            const badge = document.getElementById('navFavBadge');
+            if (badge) {
+                if (count === undefined) {
+                    const localFavs = JSON.parse(localStorage.getItem('saved_rooms') || '[]');
+                    count = localFavs.length;
+                }
+                if (count > 0) {
+                    badge.textContent = count;
+                    badge.classList.remove('d-none');
+                } else {
+                    badge.classList.add('d-none');
+                }
             }
         }
 
@@ -441,24 +524,162 @@
             }, 2500);
         }
 
-        // Tự động kiểm tra localStorage để hiển thị trạng thái tim cho khách
-        document.addEventListener('DOMContentLoaded', function() {
+        // ── Compare Rooms Helper & LocalStorage ───────────────────────
+        function getCompareList() {
             try {
-                const localFavs = JSON.parse(localStorage.getItem('saved_rooms') || '[]');
+                return JSON.parse(localStorage.getItem('compare_rooms') || '[]');
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function toggleCompare(roomId, btn, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            roomId = parseInt(roomId);
+            if (!roomId || isNaN(roomId)) return;
+
+            let list = getCompareList();
+            const idx = list.indexOf(roomId);
+
+            if (idx >= 0) {
+                list.splice(idx, 1);
+                localStorage.setItem('compare_rooms', JSON.stringify(list));
+                alertToast('Đã bỏ phòng khỏi danh sách so sánh.');
+            } else {
+                if (list.length >= 3) {
+                    alertToast('Chỉ có thể so sánh tối đa 3 phòng cùng lúc! Vui lòng bỏ bớt để thêm phòng khác.');
+                    updateCompareUI();
+                    return;
+                }
+                list.push(roomId);
+                localStorage.setItem('compare_rooms', JSON.stringify(list));
+                alertToast(`Đã thêm vào so sánh (${list.length}/3 phòng).`);
+            }
+
+            updateCompareUI();
+        }
+
+        function clearCompare(event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            localStorage.removeItem('compare_rooms');
+            updateCompareUI();
+            alertToast('Đã xóa toàn bộ phòng khỏi danh sách so sánh.');
+            if (window.location.pathname.includes('/so-sanh')) {
+                window.location.href = '/so-sanh';
+            }
+        }
+
+        function updateCompareUI() {
+            const list = getCompareList();
+
+            // Cập nhật trạng thái active cho tất cả nút so sánh trên các thẻ phòng
+            document.querySelectorAll('.room-card-compare-btn').forEach(btn => {
+                const card = btn.closest('.room-card');
+                const rId = card ? parseInt(card.getAttribute('data-room-id')) : null;
+                if (rId && list.includes(rId)) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // Cập nhật nút so sánh trên trang chi tiết (nếu có)
+            const detailCompareBtn = document.getElementById('btnDetailCompare');
+            const detailContext = document.getElementById('room-detail-context');
+            if (detailCompareBtn && detailContext) {
+                const curId = parseInt(detailContext.getAttribute('data-room-id'));
+                if (curId && list.includes(curId)) {
+                    detailCompareBtn.className = 'btn btn-primary btn-sm rounded-pill px-3 d-inline-flex align-items-center gap-1';
+                    detailCompareBtn.innerHTML = '<i class="bi bi-check2"></i> <span>Đang so sánh</span>';
+                } else {
+                    detailCompareBtn.className = 'btn btn-outline-primary btn-sm rounded-pill px-3 d-inline-flex align-items-center gap-1';
+                    detailCompareBtn.innerHTML = '<i class="bi bi-arrow-left-right"></i> <span>So sánh</span>';
+                }
+            }
+
+            // Cập nhật hoặc tạo dock so sánh nổi ở góc màn hình
+            let dock = document.getElementById('floatingCompareDock');
+            if (list.length > 0) {
+                if (!dock) {
+                    dock = document.createElement('div');
+                    dock.id = 'floatingCompareDock';
+                    dock.className = 'floating-compare-dock shadow-lg';
+                    document.body.appendChild(dock);
+                }
+                dock.innerHTML = `
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-primary rounded-pill px-2 py-1"><i class="bi bi-arrow-left-right"></i> ${list.length}/3</span>
+                        <span class="small fw-semibold text-dark d-none d-sm-inline">Đã chọn so sánh</span>
+                    </div>
+                    <a href="/so-sanh?ids=${list.join(',')}" class="btn btn-brand btn-sm rounded-pill px-3 py-1 text-decoration-none">
+                        So sánh ngay <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                    <button type="button" class="btn btn-link btn-sm text-secondary p-0 ms-1" onclick="clearCompare(event)" title="Xóa tất cả">
+                        <i class="bi bi-x-circle-fill"></i>
+                    </button>
+                `;
+            } else if (dock) {
+                dock.remove();
+            }
+
+            // Cập nhật badge trên thanh menu
+            const navCompareBadge = document.getElementById('navCompareBadge');
+            if (navCompareBadge) {
+                if (list.length > 0) {
+                    navCompareBadge.textContent = list.length;
+                    navCompareBadge.classList.remove('d-none');
+                } else {
+                    navCompareBadge.classList.add('d-none');
+                }
+            }
+        }
+
+        async function updateFavoriteUI() {
+            try {
+                let localFavs = JSON.parse(localStorage.getItem('saved_rooms') || '[]');
+
+                // Thử tải danh sách yêu thích từ server nếu đã đăng nhập
+                try {
+                    const res = await fetch('/api/favorites/my-ids');
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && data.success && Array.isArray(data.roomIds)) {
+                            // Merge danh sách server và localStorage
+                            const set = new Set([...localFavs, ...data.roomIds]);
+                            localFavs = Array.from(set);
+                            localStorage.setItem('saved_rooms', JSON.stringify(localFavs));
+                        }
+                    }
+                } catch(e) {}
+
+                updateFavoriteBadge(localFavs.length);
+
                 if (localFavs.length > 0) {
                     localFavs.forEach(function(rId) {
-                        const card = document.querySelector('.room-card[data-room-id="' + rId + '"]');
-                        if (card) {
-                            const btn = card.querySelector('.room-card-favorite-btn');
-                            if (btn && !btn.classList.contains('active')) {
-                                btn.classList.add('active');
-                                const i = btn.querySelector('i');
-                                if (i) i.className = 'bi bi-heart-fill text-danger';
-                            }
-                        }
+                        applyFavoriteStateToElements(rId, true);
                     });
                 }
-            } catch(e) {}
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
+        window.toggleFavorite = toggleFavorite;
+        window.updateFavoriteUI = updateFavoriteUI;
+        window.toggleCompare = toggleCompare;
+        window.clearCompare = clearCompare;
+        window.updateCompareUI = updateCompareUI;
+
+        // Tự động kiểm tra localStorage & server để hiển thị trạng thái tim và so sánh
+        document.addEventListener('DOMContentLoaded', function() {
+            updateFavoriteUI();
+            updateCompareUI();
         });
 
         function authTogglePwd(btn) {
@@ -670,5 +891,8 @@
             }, 3000);
         })();
     </script>
+
+    <script src="~/js/scroll-reveal.js"></script>
+    @await Html.PartialAsync("_LandlordChatWidget")
 </body>
 </html>

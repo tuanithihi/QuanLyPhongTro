@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Moq;
 using QuanLyPhongTro.Areas.Admin.Controllers;
 using QuanLyPhongTro.Areas.Admin.Models;

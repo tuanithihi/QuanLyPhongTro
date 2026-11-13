@@ -7,6 +7,7 @@ using QuanLyPhongTro.Services;
 
 namespace QuanLyPhongTro.Controllers
 {
+    [IgnoreAntiforgeryToken]
     public class FavoriteController : Controller
     {
         private readonly DataContext _db;
@@ -20,13 +21,52 @@ namespace QuanLyPhongTro.Controllers
             _logger = logger;
         }
 
+        private async Task<(int? tenantId, int? userId)> GetCurrentLoggedInIdsAsync()
+        {
+            int? tenantId = int.TryParse(HttpContext.Session.GetString("TenantUser"), out var tid) ? tid : null;
+            int? userId = int.TryParse(HttpContext.Session.GetString("NormalUser"), out var uid) ? uid : null;
+            string? username = null;
+
+            if (tenantId.HasValue)
+            {
+                var t = await _db.Tenants.AsNoTracking().FirstOrDefaultAsync(x => x.TenantId == tenantId.Value);
+                username = t?.Username;
+            }
+
+            if (!userId.HasValue)
+            {
+                var adminUser = HttpContext.Session.GetString("AdminUser");
+                if (!string.IsNullOrEmpty(adminUser))
+                {
+                    username = adminUser;
+                }
+                else if (string.IsNullOrEmpty(username))
+                {
+                    username = HttpContext.Session.GetString("UserName");
+                }
+
+                if (!string.IsNullOrEmpty(username))
+                {
+                    var u = await _db.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Username == username);
+                    if (u != null) userId = u.UserId;
+                }
+            }
+
+            if (!tenantId.HasValue && !string.IsNullOrEmpty(username))
+            {
+                var t = await _db.Tenants.AsNoTracking().FirstOrDefaultAsync(x => x.Username == username);
+                if (t != null) tenantId = t.TenantId;
+            }
+
+            return (tenantId, userId);
+        }
+
         // ── GET: /phong-da-luu ─────────────────────────────────────────────
         [HttpGet("/phong-da-luu")]
         [HttpGet("/Favorites")]
         public async Task<IActionResult> Index()
         {
-            int? tenantId = int.TryParse(HttpContext.Session.GetString("TenantUser"), out var tid) ? tid : null;
-            int? userId = int.TryParse(HttpContext.Session.GetString("NormalUser"), out var uid) ? uid : null;
+            var (tenantId, userId) = await GetCurrentLoggedInIdsAsync();
 
             var favoriteRooms = new List<RoomCardViewModel>();
 
@@ -97,6 +137,26 @@ namespace QuanLyPhongTro.Controllers
             return View(favoriteRooms);
         }
 
+        // ── GET: /api/favorites/my-ids ──────────────────────────────────
+        [HttpGet("/api/favorites/my-ids")]
+        public async Task<IActionResult> GetMyFavoriteIds()
+        {
+            var (tenantId, userId) = await GetCurrentLoggedInIdsAsync();
+            if (!tenantId.HasValue && !userId.HasValue)
+            {
+                return Ok(new { success = true, roomIds = Array.Empty<int>() });
+            }
+
+            var ids = await _db.Favorites
+                .AsNoTracking()
+                .Where(f => (tenantId.HasValue && f.TenantId == tenantId) || (userId.HasValue && f.UserId == userId))
+                .Select(f => f.RoomId)
+                .Distinct()
+                .ToListAsync();
+
+            return Ok(new { success = true, roomIds = ids });
+        }
+
         // ── POST: /api/favorites/toggle ───────────────────────────────────
         [HttpPost("/api/favorites/toggle")]
         public async Task<IActionResult> Toggle([FromBody] FavoriteToggleRequest req)
@@ -104,8 +164,7 @@ namespace QuanLyPhongTro.Controllers
             if (req == null || req.RoomId <= 0)
                 return BadRequest(new { success = false, message = "Phòng không hợp lệ." });
 
-            int? tenantId = int.TryParse(HttpContext.Session.GetString("TenantUser"), out var tid) ? tid : null;
-            int? userId = int.TryParse(HttpContext.Session.GetString("NormalUser"), out var uid) ? uid : null;
+            var (tenantId, userId) = await GetCurrentLoggedInIdsAsync();
 
             if (!tenantId.HasValue && !userId.HasValue)
             {
@@ -113,6 +172,7 @@ namespace QuanLyPhongTro.Controllers
                 {
                     success = false,
                     requireLogin = true,
+                    roomId = req.RoomId,
                     message = "Vui lòng đăng nhập để lưu phòng vào danh sách yêu thích."
                 });
             }
@@ -149,6 +209,7 @@ namespace QuanLyPhongTro.Controllers
             return Ok(new
             {
                 success = true,
+                roomId = req.RoomId,
                 isFavorite = isFavorite,
                 totalCount = totalCount,
                 message = isFavorite ? "Đã lưu phòng vào danh sách yêu thích." : "Đã bỏ lưu phòng yêu thích."
@@ -162,8 +223,7 @@ namespace QuanLyPhongTro.Controllers
             if (req == null || req.RoomIds == null || !req.RoomIds.Any())
                 return Ok(new { success = true, addedCount = 0 });
 
-            int? tenantId = int.TryParse(HttpContext.Session.GetString("TenantUser"), out var tid) ? tid : null;
-            int? userId = int.TryParse(HttpContext.Session.GetString("NormalUser"), out var uid) ? uid : null;
+            var (tenantId, userId) = await GetCurrentLoggedInIdsAsync();
 
             if (!tenantId.HasValue && !userId.HasValue)
                 return Unauthorized(new { success = false, message = "Chưa đăng nhập." });
@@ -198,6 +258,67 @@ namespace QuanLyPhongTro.Controllers
             }
 
             return Ok(new { success = true, addedCount = addedCount });
+        }
+
+        // ── POST: /api/favorites/by-ids ───────────────────────────────────
+        [HttpPost("/api/favorites/by-ids")]
+        public async Task<IActionResult> GetCardsByIds([FromBody] FavoriteSyncRequest req)
+        {
+            if (req?.RoomIds == null || !req.RoomIds.Any())
+                return Json(new { success = true, items = Array.Empty<object>() });
+
+            var roomIds = req.RoomIds.Distinct().Take(20).ToList();
+            var rooms = await _db.Rooms
+                .AsNoTracking()
+                .Include(r => r.Property).ThenInclude(p => p!.Province)
+                .Include(r => r.Property).ThenInclude(p => p!.District)
+                .Include(r => r.Property).ThenInclude(p => p!.Landlord)
+                .Include(r => r.RoomType)
+                .Include(r => r.RoomImages)
+                .Include(r => r.RoomAmenities).ThenInclude(ra => ra.Amenity)
+                .Where(r => roomIds.Contains(r.RoomId))
+                .ToListAsync();
+
+            var cards = rooms.Select(r =>
+            {
+                var primaryImg = r.RoomImages.OrderBy(img => img.SortOrder).FirstOrDefault(img => img.IsPrimary)
+                              ?? r.RoomImages.OrderBy(img => img.SortOrder).FirstOrDefault();
+
+                return new RoomCardViewModel
+                {
+                    RoomId = r.RoomId,
+                    Title = r.Title ?? r.RoomName,
+                    RoomName = r.RoomName,
+                    RoomCode = r.RoomCode,
+                    Slug = r.Slug,
+                    RoomPrice = r.RoomPrice,
+                    FormattedPrice = DisplayHelper.FormatPrice(r.RoomPrice),
+                    FormattedPriceCompact = DisplayHelper.FormatPriceCompact(r.RoomPrice),
+                    Area = r.Area,
+                    FormattedArea = DisplayHelper.FormatArea(r.Area),
+                    Floor = r.Floor,
+                    Capacity = r.Capacity,
+                    Status = r.Status,
+                    ApprovalStatus = r.ApprovalStatus,
+                    IsFeatured = r.IsFeatured,
+                    PublishedAt = r.PublishedAt,
+                    CreatedAt = r.CreatedAt,
+                    ThumbnailUrl = primaryImg?.Url ?? "/images/room-placeholder.jpg",
+                    ImageCount = r.RoomImages.Count,
+                    PropertyId = r.PropertyId ?? 0,
+                    PropertyName = r.Property?.Name ?? "",
+                    FullAddress = r.Property?.Address,
+                    ShortAddress = DisplayHelper.ShortenAddress(r.Property?.Address, r.Property?.District?.Name, r.Property?.Province?.Name),
+                    LandlordId = r.Property?.LandlordId ?? 0,
+                    LandlordName = r.Property?.Landlord?.FullName ?? "Chủ trọ",
+                    LandlordAvatar = r.Property?.Landlord?.Avatar,
+                    LandlordSlug = SlugHelper.ToSlug(r.Property?.Landlord?.FullName ?? "chu-tro"),
+                    AmenityNames = r.RoomAmenities.Select(ra => ra.Amenity?.Name).Where(n => !string.IsNullOrEmpty(n)).Cast<string>().Take(3).ToList(),
+                    IsFavorite = true
+                };
+            }).ToList();
+
+            return Json(new { success = true, items = cards });
         }
     }
 

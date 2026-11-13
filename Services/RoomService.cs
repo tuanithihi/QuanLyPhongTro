@@ -32,7 +32,8 @@ namespace QuanLyPhongTro.Services
             int? propertyId = null,
             string? search = null,
             RoomStatus? status = null,
-            RoomApprovalStatus? approvalStatus = null)
+            RoomApprovalStatus? approvalStatus = null,
+            int? roomTypeId = null)
         {
             var query = _context.Rooms
                 .Include(r => r.Property)
@@ -48,6 +49,11 @@ namespace QuanLyPhongTro.Services
             if (propertyId.HasValue)
             {
                 query = query.Where(r => r.PropertyId == propertyId.Value);
+            }
+
+            if (roomTypeId.HasValue && roomTypeId.Value > 0)
+            {
+                query = query.Where(r => r.RoomTypeId == roomTypeId.Value);
             }
 
             if (status.HasValue)
@@ -271,6 +277,14 @@ namespace QuanLyPhongTro.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Lỗi khi tạo phòng mới.");
+                if (ex.InnerException?.Message?.Contains("RoomCode") == true || ex.Message.Contains("RoomCode"))
+                {
+                    return (false, $"Mã phòng '{model.RoomCode.Trim()}' đã tồn tại trong khu trọ này. Vui lòng chọn mã phòng khác.", 0);
+                }
+                if (ex.InnerException?.Message?.Contains("Slug") == true || ex.Message.Contains("Slug"))
+                {
+                    return (false, "Đường dẫn (Slug) của phòng đã tồn tại. Vui lòng thử đổi tên hoặc mã phòng khác.", 0);
+                }
                 return (false, $"Đã xảy ra lỗi khi tạo phòng mới: {ex.Message} {(ex.InnerException != null ? " -> " + ex.InnerException.Message : "")}", 0);
             }
         }

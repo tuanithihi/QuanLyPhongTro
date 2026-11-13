@@ -114,6 +114,26 @@ namespace QuanLyPhongTro.Services
             {
                 query = query.Where(r => r.RoomTypeId == criteria.RoomTypeId.Value);
             }
+            else if (!string.IsNullOrWhiteSpace(criteria.RoomTypeName))
+            {
+                string rTypeQuery = criteria.RoomTypeName.Trim().ToLower();
+                if (rTypeQuery.Contains("nguyên căn"))
+                {
+                    query = query.Where(r => r.RoomType != null && r.RoomType.RoomTypeName.ToLower().Contains("nguyên căn"));
+                }
+                else if (rTypeQuery.Contains("căn hộ") || rTypeQuery.Contains("mini") || rTypeQuery.Contains("studio"))
+                {
+                    query = query.Where(r => r.RoomType != null && (r.RoomType.RoomTypeName.ToLower().Contains("căn hộ") || r.RoomType.RoomTypeName.ToLower().Contains("mini")));
+                }
+                else if (rTypeQuery.Contains("phòng trọ") || rTypeQuery.Contains("khép kín"))
+                {
+                    query = query.Where(r => r.RoomType != null && (r.RoomType.RoomTypeName.ToLower().Contains("phòng trọ") || r.RoomType.RoomTypeName.ToLower().Contains("khép kín")));
+                }
+                else
+                {
+                    query = query.Where(r => r.RoomType != null && r.RoomType.RoomTypeName.ToLower().Contains(rTypeQuery));
+                }
+            }
 
             // ── 7. Lọc theo Tiện ích ───────────────────────────────────────
             if (criteria.AmenityIds != null && criteria.AmenityIds.Any())

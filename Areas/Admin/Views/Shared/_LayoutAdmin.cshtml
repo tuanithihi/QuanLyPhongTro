@@ -9,10 +9,17 @@
         return;
     }
     bool isSuperAdmin = _currentLandlord.IsSuperAdmin();
-    int pendingBookings = _db.BookingRequests.Count(r => r.Status == BookingRequestStatus.Pending);
-    int unreadChats     = _db.ChatMessages.Count(m => !m.IsReadByAdmin && m.SenderType == ChatSenderType.Guest);
-
     int? currentLandlordId = _currentLandlord.GetCurrentLandlordId();
+    int pendingBookings = isSuperAdmin 
+        ? _db.BookingRequests.Count(r => r.Status == BookingRequestStatus.Pending)
+        : (currentLandlordId.HasValue 
+            ? _db.BookingRequests.Count(r => r.LandlordId == currentLandlordId.Value && r.Status == BookingRequestStatus.Pending)
+            : 0);
+    int unreadChats = isSuperAdmin
+        ? _db.ChatMessages.Count(m => !m.IsReadByAdmin && m.SenderType == ChatSenderType.Guest)
+        : (currentLandlordId.HasValue
+            ? _db.ChatMessages.Count(m => !m.IsReadByAdmin && m.SenderType == ChatSenderType.Guest && m.Session != null && m.Session.LandlordId == currentLandlordId.Value)
+            : 0);
     var currentLandlord = currentLandlordId.HasValue ? _db.Landlords.FirstOrDefault(l => l.LandlordId == currentLandlordId.Value) : null;
     var currentUser = _db.Users.FirstOrDefault(u => u.Username == adminUser);
     string userAvatar = !string.IsNullOrEmpty(currentLandlord?.Avatar) ? currentLandlord.Avatar 
@@ -25,8 +32,8 @@
 <head>
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
-  <title>Quản Lý Phòng Trọ - Admin</title>
-  <meta content="" name="description">
+  <title>Z-Stay - Quản Trị Hệ Thống</title>
+  <meta content="Hệ thống quản lý phòng trọ Z-Stay" name="description">
 
   <!-- Favicons -->
   <link href="~/admin/assets/img/favicon.png" rel="icon">
@@ -60,8 +67,8 @@
 
     <div class="d-flex align-items-center justify-content-between">
       <a asp-area="Admin" asp-controller="Home" asp-action="Index" class="logo d-flex align-items-center">
-        <img src="~/admin/assets/img/logo.png" alt="">
-        <span class="d-none d-lg-block">@(isSuperAdmin ? "PHONGTRO • ADMIN" : "PHONGTRO • CHỦ TRỌ")</span>
+        <img src="~/admin/assets/img/logo.png" alt="Z-Stay Logo">
+        <span class="d-none d-lg-block">@(isSuperAdmin ? "Z-STAY • ADMIN" : "Z-STAY • CHỦ TRỌ")</span>
       </a>
       <span class="badge ms-2 px-2 py-1 small d-none d-md-inline-block" style="background-color: var(--brand-primary-light, #fef2f2); color: var(--brand-primary, #e03c31); border: 1px solid var(--brand-primary-border, #fecaca);">
         <i class="bi @(isSuperAdmin ? "bi-shield-check" : "bi-building-gear") me-1"></i>@(isSuperAdmin ? "Quản trị sàn" : "Kênh Chủ trọ")
@@ -292,6 +299,7 @@
             </a>
             <ul id="invoice-nav" class="nav-content collapse" data-bs-parent="#sidebar-nav">
               <li><a asp-area="Admin" asp-controller="Invoice" asp-action="DueThisMonth"><i class="bi bi-circle"></i><span>Cần thu tháng này</span></a></li>
+              <li><a asp-area="Admin" asp-controller="Invoice" asp-action="SelectRoom"><i class="bi bi-circle"></i><span>Lập hóa đơn mới</span></a></li>
               <li><a asp-area="Admin" asp-controller="Invoice" asp-action="Index"><i class="bi bi-circle"></i><span>Danh sách hóa đơn</span></a></li>
             </ul>
           </li>
@@ -350,7 +358,7 @@
   <!-- ======= Footer ======= -->
   <footer id="footer" class="footer">
     <div class="copyright">
-      &copy; Copyright <strong><span>QuanLyPhongTro</span></strong>. All Rights Reserved
+      &copy; Copyright <strong><span>Z-Stay</span></strong>. All Rights Reserved
     </div>
   </footer>
 

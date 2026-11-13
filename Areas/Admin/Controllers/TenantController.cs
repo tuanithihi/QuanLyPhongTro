@@ -96,9 +96,11 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
         // ================================================================
         //  CREATE
         // ================================================================
-        public async Task<IActionResult> Create()
+        //  CREATE
+        // ================================================================
+        public async Task<IActionResult> Create(int? bookingId = null)
         {
-            await LoadUserList();
+            await LoadBookingList(bookingId);
             return View();
         }
 
@@ -106,7 +108,7 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(tblTenant model,
             IFormFile? avatarFile, IFormFile? frontFile, IFormFile? backFile,
-            string? password, int? linkedUserId)
+            string? password, int? linkedUserId, int? bookingId)
         {
             // Validate username unique
             if (!string.IsNullOrWhiteSpace(model.Username))
@@ -118,7 +120,7 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             ModelState.Remove("PasswordHash");
             if (!ModelState.IsValid)
             {
-                await LoadUserList();
+                await LoadBookingList(bookingId);
                 return View(model);
             }
 
@@ -172,7 +174,29 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             {
                 await _context.SaveChangesAsync();
 
-                // Xóa tài khoản người dùng sau khi đã chuyển thành người thuê
+                // Nếu tạo từ lịch hẹn xem phòng -> cập nhật trạng thái lịch hẹn thành Accepted (nếu đang Pending)
+                if (bookingId.HasValue)
+                {
+                    var booking = await _context.BookingRequests.FindAsync(bookingId.Value);
+                    if (booking != null)
+                    {
+                        if (booking.Status == BookingRequestStatus.Pending)
+                        {
+                            booking.Status = BookingRequestStatus.Accepted;
+                        }
+                        string noteAdd = "Đã tạo hồ sơ người thuê";
+                        if (string.IsNullOrEmpty(booking.AdminNote))
+                            booking.AdminNote = noteAdd;
+                        else if (!booking.AdminNote.Contains(noteAdd))
+                        {
+                            var combined = booking.AdminNote + " | " + noteAdd;
+                            booking.AdminNote = combined.Length > 500 ? combined[..500] : combined;
+                        }
+                        await _context.SaveChangesAsync();
+                    }
+                }
+
+                // Xóa tài khoản người dùng sau khi đã chuyển thành người thuê (nếu có linkedUserId)
                 if (linkedUserId.HasValue)
                 {
                     var linkedUser = await _context.Users.FindAsync(linkedUserId.Value);
@@ -192,12 +216,70 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             catch (Exception ex) when (ex.InnerException?.Message.Contains("UNIQUE") == true)
             {
                 ModelState.AddModelError("IdentityNumber", "Số CCCD/CMND đã tồn tại trong hệ thống.");
-                await LoadUserList();
+                await LoadBookingList(bookingId);
                 return View(model);
             }
         }
 
-        // AJAX: lấy thông tin user để điền vào form
+        // AJAX: lấy thông tin lịch hẹn xem phòng để điền vào form người thuê
+        [HttpGet]
+        public async Task<IActionResult> GetBookingInfo(int bookingId)
+        {
+            var booking = await _context.BookingRequests
+                .Include(b => b.Room)
+                    .ThenInclude(r => r.Property)
+                .FirstOrDefaultAsync(b => b.RequestId == bookingId);
+
+            if (booking == null) return NotFound();
+
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int currentLandlordId = _currentLandlordService.GetCurrentLandlordId() ?? 0;
+                bool isOwner = booking.LandlordId == currentLandlordId ||
+                               (booking.Room != null && booking.Room.Property != null && booking.Room.Property.LandlordId == currentLandlordId);
+                if (!isOwner) return StatusCode(StatusCodes.Status403Forbidden);
+            }
+
+            tblUser? matchedUser = null;
+            string cleanPhone = booking.Phone?.Trim() ?? "";
+            string cleanEmail = booking.Email?.Trim() ?? "";
+
+            if (!string.IsNullOrEmpty(cleanPhone))
+            {
+                matchedUser = await _context.Users.FirstOrDefaultAsync(u => u.Phone == cleanPhone && u.Role == "User");
+            }
+            if (matchedUser == null && !string.IsNullOrEmpty(cleanEmail))
+            {
+                matchedUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == cleanEmail && u.Role == "User");
+            }
+
+            string suggestedUsername = matchedUser?.Username ?? (!string.IsNullOrEmpty(cleanPhone) ? cleanPhone : "");
+            bool usernameTaken = false;
+            if (!string.IsNullOrEmpty(suggestedUsername))
+            {
+                usernameTaken = await _context.Tenants.AnyAsync(t => t.Username == suggestedUsername);
+            }
+
+            return Json(new
+            {
+                requestId = booking.RequestId,
+                fullName = booking.FullName ?? "",
+                phone = booking.Phone ?? "",
+                email = booking.Email ?? (matchedUser?.Email ?? ""),
+                preferredDate = booking.PreferredDate ?? (booking.ViewingTime.HasValue ? booking.ViewingTime.Value.ToString("dd/MM/yyyy HH:mm") : ""),
+                message = booking.Message ?? "",
+                roomId = booking.RoomId,
+                roomCode = booking.Room?.RoomCode ?? "",
+                roomName = booking.Room?.RoomName ?? "",
+                propertyName = booking.Room?.Property?.Name ?? "",
+                hasUserAccount = matchedUser != null,
+                linkedUserId = matchedUser?.UserId,
+                username = usernameTaken ? "" : suggestedUsername,
+                avatar = matchedUser?.Avatar ?? ""
+            });
+        }
+
+        // AJAX: lấy thông tin user để điền vào form (giữ lại hỗ trợ cũ nếu có)
         [HttpGet]
         public async Task<IActionResult> GetUserInfo(int userId)
         {
@@ -330,21 +412,52 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
         }
 
         // ── Helpers ──────────────────────────────────────────────────────
-        private async Task LoadUserList()
+        private async Task LoadBookingList(int? selectedBookingId = null)
         {
-            var usedUsernames = await _context.Tenants
-                .Where(t => t.Username != null)
-                .Select(t => t.Username!)
+            var query = _context.BookingRequests
+                .Include(b => b.Room)
+                    .ThenInclude(r => r.Property)
+                .Where(b => b.Status != BookingRequestStatus.Rejected &&
+                            (b.RequestType == BookingRequestType.ViewingRequest || b.RequestType == BookingRequestType.Viewing || b.RequestType == BookingRequestType.Deposit))
+                .AsQueryable();
+
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int currentLandlordId = _currentLandlordService.GetCurrentLandlordId() ?? 0;
+                query = query.Where(b => b.LandlordId == currentLandlordId ||
+                                         (b.Room != null && b.Room.Property != null && b.Room.Property.LandlordId == currentLandlordId));
+            }
+
+            var bookings = await query
+                .OrderByDescending(b => b.CreatedAt)
                 .ToListAsync();
 
-            var users = await _context.Users
-                .Where(u => u.Role == "User" && u.IsActive && !usedUsernames.Contains(u.Username))
-                .OrderBy(u => u.FullName ?? u.Username)
-                .Select(u => new { u.UserId, Display = $"{(u.FullName ?? u.Username)} ({u.Username})" })
+            // Lọc loại trừ những khách đã là người thuê của chủ trọ này (trừ khi chính là booking được chọn)
+            var existingPhonesQuery = _context.Tenants.AsQueryable();
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int currentLandlordId = _currentLandlordService.GetCurrentLandlordId() ?? 0;
+                existingPhonesQuery = existingPhonesQuery.Where(t => t.LandlordId == currentLandlordId);
+            }
+            var existingPhones = await existingPhonesQuery
+                .Where(t => t.Phone != null)
+                .Select(t => t.Phone!.Trim())
                 .ToListAsync();
 
+            var filteredBookings = bookings
+                .Where(b => b.RequestId == selectedBookingId || string.IsNullOrWhiteSpace(b.Phone) || !existingPhones.Contains(b.Phone.Trim()))
+                .Select(b => new
+                {
+                    b.RequestId,
+                    Display = $"{b.FullName} - {b.Phone} ({(b.Room != null ? b.Room.RoomName : "Phòng")}{(string.IsNullOrEmpty(b.PreferredDate) ? "" : " - Ngày hẹn: " + b.PreferredDate)})"
+                })
+                .ToList();
+
+            ViewBag.BookingList = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(
+                filteredBookings, "RequestId", "Display", selectedBookingId);
+            ViewBag.SelectedBookingId = selectedBookingId;
             ViewBag.UserList = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(
-                users, "UserId", "Display");
+                Enumerable.Empty<object>(), "UserId", "Display");
         }
 
         private void DeleteImage(string? imgPath)

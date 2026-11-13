@@ -123,8 +123,16 @@ dotnet user-secrets set "GroqApi:ApiKey" "gsk_your_groq_api_key_here"
 *Ghi chú:* Bạn cũng có thể điều chỉnh chuỗi kết nối trực tiếp tại file `appsettings.json` trong môi trường phát triển nội bộ.
 
 ### 3. Khởi Tạo Cơ Sở Dữ Liệu (Migrations & Seed Dữ Liệu Demo)
-Chạy lệnh migration để tạo toàn bộ bảng CSDL và tự động import danh mục hành chính 63 tỉnh/thành, tiện ích, tài khoản mẫu và dữ liệu demo:
 
+Bạn có thể khởi tạo CSDL theo 1 trong 2 cách sau:
+
+#### Cách 1: Chạy trực tiếp File SQL trong SQL Server (Khuyên Dùng)
+1. Mở **SQL Server Management Studio (SSMS)** hoặc **Azure Data Studio**.
+2. Kết nối tới SQL Server của bạn (ví dụ: `localhost`, `.\SQLEXPRESS` hoặc `(localdb)\mssqllocaldb`).
+3. Mở file [QUANLYPHONGTRO_Database.sql](file:///e:/VSCode/STKN/QuanLyPhongTro/QUANLYPHONGTRO_Database.sql).
+4. Nhấn **Execute (F5)** để tự động tạo Database `[QUANLYPHONGTRO]`, 24 bảng dữ liệu, ràng buộc, chỉ mục và tài khoản Admin/Chủ trọ mẫu.
+
+#### Cách 2: Sử dụng Entity Framework Core Migrations
 ```powershell
 # Cài đặt công cụ dotnet-ef (nếu chưa cài)
 dotnet tool install --global dotnet-ef

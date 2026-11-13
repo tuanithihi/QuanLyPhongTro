@@ -225,6 +225,25 @@ namespace QuanLyPhongTro.Services
                 await context.SaveChangesAsync();
             }
 
+            // 2.5 Dọn dẹp/sửa các property có Slug rỗng nếu có trong DB
+            var emptySlugProps = await context.Properties.Where(p => string.IsNullOrEmpty(p.Slug)).ToListAsync();
+            foreach (var ep in emptySlugProps)
+            {
+                string baseSlug = SlugHelper.GenerateSlug(ep.Name);
+                if (string.IsNullOrWhiteSpace(baseSlug) || baseSlug == "item") baseSlug = $"khu-tro-{ep.PropertyId}";
+                string s = baseSlug;
+                int c = 1;
+                while (await context.Properties.AnyAsync(p => p.Slug == s && p.PropertyId != ep.PropertyId))
+                {
+                    s = $"{baseSlug}-{c++}";
+                }
+                ep.Slug = s;
+            }
+            if (emptySlugProps.Any())
+            {
+                await context.SaveChangesAsync();
+            }
+
             // 3. Tìm hoặc tạo tblProperty mặc định (Idempotent theo Slug "khu-tro-ho-duc-tuan" hoặc LandlordId)
             const string defaultPropertySlug = "khu-tro-ho-duc-tuan";
             var property = await context.Properties
@@ -372,10 +391,99 @@ namespace QuanLyPhongTro.Services
         }
 
         /// <summary>
+        /// Đảm bảo các loại phòng chuẩn bao gồm: Cho thuê phòng trọ, Căn hộ mini, Nhà nguyên căn, Homestay, Ký túc xá
+        /// </summary>
+        public static async Task SeedRoomTypesAsync(DataContext context)
+        {
+            var existingTypes = await context.RoomTypes.ToListAsync();
+            var requiredTypes = new List<(string Name, string Desc, int Order)>
+            {
+                ("Phòng trọ khép kín", "Phòng trọ có WC riêng biệt, giờ giấc tự do, an ninh tốt", 1),
+                ("Chung cư mini", "Căn hộ mini / chung cư mini 1 phòng ngủ hoặc studio, đầy đủ nội thất", 2),
+                ("Căn hộ mini", "Căn hộ mini gia đình hoặc studio đầy đủ tiện nghi", 3),
+                ("Nhà nguyên căn", "Nhà nguyên căn cho thuê độc lập, nhiều tầng, thích hợp hộ gia đình hoặc nhóm bạn", 4),
+                ("Homestay / Căn hộ dịch vụ", "Không gian sống cao cấp, có dịch vụ dọn dẹp buồng phòng", 5),
+                ("Ký túc xá cao cấp", "Giường tầng riêng tư, đầy đủ máy lạnh tủ đồ", 6)
+            };
+
+            bool changed = false;
+            foreach (var req in requiredTypes)
+            {
+                if (!existingTypes.Any(t => string.Equals(t.RoomTypeName, req.Name, StringComparison.OrdinalIgnoreCase)))
+                {
+                    context.RoomTypes.Add(new tblRoomType
+                    {
+                        RoomTypeName = req.Name,
+                        Description = req.Desc,
+                        SortOrder = req.Order,
+                        IsActive = true,
+                        CreatedAt = DateTime.Now
+                    });
+                    changed = true;
+                }
+            }
+
+            if (changed)
+            {
+                await context.SaveChangesAsync();
+                existingTypes = await context.RoomTypes.ToListAsync();
+            }
+
+            // Gán mẫu một số phòng sang Nhà nguyên căn và Căn hộ mini nếu chưa có phòng nào thuộc loại này
+            var nhaNguyenCanType = existingTypes.FirstOrDefault(t => t.RoomTypeName.Contains("Nhà nguyên căn"));
+            if (nhaNguyenCanType != null)
+            {
+                bool hasRooms = await context.Rooms.AnyAsync(r => r.RoomTypeId == nhaNguyenCanType.RoomTypeId);
+                if (!hasRooms)
+                {
+                    var someRooms = await context.Rooms
+                        .Where(r => r.ApprovalStatus == RoomApprovalStatus.Published)
+                        .OrderBy(r => r.RoomId)
+                        .Take(3)
+                        .ToListAsync();
+                    foreach (var r in someRooms)
+                    {
+                        r.RoomTypeId = nhaNguyenCanType.RoomTypeId;
+                        r.Title = "Nhà nguyên căn " + (r.RoomName ?? "cho thuê độc lập");
+                    }
+                    if (someRooms.Any())
+                    {
+                        await context.SaveChangesAsync();
+                    }
+                }
+            }
+
+            var canHoMiniType = existingTypes.FirstOrDefault(t => t.RoomTypeName == "Căn hộ mini" || t.RoomTypeName == "Chung cư mini");
+            if (canHoMiniType != null)
+            {
+                bool hasMiniRooms = await context.Rooms.AnyAsync(r => r.RoomTypeId == canHoMiniType.RoomTypeId);
+                if (!hasMiniRooms)
+                {
+                    var someRooms = await context.Rooms
+                        .Where(r => r.ApprovalStatus == RoomApprovalStatus.Published && (nhaNguyenCanType == null || r.RoomTypeId != nhaNguyenCanType.RoomTypeId))
+                        .OrderByDescending(r => r.RoomId)
+                        .Take(3)
+                        .ToListAsync();
+                    foreach (var r in someRooms)
+                    {
+                        r.RoomTypeId = canHoMiniType.RoomTypeId;
+                        r.Title = "Căn hộ mini " + (r.RoomName ?? "full tiện nghi");
+                    }
+                    if (someRooms.Any())
+                    {
+                        await context.SaveChangesAsync();
+                    }
+                }
+            }
+        }
+
+        /// <summary>
         /// Seed dữ liệu demo đa chủ trọ, nhiều khu trọ và 30+ phòng trọ phục vụ trình diễn đồ án.
         /// </summary>
         public static async Task SeedDemoDataAsync(DataContext context)
         {
+            await SeedRoomTypesAsync(context);
+
             if (await context.Rooms.AnyAsync(r => r.RoomCode.StartsWith("HN-") || r.RoomCode.StartsWith("DN-") || r.RoomCode.StartsWith("SG-")))
             {
                 return; // Đã có dữ liệu demo
@@ -383,18 +491,6 @@ namespace QuanLyPhongTro.Services
 
             // ── 1. Đảm bảo có Loại phòng ──────────────────────────────────────
             var roomTypes = await context.RoomTypes.ToListAsync();
-            if (!roomTypes.Any())
-            {
-                roomTypes = new List<tblRoomType>
-                {
-                    new() { RoomTypeName = "Phòng trọ khép kín", Description = "Phòng trọ có WC riêng biệt, giờ giấc tự do", SortOrder = 1, IsActive = true },
-                    new() { RoomTypeName = "Chung cư mini", Description = "Căn hộ mini 1 phòng ngủ hoặc studio, đầy đủ nội thất", SortOrder = 2, IsActive = true },
-                    new() { RoomTypeName = "Homestay / Căn hộ dịch vụ", Description = "Không gian sống cao cấp, có dọn dẹp vệ sinh", SortOrder = 3, IsActive = true },
-                    new() { RoomTypeName = "Ký túc xá cao cấp", Description = "Giường tầng riêng tư, đầy đủ máy lạnh tủ đồ", SortOrder = 4, IsActive = true }
-                };
-                context.RoomTypes.AddRange(roomTypes);
-                await context.SaveChangesAsync();
-            }
 
             // ── 2. Đảm bảo có Tiện ích ────────────────────────────────────────
             var amenities = await context.Amenities.ToListAsync();

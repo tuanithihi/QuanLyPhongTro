@@ -22,6 +22,7 @@ namespace QuanLyPhongTro.Models.ViewModels
         public double? MaxArea { get; set; }
 
         public int? RoomTypeId { get; set; }
+        public string? RoomTypeName { get; set; }
 
         public List<int>? AmenityIds { get; set; } = new List<int>();
 
@@ -116,4 +117,34 @@ namespace QuanLyPhongTro.Models.ViewModels
         public int TotalReviews { get; set; } = 0;
         public List<RoomCardViewModel> ActiveListings { get; set; } = new List<RoomCardViewModel>();
     }
+
+    public class LandlordListViewModel
+    {
+        public List<LandlordCardItemViewModel> Landlords { get; set; } = new();
+        public int TotalItems { get; set; }
+        public int PageIndex { get; set; } = 1;
+        public int PageSize { get; set; } = 12;
+        public int TotalPages => (int)Math.Ceiling((double)TotalItems / (PageSize > 0 ? PageSize : 1));
+        public string? Keyword { get; set; }
+        public int? ProvinceId { get; set; }
+        public string? SortBy { get; set; }
+        public List<tblProvince> AvailableProvinces { get; set; } = new();
+    }
+
+    public class LandlordCardItemViewModel
+    {
+        public int LandlordId { get; set; }
+        public string FullName { get; set; } = string.Empty;
+        public string Slug { get; set; } = string.Empty;
+        public string? Avatar { get; set; }
+        public string? Phone { get; set; }
+        public string? Description { get; set; }
+        public int TotalProperties { get; set; }
+        public int ActiveRoomCount { get; set; }
+        public List<string> Provinces { get; set; } = new();
+        public double AverageRating { get; set; } = 5.0;
+        public int TotalReviews { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
 }
+

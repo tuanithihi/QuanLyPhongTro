@@ -41,7 +41,13 @@
             <h1 class="h3 fw-bold mb-1">So sánh phòng trọ</h1>
             <p class="text-muted mb-0 small">So sánh chi tiết tối đa 3 phòng để đưa ra quyết định phù hợp nhất.</p>
         </div>
-        <div>
+        <div class="d-flex align-items-center gap-2">
+            @if (Model.Any())
+            {
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearCompare(event)">
+                    <i class="bi bi-trash3 me-1"></i> Xóa tất cả
+                </button>
+            }
             <a asp-action="Listings" class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-plus-circle me-1"></i> Thêm phòng so sánh
             </a>
@@ -83,6 +89,9 @@
                                     </a>
                                 </h6>
                                 <div class="text-muted small">Mã: @r.RoomCode</div>
+                                <button type="button" class="btn btn-outline-danger btn-sm w-100 mt-2 py-1" onclick="removeCompareRoom(@r.RoomId)" style="font-size: 0.8rem;">
+                                    <i class="bi bi-x-circle me-1"></i>Bỏ phòng này
+                                </button>
                             </td>
                         }
                     </tr>
@@ -221,8 +230,11 @@
                         {
                             <td>
                                 <a asp-action="RoomDetail" asp-route-slug="@item.Room.Slug" asp-route-id="@item.Room.RoomId" class="btn btn-brand btn-sm w-100 mb-2">
-                                    Xem chi tiết
+                                    <i class="bi bi-eye me-1"></i>Xem chi tiết
                                 </a>
+                                <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeCompareRoom(@item.Room.RoomId)">
+                                    <i class="bi bi-x-circle me-1"></i>Bỏ so sánh
+                                </button>
                             </td>
                         }
                     </tr>
@@ -231,3 +243,37 @@
         </div>
     }
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const currentIds = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Select(m => m.Room.RoomId).ToList()));
+            const localList = (window.getCompareList ? window.getCompareList() : JSON.parse(localStorage.getItem('compare_rooms') || '[]'));
+
+            // Nếu người dùng vào /so-sanh trực tiếp từ menu và không có query params, nhưng trong localStorage có phòng:
+            if (currentIds.length === 0 && localList.length > 0 && !window.location.search.includes('ids=')) {
+                window.location.replace('/so-sanh?ids=' + localList.join(','));
+                return;
+            }
+
+            // Nếu đang xem danh sách phòng, đồng bộ danh sách phòng hiện tại vào localStorage
+            if (currentIds.length > 0) {
+                localStorage.setItem('compare_rooms', JSON.stringify(currentIds));
+                if (window.updateCompareUI) window.updateCompareUI();
+            }
+        });
+
+        function removeCompareRoom(roomId) {
+            let list = (window.getCompareList ? window.getCompareList() : JSON.parse(localStorage.getItem('compare_rooms') || '[]'));
+            list = list.filter(id => id !== roomId);
+            localStorage.setItem('compare_rooms', JSON.stringify(list));
+            if (window.updateCompareUI) window.updateCompareUI();
+
+            if (list.length > 0) {
+                window.location.href = '/so-sanh?ids=' + list.join(',');
+            } else {
+                window.location.href = '/so-sanh';
+            }
+        }
+    </script>
+}

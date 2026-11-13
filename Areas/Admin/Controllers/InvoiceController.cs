@@ -140,6 +140,40 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             return View(contracts);
         }
 
+        // ── SELECT ROOM FOR INVOICE ──────────────────────────────────────
+        public async Task<IActionResult> SelectRoom()
+        {
+            var query = _context.Contracts
+                .Include(c => c.Room)
+                .Include(c => c.Tenant)
+                .Include(c => c.Invoices)
+                .Where(c => c.Status == ContractStatus.Active)
+                .AsQueryable();
+
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int? currentLandlordId = _currentLandlordService.GetCurrentLandlordId();
+                query = query.Where(c => c.LandlordId == currentLandlordId);
+            }
+
+            var contracts = await query
+                .OrderBy(c => c.Room != null ? c.Room.RoomCode : "")
+                .ToListAsync();
+
+            return View(contracts);
+        }
+
+        // ── CREATE REDIRECT TO GENERATE ──────────────────────────────────
+        [HttpGet]
+        public IActionResult Create(int? contractId)
+        {
+            if (contractId.HasValue && contractId.Value > 0)
+            {
+                return RedirectToAction(nameof(Generate), new { contractId = contractId.Value, from = "select" });
+            }
+            return RedirectToAction(nameof(SelectRoom));
+        }
+
         // ── GENERATE GET ─────────────────────────────────────────────────
         public async Task<IActionResult> Generate(int contractId, string? from = null)
         {
@@ -563,6 +597,54 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
 
             string fileName = $"HoaDon_{invoice.InvoiceCode}.docx";
             return File(memoryStream, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", fileName);
+        }
+
+        // ── GET PREVIOUS INDEX (AJAX) ────────────────────────────────────
+        [HttpGet]
+        public async Task<IActionResult> GetPreviousIndex(int contractId, int month, int year)
+        {
+            var contract = await _context.Contracts.FindAsync(contractId);
+            if (contract == null)
+                return Json(new { ok = false });
+
+            // Chống IDOR
+            if (!_currentLandlordService.IsSuperAdmin())
+            {
+                int? currentLandlordId = _currentLandlordService.GetCurrentLandlordId();
+                if (contract.LandlordId != currentLandlordId)
+                    return Json(new { ok = false });
+            }
+
+            // Tìm kỳ liền trước: tháng/năm kỳ yêu cầu - 1 tháng
+            var prevDate    = new DateTime(year, month, 1).AddMonths(-1);
+            int prevMonth   = prevDate.Month;
+            int prevYear    = prevDate.Year;
+
+            var prevInvoice = await _context.Invoices
+                .Where(i => i.ContractId == contractId &&
+                            i.BillingMonth == prevMonth &&
+                            i.BillingYear  == prevYear)
+                .FirstOrDefaultAsync();
+
+            double electricStart, waterStart;
+            if (prevInvoice != null)
+            {
+                electricStart = prevInvoice.ElectricIndexEnd;
+                waterStart    = prevInvoice.WaterIndexEnd;
+            }
+            else
+            {
+                // Không có kỳ trước → dùng chỉ số ban đầu của hợp đồng
+                electricStart = contract.InitialElectricIndex;
+                waterStart    = contract.InitialWaterIndex;
+            }
+
+            return Json(new
+            {
+                ok            = true,
+                electricStart = electricStart,
+                waterStart    = waterStart
+            });
         }
 
         // ── HELPERS ──────────────────────────────────────────────────────

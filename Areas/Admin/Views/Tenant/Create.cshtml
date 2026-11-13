@@ -18,39 +18,61 @@
 <form asp-area="Admin" asp-controller="Tenant" asp-action="Create" method="post" enctype="multipart/form-data">
     @Html.AntiForgeryToken()
     <input type="hidden" name="linkedUserId" id="linkedUserId" />
+    <input type="hidden" name="bookingId" id="bookingId" value="@(ViewBag.SelectedBookingId ?? "")" />
     <div class="row">
 
         @* ── Cột trái ── *@
         <div class="col-lg-8">
 
-            @* Card chọn từ tài khoản website *@
-            <div class="card mb-3 border-primary">
-                <div class="card-header fw-semibold bg-primary-subtle text-primary">
-                    <i class="bi bi-person-lines-fill me-2"></i>Chọn nhanh từ tài khoản website
-                    <span class="fw-normal text-muted small ms-1">(tuỳ chọn — bỏ qua nếu muốn tạo hoàn toàn mới)</span>
+            @* Card chọn từ danh sách khách đặt lịch xem phòng *@
+            <div class="card mb-3 border-primary shadow-sm">
+                <div class="card-header fw-semibold bg-primary text-white d-flex align-items-center justify-content-between">
+                    <div>
+                        <i class="bi bi-calendar-check me-2"></i>Chọn từ khách đặt lịch xem phòng
+                    </div>
+                    @if (ViewBag.BookingList != null)
+                    {
+                        var count = ((Microsoft.AspNetCore.Mvc.Rendering.SelectList)ViewBag.BookingList).Count();
+                        <span class="badge bg-light text-primary">@count khách hẹn</span>
+                    }
                 </div>
                 <div class="card-body pt-3">
                     <div class="row g-2 align-items-end">
-                        <div class="col-md-8">
-                            <label class="form-label fw-semibold">Tài khoản người dùng</label>
-                            <select id="userSelect" class="form-select"
-                                    asp-items="@((Microsoft.AspNetCore.Mvc.Rendering.SelectList)ViewBag.UserList)">
-                                <option value="">-- Không chọn --</option>
+                        <div class="col-md-9">
+                            <label class="form-label fw-semibold">Khách đã đặt lịch xem phòng</label>
+                            <select id="bookingSelect" class="form-select"
+                                    asp-items="@((Microsoft.AspNetCore.Mvc.Rendering.SelectList)ViewBag.BookingList)">
+                                <option value="">-- Chọn khách đặt lịch xem phòng --</option>
                             </select>
                         </div>
-                        <div class="col-md-4">
-                            <button type="button" id="btnClearUser" class="btn btn-outline-secondary d-none w-100">
+                        <div class="col-md-3">
+                            <button type="button" id="btnClearBooking" class="btn btn-outline-secondary d-none w-100">
                                 <i class="bi bi-x-lg me-1"></i>Bỏ chọn
                             </button>
                         </div>
                     </div>
-                    <div class="form-text mt-1">
-                        Chỉ hiển thị tài khoản chưa được liên kết với người thuê nào.
+                    <div class="form-text mt-1 text-muted">
+                        <i class="bi bi-info-circle me-1"></i>Chỉ hiển thị những khách có lịch đặt xem phòng thuộc quyền quản lý của bạn và chưa chuyển thành người thuê.
                     </div>
-                    <div id="linkedUserInfo" class="d-none mt-2 p-2 bg-light rounded small">
-                        <i class="bi bi-check-circle-fill text-success me-1"></i>
-                        Đã điền thông tin từ tài khoản <strong id="linkedUserName"></strong>.
-                        Mật khẩu đăng nhập sẽ được giữ nguyên từ tài khoản website.
+                    <div id="linkedBookingInfo" class="d-none mt-3 p-3 bg-light border border-primary-subtle rounded-3">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i>Đã chọn</span>
+                            <strong class="text-dark" id="infoCustomerName"></strong>
+                        </div>
+                        <div class="row g-2 small text-secondary">
+                            <div class="col-sm-6">
+                                <i class="bi bi-door-open text-primary me-1"></i>Phòng hẹn: <strong class="text-dark" id="infoRoomName"></strong>
+                            </div>
+                            <div class="col-sm-6">
+                                <i class="bi bi-calendar3 text-primary me-1"></i>Ngày hẹn xem: <strong class="text-dark" id="infoPreferredDate"></strong>
+                            </div>
+                            <div class="col-12" id="infoMessageWrapper">
+                                <i class="bi bi-chat-text text-primary me-1"></i>Lời nhắn: <span class="fst-italic text-dark" id="infoMessage"></span>
+                            </div>
+                            <div class="col-12 d-none text-success mt-1" id="infoAccountLink">
+                                <i class="bi bi-person-badge-fill me-1"></i>Tìm thấy tài khoản website: <strong id="linkedUserName"></strong> (Mật khẩu tài khoản sẽ được đồng bộ tự động).
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -180,61 +202,114 @@ function previewImg(input, imgId) {
     }
 }
 
-// Chọn từ tài khoản website
-const userSelect   = document.getElementById('userSelect');
-const linkedUserId = document.getElementById('linkedUserId');
-const btnClear     = document.getElementById('btnClearUser');
-const infoBox      = document.getElementById('linkedUserInfo');
-const infoName     = document.getElementById('linkedUserName');
+// Chọn từ danh sách khách đặt lịch xem phòng
+const bookingSelect      = document.getElementById('bookingSelect');
+const bookingIdInput     = document.getElementById('bookingId');
+const linkedUserId       = document.getElementById('linkedUserId');
+const btnClear           = document.getElementById('btnClearBooking');
+const infoBox            = document.getElementById('linkedBookingInfo');
+const infoCustomerName   = document.getElementById('infoCustomerName');
+const infoRoomName       = document.getElementById('infoRoomName');
+const infoPreferredDate  = document.getElementById('infoPreferredDate');
+const infoMessageWrapper = document.getElementById('infoMessageWrapper');
+const infoMessage        = document.getElementById('infoMessage');
+const infoAccountLink    = document.getElementById('infoAccountLink');
+const linkedUserName     = document.getElementById('linkedUserName');
 
-userSelect.addEventListener('change', async function () {
-    const uid = this.value;
-    if (!uid) { clearLinked(); return; }
+async function handleBookingChange(bId) {
+    if (!bId) {
+        clearBookingSelection();
+        return;
+    }
 
     try {
-        const res  = await fetch('/Admin/Tenant/GetUserInfo?userId=' + uid);
-        if (!res.ok) { clearLinked(); return; }
+        const res = await fetch('/Admin/Tenant/GetBookingInfo?bookingId=' + bId);
+        if (!res.ok) { clearBookingSelection(); return; }
         const data = await res.json();
 
-        // Điền thông tin
+        // Tự động điền các thông tin
         setVal('FullName', data.fullName);
         setVal('Phone',    data.phone);
-        setVal('Email',    data.email);
-        setVal('Username', data.username);
+        if (data.email)    setVal('Email', data.email);
+        if (data.username) setVal('Username', data.username);
 
-        // Hiện avatar preview nếu có
-        if (data.avatar) {
-            const av = document.getElementById('prevAvatar');
-            av.src = data.avatar;
+        // Cập nhật card tóm tắt
+        bookingIdInput.value = data.requestId;
+        infoCustomerName.textContent = data.fullName + (data.phone ? ' (' + data.phone + ')' : '');
+        infoRoomName.textContent = (data.roomCode ? '[' + data.roomCode + '] ' : '') + data.roomName + (data.propertyName ? ' - ' + data.propertyName : '');
+        infoPreferredDate.textContent = data.preferredDate || 'Chưa ghi rõ';
+
+        if (data.message) {
+            infoMessage.textContent = data.message;
+            infoMessageWrapper.classList.remove('d-none');
+        } else {
+            infoMessageWrapper.classList.add('d-none');
         }
 
-        // Ẩn trường mật khẩu (dùng mật khẩu từ tài khoản)
-        document.querySelector('[name="password"]').closest('.col-md-6').style.opacity = '0.4';
-        document.querySelector('[name="password"]').disabled = true;
+        // Nếu khách có tài khoản website
+        const pwCol = document.querySelector('[name="password"]')?.closest('.col-md-6');
+        if (data.hasUserAccount && data.linkedUserId) {
+            linkedUserId.value = data.linkedUserId;
+            linkedUserName.textContent = data.username;
+            infoAccountLink.classList.remove('d-none');
 
-        linkedUserId.value = uid;
-        infoName.textContent = data.username;
+            if (data.avatar) {
+                const av = document.getElementById('prevAvatar');
+                if (av) av.src = data.avatar;
+            }
+
+            if (pwCol) {
+                pwCol.style.opacity = '0.4';
+                document.querySelector('[name="password"]').disabled = true;
+            }
+        } else {
+            linkedUserId.value = '';
+            infoAccountLink.classList.add('d-none');
+            if (pwCol) {
+                pwCol.style.opacity = '';
+                document.querySelector('[name="password"]').disabled = false;
+            }
+        }
+
         infoBox.classList.remove('d-none');
         btnClear.classList.remove('d-none');
-    } catch { clearLinked(); }
+    } catch (err) {
+        console.error(err);
+        clearBookingSelection();
+    }
+}
+
+bookingSelect.addEventListener('change', function () {
+    handleBookingChange(this.value);
 });
 
 btnClear.addEventListener('click', function () {
-    userSelect.value = '';
-    clearLinked();
+    bookingSelect.value = '';
+    clearBookingSelection();
 });
 
-function clearLinked() {
+function clearBookingSelection() {
+    bookingIdInput.value = '';
     linkedUserId.value = '';
     infoBox.classList.add('d-none');
     btnClear.classList.add('d-none');
-    document.querySelector('[name="password"]').closest('.col-md-6').style.opacity = '';
-    document.querySelector('[name="password"]').disabled = false;
+    const pwInput = document.querySelector('[name="password"]');
+    if (pwInput) {
+        pwInput.closest('.col-md-6').style.opacity = '';
+        pwInput.disabled = false;
+    }
 }
 
 function setVal(name, val) {
     const el = document.querySelector('[name="' + name + '"]');
-    if (el && !el.value) el.value = val || '';
+    if (el) el.value = val || '';
 }
+
+// Nếu đã có sẵn bookingId khi mở trang (từ URL param hoặc ViewBag)
+document.addEventListener('DOMContentLoaded', function () {
+    if (bookingSelect && bookingSelect.value) {
+        handleBookingChange(bookingSelect.value);
+    }
+});
 </script>
 }

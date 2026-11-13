@@ -69,9 +69,15 @@ namespace QuanLyPhongTro.Models
         [Display(Name = "Đã thông báo cho khách")]
         public bool IsGuestNotified { get; set; } = false;
 
+        [Display(Name = "Người dùng")]
+        public int? UserId { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         // Navigation
+        [ForeignKey(nameof(UserId))]
+        public virtual tblUser? User { get; set; }
+
         [ForeignKey(nameof(LandlordId))]
         public virtual tblLandlord? Landlord { get; set; }
 

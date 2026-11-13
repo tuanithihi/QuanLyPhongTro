@@ -287,3 +287,69 @@
   line-height: 1.5;
   margin-bottom: 0;
 }
+
+/* ── Home Search Sidebar (Right Column) ────────────────────────── */
+.home-search-sidebar {
+  border: 1px solid var(--border-color) !important;
+  transition: box-shadow var(--transition-normal);
+}
+
+.home-search-sidebar:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+}
+
+.home-search-sidebar .form-control:focus,
+.home-search-sidebar .form-select:focus {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 0.2rem rgba(224, 60, 49, 0.12);
+}
+
+.home-search-sidebar .badge {
+  font-weight: var(--font-medium);
+  transition: all var(--transition-fast);
+}
+
+.home-search-sidebar .badge:hover {
+  background-color: var(--brand-primary) !important;
+  color: #ffffff !important;
+  border-color: var(--brand-primary) !important;
+}
+
+/* ── Cuộn chuột riêng biệt cho Ô Phòng và Ô Bộ Lọc trên Trang Chủ ── */
+@media (min-width: 992px) {
+  .home-scroll-pane {
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    position: sticky;
+    top: 85px;
+    padding-bottom: var(--space-4);
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+  }
+
+  .home-rooms-pane {
+    padding-right: 12px;
+  }
+
+  .home-filter-pane {
+    padding-left: 4px;
+  }
+
+  .home-scroll-pane::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .home-scroll-pane::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .home-scroll-pane::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 4px;
+  }
+
+  .home-scroll-pane::-webkit-scrollbar-thumb:hover {
+    background-color: #94a3b8;
+  }
+}

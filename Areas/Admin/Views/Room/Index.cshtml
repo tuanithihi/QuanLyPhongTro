@@ -7,6 +7,7 @@
     int? propId = ViewBag.PropertyId;
     int? st = ViewBag.Status;
     int? appSt = ViewBag.ApprovalStatus;
+    int? rTypeId = ViewBag.RoomTypeId;
     bool isSuperAdmin = _currentLandlord.IsSuperAdmin();
 }
 
@@ -48,7 +49,7 @@
 
                 <!-- Bộ lọc phòng -->
                 <form method="get" asp-action="Index" class="row g-2 mb-3">
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <input type="text" name="searchTerm" value="@searchQ"
                                class="form-control" placeholder="Mã hoặc tên phòng...">
                     </div>
@@ -58,8 +59,13 @@
                         </select>
                     </div>
                     <div class="col-md-2">
+                        <select name="roomTypeId" class="form-select" asp-items="ViewBag.RoomTypeList">
+                            <option value="">-- Tất cả loại phòng --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
                         <select name="status" class="form-select">
-                            <option value="">-- Tình trạng phòng --</option>
+                            <option value="">-- Tình trạng --</option>
                             <option value="0" selected="@(st == 0)">Phòng trống</option>
                             <option value="1" selected="@(st == 1)">Đã cho thuê</option>
                             <option value="2" selected="@(st == 2)">Đang bảo trì</option>
@@ -74,11 +80,11 @@
                             <option value="3" selected="@(appSt == 3)">Bị từ chối (Rejected)</option>
                         </select>
                     </div>
-                    <div class="col-md-2 d-flex gap-1">
-                        <button type="submit" class="btn btn-outline-primary flex-grow-1">
-                            <i class="bi bi-funnel me-1"></i> Lọc
+                    <div class="col-md-1 d-flex gap-1">
+                        <button type="submit" class="btn btn-outline-primary flex-grow-1" title="Lọc danh sách">
+                            <i class="bi bi-funnel"></i>
                         </button>
-                        @if (!string.IsNullOrEmpty(searchQ) || propId.HasValue || st.HasValue || appSt.HasValue)
+                        @if (!string.IsNullOrEmpty(searchQ) || propId.HasValue || st.HasValue || appSt.HasValue || rTypeId.HasValue)
                         {
                             <a asp-action="Index" class="btn btn-light" title="Xóa bộ lọc"><i class="bi bi-x-lg"></i></a>
                         }
@@ -116,7 +122,8 @@
                                             <a asp-action="Details" asp-route-id="@r.RoomId" class="fw-bold text-decoration-none">
                                                 @r.RoomCode — @r.RoomName
                                             </a>
-                                            <div class="small text-muted">
+                                            <div class="small text-muted mt-1">
+                                                <span class="badge bg-light text-dark border me-1"><i class="bi bi-tag me-1 text-primary"></i>@(r.RoomTypeName ?? "Phòng trọ")</span>
                                                 <i class="bi bi-building me-1"></i>@(r.PropertyName ?? "Chưa gán khu trọ")
                                                 • @r.Area m²
                                                 @if (r.IsFeatured)

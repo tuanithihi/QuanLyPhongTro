@@ -36,7 +36,10 @@
                 foreach (var s in sessions)
                 {
                     <a href="#" class="session-item d-flex align-items-center gap-3 px-3 py-2 text-decoration-none border-bottom"
-                       data-sid="@s.SessionId" onclick="openSession(@s.SessionId, event)">
+                       data-sid="@s.SessionId" 
+                       data-name="@s.GuestName" 
+                       data-phone="@s.GuestPhone" 
+                       onclick="openSession(@s.SessionId, event)">
                         @{ var _name = ((string)s.GuestName) ?? "?"; }
                         <div class="avatar-circle flex-shrink-0">
                             @(_name.Length > 0 ? _name[0].ToString().ToUpper() : "?")
@@ -47,7 +50,7 @@
                                 <span class="text-muted" style="font-size:.7rem;">@((DateTime)s.LastMsgAt).ToString("dd/MM HH:mm")</span>
                             </div>
                             <div class="d-flex align-items-center gap-1 mt-1">
-                                <span class="text-muted text-truncate" style="font-size:.75rem;max-width:100px;">@s.GuestPhone</span>
+                                <span class="text-muted text-truncate" style="font-size:.75rem;max-width:100px;">@(string.IsNullOrEmpty((string)s.GuestPhone) ? "Chưa có SĐT" : s.GuestPhone)</span>
                                 @if (s.TenantId != null)
                                 {
                                     <span class="badge bg-success ms-1" style="font-size:.6rem;">
@@ -88,7 +91,7 @@
         @* Pane hiển thị khi đã chọn *@
         <div id="chatPane" class="d-none flex-column flex-fill" style="height:640px;">
             <div class="px-3 py-2 border-bottom d-flex align-items-center gap-2">
-                <div class="avatar-circle">?</div>
+                <div class="avatar-circle" id="chatGuestAvatar">?</div>
                 <div>
                     <div class="fw-semibold mb-0" id="chatGuestName">—</div>
                     <div class="text-muted small" id="chatGuestPhone">—</div>
@@ -101,7 +104,7 @@
                 <div class="d-flex gap-2">
                     <textarea id="replyInput" class="form-control form-control-sm rounded-3"
                               rows="2" placeholder="Nhập phản hồi..." style="resize:none;"></textarea>
-                    <button class="btn btn-primary px-3 rounded-3 align-self-end" onclick="sendReply()">
+                    <button id="btnSendReply" class="btn btn-primary px-3 rounded-3 align-self-end" onclick="sendReply()">
                         <i class="bi bi-send"></i>
                     </button>
                 </div>
@@ -143,40 +146,58 @@
 
         document.querySelectorAll('.session-item').forEach(el => el.classList.remove('active'));
         const item = document.querySelector(`.session-item[data-sid="${sid}"]`);
-        if (item) item.classList.add('active');
+        if (item) {
+            item.classList.add('active');
+            const gName = item.getAttribute('data-name') || 'Khách';
+            const gPhone = item.getAttribute('data-phone') || 'Chưa có SĐT';
+            document.getElementById('chatGuestName').textContent = gName;
+            document.getElementById('chatGuestPhone').textContent = gPhone;
+            const av = document.getElementById('chatGuestAvatar');
+            if (av) av.textContent = gName.trim().charAt(0).toUpperCase() || '?';
+        }
 
         document.getElementById('chatPlaceholder').classList.add('d-none');
         document.getElementById('chatPane').classList.remove('d-none');
         document.getElementById('chatPane').classList.add('d-flex');
-        document.getElementById('msgArea').innerHTML = '';
+        document.getElementById('msgArea').innerHTML = '<div class="text-center text-muted p-3"><span class="spinner-border spinner-border-sm me-2"></span>Đang tải tin nhắn...</div>';
 
         fetchMessages(true);
         clearInterval(pollTimer);
-        pollTimer = setInterval(() => fetchMessages(false), 4000);
+        pollTimer = setInterval(() => fetchMessages(false), 3000);
     }
 
     async function fetchMessages(scrollBottom) {
         if (!currentSid) return;
         try {
             const res  = await fetch(`/Admin/Chat/Messages?sessionId=${currentSid}&after=${lastMsgId}`);
+            if (!res.ok) return;
             const data = await res.json();
 
             if (data.guestName) {
                 document.getElementById('chatGuestName').textContent  = data.guestName;
-                document.getElementById('chatGuestPhone').textContent = data.guestPhone;
+                document.getElementById('chatGuestPhone').textContent = data.guestPhone || 'Chưa cung cấp SĐT';
+                const av = document.getElementById('chatGuestAvatar');
+                if (av) av.textContent = data.guestName.trim().charAt(0).toUpperCase() || '?';
             }
 
             if (data.messages && data.messages.length > 0) {
                 const area = document.getElementById('msgArea');
+                if (lastMsgId === 0) area.innerHTML = '';
+
                 data.messages.forEach(m => appendMsg(area, m));
                 lastMsgId = data.messages[data.messages.length - 1].id;
                 area.scrollTop = area.scrollHeight;
 
                 // Remove unread badge for this session
-                const badge = document.querySelector(`.session-item[data-sid="${currentSid}"] .badge`);
+                const badge = document.querySelector(`.session-item[data-sid="${currentSid}"] .badge.bg-danger`);
                 if (badge) badge.remove();
+            } else if (lastMsgId === 0) {
+                const area = document.getElementById('msgArea');
+                area.innerHTML = '<div class="text-center text-muted p-4 small"><i class="bi bi-chat-text d-block fs-3 mb-2 opacity-50"></i>Chưa có tin nhắn nào trong hội thoại này.</div>';
             }
-        } catch {}
+        } catch (err) {
+            console.error('Lỗi tải tin nhắn:', err);
+        }
     }
 
     function appendMsg(area, m) {
@@ -202,17 +223,30 @@
         const input = document.getElementById('replyInput');
         const text  = input.value.trim();
         if (!text || !currentSid) return;
-        input.value = '';
-        input.focus();
+
+        const btn = document.getElementById('btnSendReply');
+        if (btn) btn.disabled = true;
 
         try {
-            await fetch('/Admin/Chat/Reply', {
+            const res = await fetch('/Admin/Chat/Reply', {
                 method:  'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body:    JSON.stringify({ sessionId: currentSid, content: text })
             });
-            fetchMessages(true);
-        } catch {}
+            const data = await res.json();
+            if (!res.ok || (data && data.success === false)) {
+                alert(data?.message || 'Không thể gửi phản hồi. Vui lòng thử lại!');
+                return;
+            }
+            input.value = '';
+            input.focus();
+            await fetchMessages(true);
+        } catch (err) {
+            console.error('Lỗi gửi tin nhắn:', err);
+            alert('Lỗi kết nối khi gửi phản hồi. Vui lòng kiểm tra lại!');
+        } finally {
+            if (btn) btn.disabled = false;
+        }
     }
 
     // Enter to send (Shift+Enter = newline)

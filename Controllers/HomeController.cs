@@ -32,8 +32,10 @@ namespace QuanLyPhongTro.Controllers
             var featuredCards = await _roomSearchService.GetFeaturedRoomsAsync(6);
             var recentCards = await _roomSearchService.GetRecentRoomsAsync(6);
             var popularProvinces = await _roomSearchService.GetPopularProvincesAsync(6);
+            var allProvinces = await _db.Provinces.AsNoTracking().OrderBy(p => p.Name).ToListAsync();
             var featuredLandlords = await _roomSearchService.GetFeaturedLandlordsAsync(4);
             var roomTypes = await _roomSearchService.GetActiveRoomTypesAsync();
+            var allAmenities = await _roomSearchService.GetAllAmenitiesAsync();
             var recentPosts = await _db.Posts
                 .AsNoTracking()
                 .Where(p => p.IsPublished)
@@ -47,12 +49,68 @@ namespace QuanLyPhongTro.Controllers
                 FeaturedCardRooms = featuredCards,
                 RecentCardRooms = recentCards,
                 PopularProvinces = popularProvinces,
+                AvailableProvinces = allProvinces,
+                AvailableAmenities = allAmenities,
                 FeaturedLandlords = featuredLandlords,
                 RoomTypes = roomTypes,
                 RecentPosts = recentPosts
             };
 
             return View(vm);
+        }
+
+        // ── API LỌC PHÒNG THEO TAB TRANG CHỦ (Phòng trọ, Căn hộ mini, Nhà nguyên căn) ──
+        [HttpGet("/api/rooms/by-tab")]
+        public async Task<IActionResult> GetRoomsByTab(string? typeName, int? roomTypeId)
+        {
+            var criteria = new RoomFilterCriteria
+            {
+                PageSize = 6,
+                SortBy = "newest"
+            };
+
+            string sectionTitle = "Phòng trọ xác thực nổi bật";
+            string viewAllUrl = "/phong-tro";
+
+            if (roomTypeId.HasValue && roomTypeId > 0)
+            {
+                criteria.RoomTypeId = roomTypeId;
+                var rt = await _db.RoomTypes.FindAsync(roomTypeId.Value);
+                if (rt != null)
+                {
+                    sectionTitle = $"{rt.RoomTypeName} nổi bật";
+                    viewAllUrl = $"/phong-tro?roomTypeId={roomTypeId.Value}";
+                }
+            }
+            else if (!string.IsNullOrWhiteSpace(typeName) && !typeName.Equals("Tất cả", StringComparison.OrdinalIgnoreCase))
+            {
+                criteria.RoomTypeName = typeName;
+                if (typeName.Contains("nguyên căn", StringComparison.OrdinalIgnoreCase))
+                {
+                    sectionTitle = "Nhà nguyên căn cho thuê nổi bật";
+                    viewAllUrl = "/phong-tro?roomTypeName=" + Uri.EscapeDataString("Nhà nguyên căn");
+                }
+                else if (typeName.Contains("căn hộ", StringComparison.OrdinalIgnoreCase) || typeName.Contains("mini", StringComparison.OrdinalIgnoreCase))
+                {
+                    sectionTitle = "Căn hộ mini / Studio nổi bật";
+                    viewAllUrl = "/phong-tro?roomTypeName=" + Uri.EscapeDataString("Căn hộ mini");
+                }
+                else
+                {
+                    sectionTitle = "Phòng trọ cho thuê nổi bật";
+                    viewAllUrl = "/phong-tro";
+                }
+            }
+
+            var result = await _roomSearchService.SearchRoomsAsync(criteria);
+            return Json(new
+            {
+                success = true,
+                title = sectionTitle,
+                viewAllUrl = viewAllUrl,
+                items = result.Items,
+                total = result.TotalItems
+            });
         }
 
         // ── 2. TRANG DANH SÁCH TÌM KIẾM ───────────────────────────────────
@@ -175,6 +233,15 @@ namespace QuanLyPhongTro.Controllers
                     (userId.HasValue && rv.UserId == userId));
             }
 
+            bool isFavorite = false;
+            if (tenantId.HasValue || userId.HasValue)
+            {
+                isFavorite = await _db.Favorites.AsNoTracking().AnyAsync(f =>
+                    f.RoomId == id &&
+                    ((tenantId.HasValue && f.TenantId == tenantId) || (userId.HasValue && f.UserId == userId)));
+            }
+            ViewBag.IsFavorite = isFavorite;
+
             var vm = new RoomDetailViewModel
             {
                 Room = room,
@@ -222,6 +289,117 @@ namespace QuanLyPhongTro.Controllers
             }
 
             return View("LandlordProfile", profile);
+        }
+
+        // ── 4b. TRANG DANH SÁCH CHỦ TRỌ UY TÍN CÔNG KHAI (/danh-sach-chu-tro hoặc /chu-tro) ──
+        [HttpGet("/danh-sach-chu-tro")]
+        [HttpGet("/chu-tro")]
+        public async Task<IActionResult> LandlordList(string? q, int? provinceId, string? sortBy, int page = 1)
+        {
+            var query = _db.Landlords
+                .AsNoTracking()
+                .Include(l => l.Properties).ThenInclude(p => p.Province)
+                .Include(l => l.Properties).ThenInclude(p => p.Rooms)
+                .Where(l => l.Status == LandlordStatus.Approved);
+
+            // Tìm kiếm theo từ khóa (tên hoặc số điện thoại)
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                string kw = q.Trim().ToLower();
+                query = query.Where(l => l.FullName.ToLower().Contains(kw) || (l.Phone != null && l.Phone.Contains(kw)));
+            }
+
+            // Lọc theo tỉnh / thành phố
+            if (provinceId.HasValue && provinceId > 0)
+            {
+                query = query.Where(l => l.Properties.Any(p => p.ProvinceId == provinceId.Value));
+            }
+
+            // Sắp xếp
+            sortBy = (sortBy ?? "properties").ToLowerInvariant();
+            switch (sortBy)
+            {
+                case "newest":
+                    query = query.OrderByDescending(l => l.CreatedAt);
+                    break;
+                case "rooms":
+                    query = query.OrderByDescending(l => l.Properties.SelectMany(p => p.Rooms).Count(r => r.Status == RoomStatus.Available && r.ApprovalStatus == RoomApprovalStatus.Published && r.IsPublished));
+                    break;
+                case "properties":
+                default:
+                    query = query.OrderByDescending(l => l.Properties.Count).ThenByDescending(l => l.CreatedAt);
+                    break;
+            }
+
+            int pageSize = 12;
+            page = Math.Max(1, page);
+            int totalItems = await query.CountAsync();
+
+            var rawLandlords = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var landlordIds = rawLandlords.Select(l => l.LandlordId).ToList();
+
+            // Tính điểm đánh giá
+            var reviews = await _db.Reviews
+                .AsNoTracking()
+                .Include(r => r.Contract)
+                .Where(r => r.Contract != null && r.Contract.LandlordId.HasValue && landlordIds.Contains(r.Contract.LandlordId.Value) && r.IsApproved)
+                .ToListAsync();
+
+            var landlordCards = rawLandlords.Select(l =>
+            {
+                var lReviews = reviews.Where(r => r.Contract != null && r.Contract.LandlordId == l.LandlordId).ToList();
+                double avgRating = lReviews.Any() ? Math.Round(lReviews.Average(r => r.Rating), 1) : 5.0;
+
+                var provs = l.Properties
+                    .Where(p => p.Province != null)
+                    .Select(p => p.Province!.Name)
+                    .Distinct()
+                    .ToList();
+
+                int activeRooms = l.Properties
+                    .SelectMany(p => p.Rooms)
+                    .Count(r => r.Status == RoomStatus.Available && r.ApprovalStatus == RoomApprovalStatus.Published && r.IsPublished);
+
+                return new LandlordCardItemViewModel
+                {
+                    LandlordId = l.LandlordId,
+                    FullName = l.FullName,
+                    Slug = SlugHelper.ToSlug(l.FullName),
+                    Avatar = l.Avatar,
+                    Phone = l.Phone,
+                    Description = l.Description,
+                    TotalProperties = l.Properties.Count,
+                    ActiveRoomCount = activeRooms,
+                    Provinces = provs,
+                    AverageRating = avgRating,
+                    TotalReviews = lReviews.Count,
+                    CreatedAt = l.CreatedAt
+                };
+            }).ToList();
+
+            var availableProvinces = await _db.Provinces
+                .AsNoTracking()
+                .Where(p => p.Properties.Any(prop => prop.Landlord != null && prop.Landlord.Status == LandlordStatus.Approved))
+                .OrderBy(p => p.Name)
+                .ToListAsync();
+
+            var vm = new LandlordListViewModel
+            {
+                Landlords = landlordCards,
+                TotalItems = totalItems,
+                PageIndex = page,
+                PageSize = pageSize,
+                Keyword = q,
+                ProvinceId = provinceId,
+                SortBy = sortBy,
+                AvailableProvinces = availableProvinces
+            };
+
+            return View("LandlordList", vm);
         }
 
         // ── 5. SO SÁNH PHÒNG TRỌ (/so-sanh) ───────────────────────────────
@@ -345,10 +523,13 @@ namespace QuanLyPhongTro.Controllers
             var room = await _db.Rooms.Include(r => r.Property).FirstOrDefaultAsync(r => r.RoomId == roomId);
             int? landlordId = room?.Property?.LandlordId;
 
+            int? loggedInUserId = int.TryParse(HttpContext.Session.GetString("NormalUser"), out var uid) ? uid : (int?)null;
+
             var booking = new tblBookingRequest
             {
                 RoomId = roomId,
                 LandlordId = landlordId,
+                UserId = loggedInUserId,
                 FullName = bookingName.Trim(),
                 Phone = cleanPhone,
                 PreferredDate = bookingDate,
@@ -417,7 +598,7 @@ namespace QuanLyPhongTro.Controllers
             {
                 ContractId = eligibleContract.ContractId,
                 FullName = reviewName,
-                Email = "tenant@phongtromoi.vn",
+                Email = "tenant@zstay.vn",
                 Title = $"Đánh giá phòng #{roomId}",
                 Content = reviewComment?.Trim() ?? "Đánh giá chất lượng phòng trọ",
                 Rating = reviewRating,

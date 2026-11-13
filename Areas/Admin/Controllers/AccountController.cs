@@ -21,7 +21,7 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
         // GET: /Admin/Account/Logout
         public IActionResult Logout()
         {
-            HttpContext.Session.Remove(SESSION_KEY);
+            HttpContext.Session.Clear();
             TempData["Success"] = "Đã đăng xuất thành công.";
             return RedirectToAction("Index", "Home", new { area = "" });
         }

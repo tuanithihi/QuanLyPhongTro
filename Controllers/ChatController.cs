@@ -8,6 +8,7 @@ namespace QuanLyPhongTro.Controllers
     /// <summary>
     /// Xử lý chat phía khách (guest) gắn theo từng chủ trọ cụ thể.
     /// </summary>
+    [IgnoreAntiforgeryToken]
     public class ChatController : Controller
     {
         private readonly DataContext _db;
@@ -45,6 +46,22 @@ namespace QuanLyPhongTro.Controllers
             string resolvedName  = req.GuestName?.Trim()  ?? "";
             string resolvedPhone = req.GuestPhone?.Trim() ?? "";
 
+            // Hỗ trợ cả trường hợp đăng nhập bằng tài khoản Quản trị / Chủ trọ
+            if (!userId.HasValue && !tenantId.HasValue)
+            {
+                var adminUser = HttpContext.Session.GetString("AdminUser");
+                if (!string.IsNullOrEmpty(adminUser))
+                {
+                    var u = await _db.Users.FirstOrDefaultAsync(x => x.Username == adminUser);
+                    if (u != null)
+                    {
+                        userId = u.UserId;
+                        resolvedName = string.IsNullOrEmpty(u.FullName) ? u.Username : u.FullName;
+                        resolvedPhone = u.Phone ?? resolvedPhone;
+                    }
+                }
+            }
+
             // 1. Tenant đã đăng nhập
             if (tenantId.HasValue)
             {
@@ -57,6 +74,7 @@ namespace QuanLyPhongTro.Controllers
 
                 // Tìm phiên đang mở của tenant này với đúng chủ trọ
                 var existing = await _db.ChatSessions
+                    .Include(s => s.Landlord)
                     .Where(s => s.TenantId == tenantId && s.IsOpen && s.LandlordId == targetLandlordId)
                     .OrderByDescending(s => s.LastMsgAt)
                     .FirstOrDefaultAsync();
@@ -64,7 +82,15 @@ namespace QuanLyPhongTro.Controllers
                 if (existing != null)
                 {
                     SetCookie(existing.SessionKey);
-                    return Json(new { success = true, sessionKey = existing.SessionKey, sessionId = existing.SessionId, landlordId = existing.LandlordId });
+                    return Json(new
+                    {
+                        success        = true,
+                        sessionKey     = existing.SessionKey,
+                        sessionId      = existing.SessionId,
+                        landlordId     = existing.LandlordId,
+                        landlordName   = existing.Landlord?.FullName ?? "Chủ trọ",
+                        landlordAvatar = existing.Landlord?.Avatar ?? ""
+                    });
                 }
             }
             // 2. Người dùng website đã đăng nhập
@@ -78,6 +104,7 @@ namespace QuanLyPhongTro.Controllers
                 }
 
                 var existing = await _db.ChatSessions
+                    .Include(s => s.Landlord)
                     .Where(s => s.UserId == userId && s.IsOpen && s.LandlordId == targetLandlordId)
                     .OrderByDescending(s => s.LastMsgAt)
                     .FirstOrDefaultAsync();
@@ -85,7 +112,15 @@ namespace QuanLyPhongTro.Controllers
                 if (existing != null)
                 {
                     SetCookie(existing.SessionKey);
-                    return Json(new { success = true, sessionKey = existing.SessionKey, sessionId = existing.SessionId, landlordId = existing.LandlordId });
+                    return Json(new
+                    {
+                        success        = true,
+                        sessionKey     = existing.SessionKey,
+                        sessionId      = existing.SessionId,
+                        landlordId     = existing.LandlordId,
+                        landlordName   = existing.Landlord?.FullName ?? "Chủ trọ",
+                        landlordAvatar = existing.Landlord?.Avatar ?? ""
+                    });
                 }
             }
             // 3. Khách vãng lai
@@ -94,18 +129,30 @@ namespace QuanLyPhongTro.Controllers
                 var existingKey = Request.Cookies[CookieName];
                 if (!string.IsNullOrEmpty(existingKey))
                 {
-                    var existing = await _db.ChatSessions.FirstOrDefaultAsync(s => s.SessionKey == existingKey && s.IsOpen && s.LandlordId == targetLandlordId);
+                    var existing = await _db.ChatSessions
+                        .Include(s => s.Landlord)
+                        .FirstOrDefaultAsync(s => s.SessionKey == existingKey && s.IsOpen && s.LandlordId == targetLandlordId);
                     if (existing != null)
                     {
-                        return Json(new { success = true, sessionKey = existing.SessionKey, sessionId = existing.SessionId, landlordId = existing.LandlordId });
+                        return Json(new
+                        {
+                            success        = true,
+                            sessionKey     = existing.SessionKey,
+                            sessionId      = existing.SessionId,
+                            landlordId     = existing.LandlordId,
+                            landlordName   = existing.Landlord?.FullName ?? "Chủ trọ",
+                            landlordAvatar = existing.Landlord?.Avatar ?? ""
+                        });
                     }
                 }
 
                 if (string.IsNullOrWhiteSpace(resolvedName) || string.IsNullOrWhiteSpace(resolvedPhone))
                 {
-                    return Json(new { success = false, message = "Vui lòng nhập họ tên và số điện thoại." });
+                    return Json(new { success = false, message = "Vui lòng nhập họ tên và số điện thoại để gửi tin nhắn tư vấn." });
                 }
             }
+
+            var targetLandlord = targetLandlordId.HasValue ? await _db.Landlords.FindAsync(targetLandlordId.Value) : null;
 
             // Tạo phiên mới gắn với chủ trọ
             var session = new tblChatSession
@@ -124,7 +171,15 @@ namespace QuanLyPhongTro.Controllers
             await _db.SaveChangesAsync();
 
             SetCookie(session.SessionKey);
-            return Json(new { success = true, sessionKey = session.SessionKey, sessionId = session.SessionId, landlordId = session.LandlordId });
+            return Json(new
+            {
+                success        = true,
+                sessionKey     = session.SessionKey,
+                sessionId      = session.SessionId,
+                landlordId     = session.LandlordId,
+                landlordName   = targetLandlord?.FullName ?? "Chủ trọ",
+                landlordAvatar = targetLandlord?.Avatar ?? ""
+            });
 
             void SetCookie(string key) => Response.Cookies.Append(CookieName, key, new CookieOptions
             {
@@ -194,10 +249,9 @@ namespace QuanLyPhongTro.Controllers
                 })
                 .ToListAsync();
 
-            // Đánh dấu đã đọc cho tin nhắn từ admin/system
+            // Đánh dấu đã đọc cho tất cả tin nhắn từ admin/system trong phiên
             var unread = await _db.ChatMessages
                 .Where(m => m.SessionId == session.SessionId
-                         && m.MessageId > after
                          && !m.IsReadByGuest
                          && (m.SenderType == ChatSenderType.Admin || m.SenderType == ChatSenderType.System))
                 .ToListAsync();
@@ -207,8 +261,47 @@ namespace QuanLyPhongTro.Controllers
                 await _db.SaveChangesAsync();
             }
 
-            return Json(new { messages = msgs });
+            var landlord = session.LandlordId.HasValue ? await _db.Landlords.FindAsync(session.LandlordId.Value) : null;
+
+            return Json(new
+            {
+                messages       = msgs,
+                landlordName   = landlord?.FullName ?? "Chủ trọ",
+                landlordAvatar = landlord?.Avatar ?? ""
+            });
         }
+
+        // ─────────────────────────────────────────────────────────────────
+        // POST /Chat/MarkRead
+        // Đánh dấu toàn bộ tin nhắn trong phiên là đã đọc.
+        // ─────────────────────────────────────────────────────────────────
+        [HttpPost]
+        public async Task<IActionResult> MarkRead([FromBody] MarkReadChatRequest req)
+        {
+            if (string.IsNullOrWhiteSpace(req?.SessionKey)) return Json(new { success = false });
+
+            var session = await _db.ChatSessions.FirstOrDefaultAsync(s => s.SessionKey == req.SessionKey);
+            if (session == null) return Json(new { success = false });
+
+            var unread = await _db.ChatMessages
+                .Where(m => m.SessionId == session.SessionId
+                         && !m.IsReadByGuest
+                         && (m.SenderType == ChatSenderType.Admin || m.SenderType == ChatSenderType.System))
+                .ToListAsync();
+
+            if (unread.Any())
+            {
+                unread.ForEach(m => m.IsReadByGuest = true);
+                await _db.SaveChangesAsync();
+            }
+
+            return Json(new { success = true });
+        }
+    }
+
+    public sealed class MarkReadChatRequest
+    {
+        public string SessionKey { get; set; } = string.Empty;
     }
 
     public sealed class StartChatRequest

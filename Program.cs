@@ -54,6 +54,7 @@ using (var scope = app.Services.CreateScope())
         {
             await DataSeeder.SeedAdministrativeDataAsync(context);
             await DataSeeder.SeedAmenitiesAsync(context);
+            await DataSeeder.SeedRoomTypesAsync(context);
             await DataSeeder.BackfillLegacyDataAsync(context, config);
             await DataSeeder.SeedDemoDataAsync(context);
         }
@@ -110,9 +111,24 @@ app.MapControllerRoute(
     defaults: new { controller = "Home", action = "Listings" });
 
 app.MapControllerRoute(
+    name: "landlord_list",
+    pattern: "danh-sach-chu-tro",
+    defaults: new { controller = "Home", action = "LandlordList" });
+
+app.MapControllerRoute(
+    name: "landlords_all",
+    pattern: "chu-tro",
+    defaults: new { controller = "Home", action = "LandlordList" });
+
+app.MapControllerRoute(
     name: "landlord_profile",
     pattern: "chu-tro/{slug}",
     defaults: new { controller = "Home", action = "LandlordProfile" });
+
+app.MapControllerRoute(
+    name: "contact",
+    pattern: "lien-he",
+    defaults: new { controller = "Contact", action = "Index" });
 
 // ── Standard Routes ───────────────────────────────────────────────────
 app.MapControllerRoute(

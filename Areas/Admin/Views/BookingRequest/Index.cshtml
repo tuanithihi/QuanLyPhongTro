@@ -194,6 +194,16 @@
                                                         </button>
                                                     }
 
+                                                    @* Nút thêm người thuê từ yêu cầu này *@
+                                                    @if (req.Status != BookingRequestStatus.Rejected)
+                                                    {
+                                                        <a asp-area="Admin" asp-controller="Tenant" asp-action="Create" asp-route-bookingId="@req.RequestId"
+                                                           class="btn btn-sm btn-outline-primary rounded-pill ms-1"
+                                                           title="Thêm thành người thuê">
+                                                            <i class="bi bi-person-plus"></i>
+                                                        </a>
+                                                    }
+
                                                     @* Nút xóa *@
                                                     <form asp-action="Delete" method="post" class="d-inline ms-1"
                                                           onsubmit="return confirm('Xóa yêu cầu này?');">

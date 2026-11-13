@@ -240,7 +240,8 @@ namespace QuanLyPhongTro.Areas.Admin.Data
             // ── tblRoom ─────────────────────────────────────────────────
             modelBuilder.Entity<tblRoom>(entity =>
             {
-                entity.HasIndex(r => r.RoomCode).IsUnique();
+                entity.HasIndex(r => new { r.PropertyId, r.RoomCode }).IsUnique();
+                entity.HasIndex(r => r.RoomCode);
                 entity.HasIndex(r => r.Slug).IsUnique();
                 entity.HasIndex(r => r.RoomPrice);          // Index cho Price
                 entity.HasIndex(r => r.ApprovalStatus);     // Index cho ApprovalStatus

@@ -1,0 +1,261 @@
+@model QuanLyPhongTro.Models.ViewModels.LandlordListViewModel
+@{
+    ViewData["Title"] = "Danh sách Chủ trọ uy tín & đã xác thực - Z-Stay";
+    ViewData["Description"] = "Khám phá danh sách các chủ nhà, đơn vị vận hành phòng trọ uy tín, có hồ sơ xác minh minh bạch, phòng trọ chất lượng và dịch vụ tận tâm.";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/pages/landlord.css" />
+}
+
+<!-- ══ HERO BANNER ══ -->
+<div class="landlord-dir-hero">
+    <div class="container-xl position-relative">
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
+                <li class="breadcrumb-item"><a href="/" class="text-white-50 text-decoration-none">Trang chủ</a></li>
+                <li class="breadcrumb-item active text-white" aria-current="page">Chủ trọ uy tín</li>
+            </ol>
+        </nav>
+
+        <h1 class="landlord-dir-title">Danh sách Chủ trọ uy tín được xác thực</h1>
+        <p class="landlord-dir-subtitle">
+            Kết nối trực tiếp với các chủ trọ minh bạch, vận hành chuyên nghiệp, hợp đồng pháp lý rõ ràng và sẵn sàng hỗ trợ người thuê tận tình.
+        </p>
+
+        <div class="landlord-trust-badges">
+            <div class="trust-badge-item">
+                <i class="bi bi-patch-check-fill"></i>
+                <span>100% Đã xác thực danh tính &amp; SĐT</span>
+            </div>
+            <div class="trust-badge-item">
+                <i class="bi bi-shield-lock-fill"></i>
+                <span>Hợp đồng &amp; Giá cả minh bạch</span>
+            </div>
+            <div class="trust-badge-item">
+                <i class="bi bi-chat-dots-fill"></i>
+                <span>Hỗ trợ nhắn tin tư vấn trực tuyến</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-xl pb-5">
+    <!-- ══ BỘ LỌC VÀ TÌM KIẾM ══ -->
+    <div class="landlord-filter-card">
+        <form method="get" action="/danh-sach-chu-tro" class="row g-3 align-items-center">
+            <!-- Tìm kiếm tên hoặc SĐT -->
+            <div class="col-12 col-md-4">
+                <label class="form-label small fw-semibold text-muted mb-1">Tìm kiếm chủ trọ</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" name="q" value="@Model.Keyword" class="form-control border-start-0"
+                           placeholder="Nhập tên chủ trọ hoặc số điện thoại..." />
+                </div>
+            </div>
+
+            <!-- Lọc theo tỉnh thành -->
+            <div class="col-12 col-sm-6 col-md-3">
+                <label class="form-label small fw-semibold text-muted mb-1">Khu vực / Tỉnh thành</label>
+                <select name="provinceId" class="form-select">
+                    <option value="">Tất cả tỉnh thành</option>
+                    @foreach (var p in Model.AvailableProvinces)
+                    {
+                        <option value="@p.ProvinceId" selected="@(Model.ProvinceId == p.ProvinceId)">
+                            @p.Name
+                        </option>
+                    }
+                </select>
+            </div>
+
+            <!-- Sắp xếp -->
+            <div class="col-12 col-sm-6 col-md-3">
+                <label class="form-label small fw-semibold text-muted mb-1">Sắp xếp theo</label>
+                <select name="sortBy" class="form-select">
+                    <option value="properties" selected="@(Model.SortBy == "properties" || string.IsNullOrEmpty(Model.SortBy))">Nhiều khu trọ nhất</option>
+                    <option value="rooms" selected="@(Model.SortBy == "rooms")">Nhiều phòng trống nhất</option>
+                    <option value="newest" selected="@(Model.SortBy == "newest")">Mới tham gia gần đây</option>
+                </select>
+            </div>
+
+            <!-- Nút thao tác -->
+            <div class="col-12 col-md-2 d-flex gap-2 align-items-end pt-md-4">
+                <button type="submit" class="btn btn-brand flex-fill fw-semibold">
+                    <i class="bi bi-filter me-1"></i>Lọc
+                </button>
+                @if (!string.IsNullOrEmpty(Model.Keyword) || Model.ProvinceId.HasValue || (Model.SortBy != null && Model.SortBy != "properties"))
+                {
+                    <a href="/danh-sach-chu-tro" class="btn btn-outline-secondary" title="Xóa bộ lọc">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                    </a>
+                }
+            </div>
+        </form>
+    </div>
+
+    <!-- ══ HEADER KẾT QUẢ ══ -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="h5 fw-bold mb-1 text-dark">
+                Đối tác Chủ trọ uy tín
+            </h2>
+            <p class="text-muted small mb-0">
+                Hiển thị <strong>@Model.Landlords.Count</strong> trong tổng số <strong>@Model.TotalItems</strong> chủ trọ đã xác thực
+            </p>
+        </div>
+    </div>
+
+    <!-- ══ DANH SÁCH THẺ CHỦ TRỌ ══ -->
+    @if (Model.Landlords != null && Model.Landlords.Any())
+    {
+        <div class="row g-4">
+            @foreach (var l in Model.Landlords)
+            {
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="landlord-grid-card">
+                        <!-- Card Header -->
+                        <div class="landlord-card-header">
+                            @if (!string.IsNullOrEmpty(l.Avatar))
+                            {
+                                <img src="@l.Avatar" alt="@l.FullName" class="landlord-card-avatar" />
+                            }
+                            else
+                            {
+                                <div class="landlord-card-avatar-empty">
+                                    <i class="bi bi-person-fill"></i>
+                                </div>
+                            }
+                            <div class="flex-grow-1 min-w-0">
+                                <a href="/chu-tro/@l.Slug" class="text-decoration-none">
+                                    <div class="landlord-card-name" title="@l.FullName">@l.FullName</div>
+                                </a>
+                                <div class="d-flex align-items-center gap-2 mt-1">
+                                    <span class="badge-status badge-status-verified" style="font-size: 11px;">
+                                        <i class="bi bi-patch-check-fill me-1"></i>Đã xác thực
+                                    </span>
+                                    <span class="text-warning small fw-bold d-flex align-items-center gap-1">
+                                        <i class="bi bi-star-fill text-warning"></i>@l.AverageRating.ToString("0.0")
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card Body -->
+                        <div class="landlord-card-body">
+                            <p class="landlord-card-bio" title="@l.Description">
+                                @(string.IsNullOrWhiteSpace(l.Description)
+                                    ? "Chủ trọ uy tín, cam kết cung cấp phòng trọ chất lượng, giá điện nước chuẩn nhà nước và hỗ trợ người thuê tận tình."
+                                    : l.Description)
+                            </p>
+
+                            <!-- Thống kê -->
+                            <div class="landlord-meta-grid">
+                                <div class="meta-grid-item">
+                                    <span class="meta-grid-val text-primary">@l.TotalProperties</span>
+                                    <span class="meta-grid-lbl">Khu trọ / Tòa</span>
+                                </div>
+                                <div class="meta-grid-item">
+                                    <span class="meta-grid-val text-success">@l.ActiveRoomCount</span>
+                                    <span class="meta-grid-lbl">Phòng sẵn sàng</span>
+                                </div>
+                            </div>
+
+                            <!-- Địa bàn hoạt động -->
+                            @if (l.Provinces != null && l.Provinces.Any())
+                            {
+                                <div class="mt-auto">
+                                    <div class="small text-muted mb-1 fw-semibold">
+                                        <i class="bi bi-geo-alt me-1 text-danger"></i>Khu vực quản lý:
+                                    </div>
+                                    <div>
+                                        @foreach (var prov in l.Provinces.Take(3))
+                                        {
+                                            <span class="landlord-location-tag">@prov</span>
+                                        }
+                                        @if (l.Provinces.Count > 3)
+                                        {
+                                            <span class="landlord-location-tag">+@(l.Provinces.Count - 3)</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Card Actions -->
+                        <div class="landlord-card-actions">
+                            <a href="/chu-tro/@l.Slug" class="btn btn-outline-brand">
+                                <i class="bi bi-door-open"></i> Xem phòng (@l.ActiveRoomCount)
+                            </a>
+                            <button type="button" class="btn btn-brand"
+                                    onclick="openLandlordChat({ landlordId: @l.LandlordId, landlordName: '@Html.Raw(l.FullName.Replace("'", "\\'"))', landlordAvatar: '@(l.Avatar ?? "")' })">
+                                <i class="bi bi-chat-dots-fill"></i> Nhắn tin
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- ══ PHÂN TRANG ══ -->
+        @if (Model.TotalPages > 1)
+        {
+            <div class="d-flex justify-content-center mt-5">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination pagination-md mb-0">
+                        @if (Model.PageIndex > 1)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="@Url.Action("LandlordList", "Home", new { q = Model.Keyword, provinceId = Model.ProvinceId, sortBy = Model.SortBy, page = Model.PageIndex - 1 })" aria-label="Previous">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                        }
+
+                        @for (int p = 1; p <= Model.TotalPages; p++)
+                        {
+                            if (p == 1 || p == Model.TotalPages || (p >= Model.PageIndex - 2 && p <= Model.PageIndex + 2))
+                            {
+                                <li class="page-item @(p == Model.PageIndex ? "active" : "")">
+                                    <a class="page-link" href="@Url.Action("LandlordList", "Home", new { q = Model.Keyword, provinceId = Model.ProvinceId, sortBy = Model.SortBy, page = p })">
+                                        @p
+                                    </a>
+                                </li>
+                            }
+                            else if (p == Model.PageIndex - 3 || p == Model.PageIndex + 3)
+                            {
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            }
+                        }
+
+                        @if (Model.PageIndex < Model.TotalPages)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="@Url.Action("LandlordList", "Home", new { q = Model.Keyword, provinceId = Model.ProvinceId, sortBy = Model.SortBy, page = Model.PageIndex + 1 })" aria-label="Next">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            </div>
+        }
+    }
+    else
+    {
+        <!-- ══ EMPTY STATE ══ -->
+        <div class="empty-state bg-white border rounded-4 p-5 text-center my-4">
+            <div class="empty-state-icon text-muted mb-3">
+                <i class="bi bi-person-x fs-1 opacity-50"></i>
+            </div>
+            <h3 class="empty-state-title h4 fw-bold">Không tìm thấy chủ trọ phù hợp</h3>
+            <p class="empty-state-desc text-muted mb-4" style="max-width: 480px; margin: 0 auto;">
+                Rất tiếc, không có chủ trọ nào khớp với tiêu chí tìm kiếm hiện tại. Hãy thử tìm với từ khóa khác hoặc xóa bộ lọc khu vực.
+            </p>
+            <a href="/danh-sach-chu-tro" class="btn btn-brand px-4 py-2">
+                <i class="bi bi-arrow-counterclockwise me-1"></i> Xem tất cả chủ trọ uy tín
+            </a>
+        </div>
+    }
+</div>

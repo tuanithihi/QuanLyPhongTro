@@ -1,110 +1,271 @@
- <main class="main">
+@model QuanLyPhongTro.Models.ContactViewModel
+@{
+    ViewData["Title"] = "Liên hệ & Hỗ trợ - Z-Stay";
+    ViewData["Description"] = "Liên hệ với Ban quản trị Sàn cho thuê phòng trọ Z-Stay. Hỗ trợ tìm kiếm phòng trọ, đăng tin cho thuê, giải đáp thắc mắc và khiếu nại 24/7.";
+}
 
-    <!-- Page Title -->
-    <div class="page-title light-background">
-      <div class="container d-lg-flex justify-content-between align-items-center">
-        <h1 class="mb-2 mb-lg-0">Contact</h1>
-        <nav class="breadcrumbs">
-          <ol>
-            <li><a href="index.html">Home</a></li>
-            <li class="current">Contact</li>
-          </ol>
+@section Styles {
+    <link rel="stylesheet" href="~/css/pages/contact.css" />
+}
+
+<!-- ══ HERO BANNER ══ -->
+<div class="contact-hero">
+    <div class="container-xl position-relative">
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
+                <li class="breadcrumb-item"><a href="/" class="text-white-50 text-decoration-none">Trang chủ</a></li>
+                <li class="breadcrumb-item active text-white" aria-current="page">Liên hệ</li>
+            </ol>
         </nav>
-      </div>
-    </div><!-- End Page Title -->
 
-    <!-- Contact Section -->
-    <section id="contact" class="contact section">
+        <h1 class="contact-hero-title">Liên hệ &amp; Trung tâm Hỗ trợ</h1>
+        <p class="contact-hero-subtitle">
+            Chúng tôi luôn lắng nghe mọi thắc mắc, đề xuất hợp tác hoặc phản hồi của bạn để nâng cao chất lượng dịch vụ thuê phòng trọ.
+        </p>
+    </div>
+</div>
 
-      <div class="container" data-aos="fade-up" data-aos-delay="100">
-        <div class="contact-main-wrapper">
-          <div class="map-wrapper">
-            <iframe src="https://maps.google.com/maps?q=Vinh%2C%20Ngh%E1%BB%87%20An%2C%20Vi%E1%BB%87t%20Nam&z=14&output=embed" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-          </div>
-
-          <div class="contact-content">
-            <div class="contact-cards-container" data-aos="fade-up" data-aos-delay="300">
-              <div class="contact-card">
-                <div class="icon-box">
-                  <i class="bi bi-geo-alt"></i>
+<div class="container-xl pb-5">
+    <!-- ══ THÔNG TIN LIÊN HỆ NHANH (4 CARDS) ══ -->
+    <div class="row g-4 mb-5">
+        <!-- Trụ sở -->
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="contact-info-card">
+                <div class="contact-card-icon icon-red">
+                    <i class="bi bi-geo-alt-fill"></i>
                 </div>
-                <div class="contact-text">
-                  <h4>Location</h4>
-                  <p>Vinh, Nghệ An, Việt Nam</p>
+                <div>
+                    <h3 class="contact-card-title">Văn phòng trụ sở</h3>
+                    <p class="contact-card-text">TP. Vinh, Tỉnh Nghệ An, Việt Nam</p>
+                    <span class="small text-muted">Mở cửa đón tiếp khách</span>
                 </div>
-              </div>
-
-              <div class="contact-card">
-                <div class="icon-box">
-                  <i class="bi bi-envelope"></i>
-                </div>
-                <div class="contact-text">
-                  <h4>Email</h4>
-                  <p>info@examplecompany.com</p>
-                </div>
-              </div>
-
-              <div class="contact-card">
-                <div class="icon-box">
-                  <i class="bi bi-telephone"></i>
-                </div>
-                <div class="contact-text">
-                  <h4>Call</h4>
-                  <p>+1 (212) 555-7890</p>
-                </div>
-              </div>
-
-              <div class="contact-card">
-                <div class="icon-box">
-                  <i class="bi bi-clock"></i>
-                </div>
-                <div class="contact-text">
-                  <h4>Open Hours</h4>
-                  <p>Monday-Friday: 9AM - 6PM</p>
-                </div>
-              </div>
             </div>
-
-            <div class="contact-form-container" data-aos="fade-up" data-aos-delay="400">
-              <h3>Get in Touch</h3>
-              <p>Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua consectetur adipiscing.</p>
-
-              <form action="forms/contact.php" method="post" class="php-email-form">
-                <div class="row">
-                  <div class="col-md-6 form-group">
-                    <input type="text" name="name" class="form-control" id="name" placeholder="Your Name" required="">
-                  </div>
-                  <div class="col-md-6 form-group mt-3 mt-md-0">
-                    <input type="email" class="form-control" name="email" id="email" placeholder="Your Email" required="">
-                  </div>
-                </div>
-                <div class="form-group mt-3">
-                  <input type="text" class="form-control" name="subject" id="subject" placeholder="Subject" required="">
-                </div>
-                <div class="form-group mt-3">
-                  <textarea class="form-control" name="message" rows="5" placeholder="Message" required=""></textarea>
-                </div>
-
-                <div class="my-3">
-                  <div class="loading">Loading</div>
-                  <div class="error-message"></div>
-                  <div class="sent-message">Your message has been sent. Thank you!</div>
-                </div>
-
-                <div class="form-submit">
-                  <button type="submit">Send Message</button>
-                  <div class="social-links">
-                    <a href="#"><i class="bi bi-twitter"></i></a>
-                    <a href="#"><i class="bi bi-facebook"></i></a>
-                    <a href="#"><i class="bi bi-instagram"></i></a>
-                    <a href="#"><i class="bi bi-linkedin"></i></a>
-                  </div>
-                </div>
-              </form>
-            </div>
-          </div>
         </div>
-      </div>
-    </section><!-- /Contact Section -->
 
-  </main>
+        <!-- Hotline -->
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="contact-info-card">
+                <div class="contact-card-icon icon-blue">
+                    <i class="bi bi-telephone-fill"></i>
+                </div>
+                <div>
+                    <h3 class="contact-card-title">Tổng đài Hotline</h3>
+                    <p class="contact-card-text mb-1">
+                        <a href="tel:19008888" class="contact-card-link">1900 8888</a>
+                    </p>
+                    <span class="small text-muted">08:00 - 21:00 hàng ngày</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Email -->
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="contact-info-card">
+                <div class="contact-card-icon icon-amber">
+                    <i class="bi bi-envelope-open-fill"></i>
+                </div>
+                <div>
+                    <h3 class="contact-card-title">Hộp thư hỗ trợ</h3>
+                    <p class="contact-card-text mb-1">
+                        <a href="mailto:support@zstay.vn" class="contact-card-link">support@zstay.vn</a>
+                    </p>
+                    <span class="small text-muted">Phản hồi trong 24h</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trực tuyến 24/7 -->
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="contact-info-card">
+                <div class="contact-card-icon icon-green">
+                    <i class="bi bi-chat-quote-fill"></i>
+                </div>
+                <div>
+                    <h3 class="contact-card-title">Tư vấn trực tuyến</h3>
+                    <p class="contact-card-text mb-1">
+                        <a href="/ai-chat.html" class="contact-card-link">Trợ lý AI 24/7</a>
+                    </p>
+                    <span class="small text-muted">Giải đáp thông tin tức thì</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ MAIN CONTENT: FORM & MAP/FAQ ══ -->
+    <div class="row g-4">
+        <!-- Cột Form Liên Hệ -->
+        <div class="col-12 col-lg-7">
+            <div class="contact-form-card">
+                <h2 class="contact-form-title">Gửi tin nhắn liên hệ cho chúng tôi</h2>
+                <p class="contact-form-desc">
+                    Vui lòng điền thông tin bên dưới, nhân viên hỗ trợ của Z-Stay sẽ liên hệ lại với bạn trong thời gian sớm nhất.
+                </p>
+
+                <form asp-controller="Contact" asp-action="Index" method="post" id="contactForm">
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-3"></div>
+
+                    <div class="row g-3">
+                        <!-- Họ tên -->
+                        <div class="col-12 col-md-6">
+                            <label asp-for="FullName" class="form-label small fw-semibold text-dark">
+                                Họ và tên <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted border-end-0">
+                                    <i class="bi bi-person"></i>
+                                </span>
+                                <input asp-for="FullName" class="form-control border-start-0" placeholder="VD: Nguyễn Văn A" />
+                            </div>
+                            <span asp-validation-for="FullName" class="text-danger small mt-1 d-block"></span>
+                        </div>
+
+                        <!-- Số điện thoại -->
+                        <div class="col-12 col-md-6">
+                            <label asp-for="Phone" class="form-label small fw-semibold text-dark">
+                                Số điện thoại <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted border-end-0">
+                                    <i class="bi bi-telephone"></i>
+                                </span>
+                                <input asp-for="Phone" class="form-control border-start-0" placeholder="VD: 0912345678" />
+                            </div>
+                            <span asp-validation-for="Phone" class="text-danger small mt-1 d-block"></span>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="col-12 col-md-6">
+                            <label asp-for="Email" class="form-label small fw-semibold text-dark">
+                                Địa chỉ Email
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-muted border-end-0">
+                                    <i class="bi bi-envelope"></i>
+                                </span>
+                                <input asp-for="Email" class="form-control border-start-0" placeholder="VD: email@example.com" />
+                            </div>
+                            <span asp-validation-for="Email" class="text-danger small mt-1 d-block"></span>
+                        </div>
+
+                        <!-- Chủ đề liên hệ -->
+                        <div class="col-12 col-md-6">
+                            <label asp-for="Subject" class="form-label small fw-semibold text-dark">
+                                Chủ đề liên hệ <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="Subject" class="form-select">
+                                <option value="">-- Chọn chủ đề cần hỗ trợ --</option>
+                                <option value="Hỗ trợ tìm kiếm & thuê phòng trọ">Hỗ trợ tìm kiếm &amp; thuê phòng trọ</option>
+                                <option value="Đăng ký làm đối tác chủ trọ / Đăng tin">Đăng ký làm đối tác chủ trọ / Đăng tin</option>
+                                <option value="Hỗ trợ thanh toán hóa đơn / VietQR">Hỗ trợ thanh toán hóa đơn / VietQR</option>
+                                <option value="Báo cáo tin đăng sai sự thật / phòng ảo">Báo cáo tin đăng sai sự thật / phòng ảo</option>
+                                <option value="Khiếu nại & Góp ý chất lượng dịch vụ">Khiếu nại &amp; Góp ý chất lượng dịch vụ</option>
+                                <option value="Hợp tác kinh doanh & Quảng cáo">Hợp tác kinh doanh &amp; Quảng cáo</option>
+                                <option value="Chủ đề khác">Chủ đề khác</option>
+                            </select>
+                            <span asp-validation-for="Subject" class="text-danger small mt-1 d-block"></span>
+                        </div>
+
+                        <!-- Nội dung -->
+                        <div class="col-12">
+                            <label asp-for="Message" class="form-label small fw-semibold text-dark">
+                                Nội dung chi tiết <span class="text-danger">*</span>
+                            </label>
+                            <textarea asp-for="Message" rows="5" class="form-control"
+                                      placeholder="Mô tả chi tiết yêu cầu, câu hỏi hoặc vấn đề bạn cần giải quyết..."></textarea>
+                            <span asp-validation-for="Message" class="text-danger small mt-1 d-block"></span>
+                        </div>
+
+                        <!-- Submit button -->
+                        <div class="col-12 mt-4">
+                            <button type="submit" class="btn btn-brand btn-lg px-4 fw-semibold w-100 w-sm-auto">
+                                <i class="bi bi-send-fill me-2"></i>Gửi thông tin liên hệ
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Cột Bản đồ & Thông tin bổ trợ -->
+        <div class="col-12 col-lg-5">
+            <div class="contact-sidebar-card">
+                <!-- Bản đồ Google Maps nhúng chuẩn -->
+                <iframe class="contact-map-frame"
+                        src="https://maps.google.com/maps?q=Vinh%2C%20Ngh%E1%BB%87%20An%2C%20Vi%E1%BB%87t%20Nam&z=14&output=embed"
+                        loading="lazy"
+                        referrerpolicy="no-referrer-when-downgrade"
+                        title="Vị trí văn phòng Z-Stay tại TP Vinh, Nghệ An">
+                </iframe>
+
+                <div class="contact-sidebar-body">
+                    <!-- Banner hỗ trợ khẩn cấp -->
+                    <div class="emergency-banner">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="text-danger fs-3">
+                                <i class="bi bi-headset"></i>
+                            </div>
+                            <div>
+                                <h4 class="h6 fw-bold text-dark mb-1">Cần hỗ trợ gấp?</h4>
+                                <p class="small text-muted mb-0">
+                                    Gọi ngay hotline <strong><a href="tel:19008888" class="text-danger text-decoration-none">1900 8888</a></strong> để gặp tư vấn viên trực tiếp.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Các câu hỏi thường gặp nhanh -->
+                    <h3 class="h6 fw-bold text-dark mb-3">Câu hỏi thường gặp</h3>
+                    <div class="accordion accordion-flush" id="faqAccordion">
+                        <div class="accordion-item border-bottom">
+                            <h4 class="accordion-header" id="faqOne">
+                                <button class="accordion-button collapsed px-0 py-2 small fw-semibold text-dark bg-transparent"
+                                        type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                                    Làm sao để nhắn tin trực tiếp với chủ trọ?
+                                </button>
+                            </h4>
+                            <div id="collapseOne" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body px-0 pt-0 pb-3 small text-muted">
+                                    Bạn chỉ cần vào trang chi tiết phòng bất kỳ hoặc danh sách chủ trọ uy tín, sau đó bấm nút <strong>"Nhắn tin tư vấn"</strong>. Cửa sổ chat sẽ mở ngay góc phải màn hình để bạn trò chuyện trực tiếp.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item border-bottom">
+                            <h4 class="accordion-header" id="faqTwo">
+                                <button class="accordion-button collapsed px-0 py-2 small fw-semibold text-dark bg-transparent"
+                                        type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
+                                    Đăng tin phòng trọ có mất phí không?
+                                </button>
+                            </h4>
+                            <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body px-0 pt-0 pb-3 small text-muted">
+                                    Z-Stay hiện hỗ trợ chủ trọ đăng tin hoàn toàn miễn phí. Sau khi đăng ký và được ban quản trị xét duyệt, phòng của bạn sẽ xuất hiện trên sàn ngay lập tức.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h4 class="accordion-header" id="faqThree">
+                                <button class="accordion-button collapsed px-0 py-2 small fw-semibold text-dark bg-transparent"
+                                        type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">
+                                    Thanh toán tiền trọ qua VietQR như thế nào?
+                                </button>
+                            </h4>
+                            <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body px-0 pt-0 pb-3 small text-muted">
+                                    Khi chủ trọ lập hóa đơn hàng tháng, bạn sẽ nhận được thông báo kèm mã VietQR tự động điền sẵn số tiền và nội dung chuyển khoản, giúp thanh toán an toàn và chính xác tuyệt đối.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

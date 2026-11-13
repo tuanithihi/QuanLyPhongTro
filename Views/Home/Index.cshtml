@@ -1,11 +1,12 @@
 @model HomeIndexViewModel
 @{
-    ViewData["Title"] = "Phòng Trọ Mới - Nền tảng tìm kiếm và cho thuê phòng trọ uy tín";
+    ViewData["Title"] = "Z-Stay - Nền tảng tìm kiếm và cho thuê phòng trọ uy tín";
     ViewData["Description"] = "Hàng ngàn phòng trọ, căn hộ mini, nhà nguyên căn được xác thực, thông tin giá cả, diện tích và dịch vụ minh bạch tại Việt Nam.";
 }
 
 @section Styles {
     <link rel="stylesheet" href="~/css/pages/home.css" />
+    <link rel="stylesheet" href="~/css/pages/listing.css" />
 }
 
 <!-- ════════════════════════════════════════════════════════════════
@@ -16,7 +17,7 @@
         <div class="row justify-content-center">
             <div class="col-lg-11 col-xl-10">
                 <div class="text-center mb-4">
-                    <h1 class="home-hero-title">Kênh Thông Tin Phòng Trọ Số 1 Việt Nam</h1>
+                    <h1 class="home-hero-title">Tìm trọ dễ – Ở trọ vui</h1>
                     <p class="home-hero-subtitle">Tìm kiếm nhanh chóng, phòng trọ thật, giá thật, liên hệ trực tiếp chủ nhà</p>
                 </div>
 
@@ -24,23 +25,25 @@
                 <div class="search-box-card">
                     <ul class="search-box-tabs">
                         <li>
-                            <button type="button" class="search-tab-btn active" data-type-name="Tất cả">
+                            <button type="button" class="search-tab-btn active" data-type-name="Phòng trọ" data-type-id="">
                                 <i class="bi bi-houses me-1"></i>Cho thuê phòng trọ
                             </button>
                         </li>
                         <li>
-                            <button type="button" class="search-tab-btn" data-type-name="Căn hộ mini">
+                            <button type="button" class="search-tab-btn" data-type-name="Căn hộ mini" data-type-id="">
                                 <i class="bi bi-building me-1"></i>Căn hộ mini / Studio
                             </button>
                         </li>
                         <li>
-                            <button type="button" class="search-tab-btn" data-type-name="Nhà nguyên căn">
+                            <button type="button" class="search-tab-btn" data-type-name="Nhà nguyên căn" data-type-id="">
                                 <i class="bi bi-house-door me-1"></i>Nhà nguyên căn
                             </button>
                         </li>
                     </ul>
 
                     <form action="/phong-tro" method="get" id="heroSearchForm">
+                        <input type="hidden" name="RoomTypeId" id="heroRoomTypeId" />
+                        <input type="hidden" name="RoomTypeName" id="heroRoomTypeName" />
                         <div class="search-inputs-grid">
                             <!-- Keyword / Area -->
                             <div>
@@ -189,81 +192,192 @@
 </section>
 
 <!-- ════════════════════════════════════════════════════════════════
-     3. FEATURED LISTINGS (Phòng trọ nổi bật)
+     3 & 4. ROOMS SECTION WITH RIGHT SEARCH SIDEBAR (Phòng trọ & Bộ lọc tìm kiếm)
      ════════════════════════════════════════════════════════════════ -->
-<section class="py-5" style="background-color: var(--color-bg-page);">
+<section class="py-5" style="background-color: var(--color-bg-page);" id="rooms-section">
     <div class="container-xl">
-        <div class="section-header">
-            <div>
-                <h2 class="section-title">Phòng trọ xác thực nổi bật</h2>
-                <p class="section-subtitle">Được kiểm tra đầy đủ tiện nghi, an ninh, phòng cháy chữa cháy</p>
-            </div>
-            <a href="/phong-tro" class="section-view-all">
-                Xem thêm phòng nổi bật <i class="bi bi-arrow-right"></i>
-            </a>
-        </div>
-
-        @if (Model.FeaturedCardRooms != null && Model.FeaturedCardRooms.Any())
-        {
-            <div class="row g-4">
-                @foreach (var room in Model.FeaturedCardRooms)
-                {
-                    <div class="col-12 col-md-6 col-lg-4">
-                        @await Html.PartialAsync("_RoomCard", room)
+        <div class="row g-4 align-items-start">
+            <!-- ── CỘT BÊN TRÁI: DANH SÁCH PHÒNG TRỌ (Cuộn riêng biệt) ── -->
+            <div class="col-lg-8 col-xl-8 home-scroll-pane home-rooms-pane">
+                <!-- 3.1. FEATURED LISTINGS (Phòng trọ nổi bật) -->
+                <div class="section-header mb-3">
+                    <div>
+                        <h2 class="section-title" id="featuredSectionTitle">Phòng trọ xác thực nổi bật</h2>
+                        <p class="section-subtitle" id="featuredSectionSubtitle">Được kiểm tra đầy đủ tiện nghi, an ninh, phòng cháy chữa cháy</p>
                     </div>
-                }
-            </div>
-        }
-        else
-        {
-            <div class="empty-state">
-                <div class="empty-state-icon">
-                    <i class="bi bi-buildings"></i>
+                    <a href="/phong-tro" class="section-view-all" id="featuredViewAllBtn">
+                        Xem thêm phòng nổi bật <i class="bi bi-arrow-right"></i>
+                    </a>
                 </div>
-                <div class="empty-state-title">Chưa có tin đăng nổi bật</div>
-                <p class="empty-state-desc">Hãy quay lại sau hoặc sử dụng bộ lọc tìm kiếm để xem toàn bộ danh sách phòng hiện có.</p>
-                <a href="/phong-tro" class="btn btn-brand">Xem danh sách phòng</a>
-            </div>
-        }
-    </div>
-</section>
 
-<!-- ════════════════════════════════════════════════════════════════
-     4. RECENT LISTINGS (Phòng mới đăng)
-     ════════════════════════════════════════════════════════════════ -->
-<section class="py-5 bg-white border-top border-bottom">
-    <div class="container-xl">
-        <div class="section-header">
-            <div>
-                <h2 class="section-title">Tin đăng phòng trọ mới nhất</h2>
-                <p class="section-subtitle">Cập nhật liên tục từ các chủ nhà và quản lý khu trọ</p>
-            </div>
-            <a href="/phong-tro?sortBy=newest" class="section-view-all">
-                Xem toàn bộ tin mới <i class="bi bi-arrow-right"></i>
-            </a>
-        </div>
+                <div id="featuredRoomsWrapper" style="transition: opacity 0.25s ease;" class="mb-5">
+                    @if (Model.FeaturedCardRooms != null && Model.FeaturedCardRooms.Any())
+                    {
+                        <div class="row g-3" id="featuredRoomsContainer">
+                            @foreach (var room in Model.FeaturedCardRooms)
+                            {
+                                <div class="col-12 col-md-6">
+                                    @await Html.PartialAsync("_RoomCard", room)
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <i class="bi bi-buildings"></i>
+                            </div>
+                            <div class="empty-state-title">Chưa có tin đăng nổi bật</div>
+                            <p class="empty-state-desc">Hãy quay lại sau hoặc sử dụng bộ lọc tìm kiếm để xem toàn bộ danh sách phòng hiện có.</p>
+                            <a href="/phong-tro" class="btn btn-brand">Xem danh sách phòng</a>
+                        </div>
+                    }
+                </div>
 
-        @if (Model.RecentCardRooms != null && Model.RecentCardRooms.Any())
-        {
-            <div class="row g-4">
-                @foreach (var room in Model.RecentCardRooms)
-                {
-                    <div class="col-12 col-md-6 col-lg-4">
-                        @await Html.PartialAsync("_RoomCard", room)
+                <!-- 3.2. RECENT LISTINGS (Phòng mới đăng) -->
+                <div class="pt-4 border-top">
+                    <div class="section-header mb-3">
+                        <div>
+                            <h2 class="section-title">Tin đăng phòng trọ mới nhất</h2>
+                            <p class="section-subtitle">Cập nhật liên tục từ các chủ nhà và quản lý khu trọ</p>
+                        </div>
+                        <a href="/phong-tro?sortBy=newest" class="section-view-all">
+                            Xem toàn bộ tin mới <i class="bi bi-arrow-right"></i>
+                        </a>
                     </div>
-                }
-            </div>
-        }
-        else
-        {
-            <div class="empty-state">
-                <div class="empty-state-icon">
-                    <i class="bi bi-inbox"></i>
+
+                    @if (Model.RecentCardRooms != null && Model.RecentCardRooms.Any())
+                    {
+                        <div class="row g-3">
+                            @foreach (var room in Model.RecentCardRooms)
+                            {
+                                <div class="col-12 col-md-6">
+                                    @await Html.PartialAsync("_RoomCard", room)
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <i class="bi bi-inbox"></i>
+                            </div>
+                            <div class="empty-state-title">Chưa có tin đăng mới</div>
+                            <p class="empty-state-desc">Hiện tại các phòng đang được rà soát phê duyệt. Vui lòng quay lại sau.</p>
+                        </div>
+                    }
                 </div>
-                <div class="empty-state-title">Chưa có tin đăng mới</div>
-                <p class="empty-state-desc">Hiện tại các phòng đang được rà soát phê duyệt. Vui lòng quay lại sau.</p>
             </div>
-        }
+
+            <!-- ── CỘT BÊN PHẢI: BỘ LỌC TÌM KIẾM (Cuộn riêng biệt & Chỉ submit khi bấm Áp dụng) ── -->
+            <div class="col-lg-4 col-xl-4 home-scroll-pane home-filter-pane">
+                <form id="homeDesktopFilterForm" method="get" action="/phong-tro" class="filter-sidebar">
+                    <!-- Header -->
+                    <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
+                        <span class="fw-bold fs-6"><i class="bi bi-funnel me-1 text-danger"></i>Bộ lọc tìm kiếm</span>
+                        <a href="/phong-tro" class="small text-danger text-decoration-none">Xóa tất cả</a>
+                    </div>
+
+                    <!-- Từ khóa / Đường -->
+                    <div class="filter-group">
+                        <div class="filter-group-title">Từ khóa / Đường</div>
+                        <input type="text" name="Keyword" class="form-control form-control-sm"
+                               placeholder="Tên phòng, tên đường..." />
+                    </div>
+
+                    <!-- Tỉnh / Thành phố -->
+                    <div class="filter-group">
+                        <div class="filter-group-title">Tỉnh / Thành phố</div>
+                        <select name="ProvinceId" id="homeProvinceSelect" class="form-select form-select-sm">
+                            <option value="">-- Toàn quốc --</option>
+                            @foreach (var p in Model.AvailableProvinces)
+                            {
+                                <option value="@p.ProvinceId">@p.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Quận / Huyện -->
+                    <div class="filter-group">
+                        <div class="filter-group-title">Quận / Huyện</div>
+                        <select name="DistrictId" id="homeDistrictSelect" class="form-select form-select-sm">
+                            <option value="">-- Tất cả quận/huyện --</option>
+                        </select>
+                    </div>
+
+                    <!-- Phường / Xã -->
+                    <div class="filter-group">
+                        <div class="filter-group-title">Phường / Xã</div>
+                        <select name="WardId" id="homeWardSelect" class="form-select form-select-sm">
+                            <option value="">-- Tất cả phường/xã --</option>
+                        </select>
+                    </div>
+
+                    <!-- Khoảng giá (VNĐ) -->
+                    <div class="filter-group">
+                        <div class="filter-group-title">Khoảng giá (VNĐ)</div>
+                        <div class="d-flex gap-2 mb-2">
+                            <input type="number" name="MinPrice" class="form-control form-control-sm" placeholder="Từ" />
+                            <input type="number" name="MaxPrice" class="form-control form-control-sm" placeholder="Đến" />
+                        </div>
+                        <div class="filter-shortcuts-grid">
+                            <button type="button" class="filter-chip-btn" onclick="setHomePriceRange(this, 0, 2000000)">Dưới 2tr</button>
+                            <button type="button" class="filter-chip-btn" onclick="setHomePriceRange(this, 2000000, 3500000)">2 - 3.5tr</button>
+                            <button type="button" class="filter-chip-btn" onclick="setHomePriceRange(this, 3500000, 5000000)">3.5 - 5tr</button>
+                            <button type="button" class="filter-chip-btn" onclick="setHomePriceRange(this, 5000000, 8000000)">5 - 8tr</button>
+                            <button type="button" class="filter-chip-btn" onclick="setHomePriceRange(this, 8000000, 0)">Trên 8tr</button>
+                        </div>
+                    </div>
+
+                    <!-- Diện tích (m²) -->
+                    <div class="filter-group">
+                        <div class="filter-group-title">Diện tích (m²)</div>
+                        <div class="d-flex gap-2 mb-2">
+                            <input type="number" name="MinArea" class="form-control form-control-sm" placeholder="Từ" />
+                            <input type="number" name="MaxArea" class="form-control form-control-sm" placeholder="Đến" />
+                        </div>
+                        <div class="filter-shortcuts-grid">
+                            <button type="button" class="filter-chip-btn" onclick="setHomeAreaRange(this, 0, 20)">Dưới 20m²</button>
+                            <button type="button" class="filter-chip-btn" onclick="setHomeAreaRange(this, 20, 30)">20 - 30m²</button>
+                            <button type="button" class="filter-chip-btn" onclick="setHomeAreaRange(this, 30, 45)">30 - 45m²</button>
+                            <button type="button" class="filter-chip-btn" onclick="setHomeAreaRange(this, 45, 0)">Trên 45m²</button>
+                        </div>
+                    </div>
+
+                    <!-- Loại phòng -->
+                    <div class="filter-group">
+                        <div class="filter-group-title">Loại phòng</div>
+                        <select name="RoomTypeId" class="form-select form-select-sm">
+                            <option value="">-- Tất cả loại phòng --</option>
+                            @foreach (var rt in Model.RoomTypes)
+                            {
+                                <option value="@rt.RoomTypeId">@rt.RoomTypeName</option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Tiện ích -->
+                    <div class="filter-group">
+                        <div class="filter-group-title">Tiện ích</div>
+                        <div style="max-height: 200px; overflow-y: auto;">
+                            @foreach (var am in Model.AvailableAmenities)
+                            {
+                                <label class="amenity-checkbox-label">
+                                    <input type="checkbox" name="AmenityIds" value="@am.AmenityId" />
+                                    <span>@am.Name</span>
+                                </label>
+                            }
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-brand w-100 mt-3">
+                        <i class="bi bi-funnel-fill me-1"></i>Áp dụng bộ lọc
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
 </section>
 
@@ -279,6 +393,9 @@
                     <h2 class="section-title">Chủ trọ uy tín được xác thực</h2>
                     <p class="section-subtitle">Chủ nhà có hồ sơ minh bạch, nhiều năm vận hành khu trọ chất lượng</p>
                 </div>
+                <a href="/danh-sach-chu-tro" class="section-view-all">
+                    Xem thêm chủ trọ <i class="bi bi-arrow-right"></i>
+                </a>
             </div>
 
             <div class="row g-3">
@@ -311,6 +428,12 @@
                         </a>
                     </div>
                 }
+            </div>
+
+            <div class="text-center mt-4 d-md-none">
+                <a href="/danh-sach-chu-tro" class="btn btn-outline-brand rounded-pill px-4">
+                    Xem tất cả chủ trọ <i class="bi bi-arrow-right ms-1"></i>
+                </a>
             </div>
         </div>
     </section>
@@ -384,31 +507,254 @@
             var priceSelect = document.getElementById('heroPriceSelect');
             var minPrice = document.getElementById('heroMinPrice');
             var maxPrice = document.getElementById('heroMaxPrice');
-            priceSelect.addEventListener('change', function () {
-                var opt = this.options[this.selectedIndex];
-                minPrice.value = opt.getAttribute('data-min') || '';
-                maxPrice.value = opt.getAttribute('data-max') || '';
-            });
+            if (priceSelect && minPrice && maxPrice) {
+                priceSelect.addEventListener('change', function () {
+                    var opt = this.options[this.selectedIndex];
+                    minPrice.value = opt.getAttribute('data-min') || '';
+                    maxPrice.value = opt.getAttribute('data-max') || '';
+                });
+            }
 
             // Area select sync
             var areaSelect = document.getElementById('heroAreaSelect');
             var minArea = document.getElementById('heroMinArea');
             var maxArea = document.getElementById('heroMaxArea');
-            areaSelect.addEventListener('change', function () {
-                var opt = this.options[this.selectedIndex];
-                minArea.value = opt.getAttribute('data-min') || '';
-                maxArea.value = opt.getAttribute('data-max') || '';
+            if (areaSelect && minArea && maxArea) {
+                areaSelect.addEventListener('change', function () {
+                    var opt = this.options[this.selectedIndex];
+                    minArea.value = opt.getAttribute('data-min') || '';
+                    maxArea.value = opt.getAttribute('data-max') || '';
+                });
+            }
+
+            // ── Khởi tạo Cascading Dropdown Tỉnh -> Quận -> Phường cho Bộ lọc trang chủ ──
+            setupCascadingDropdown('homeProvinceSelect', 'homeDistrictSelect', 'homeWardSelect');
+
+            // ── Chuyển Tab loại phòng (Cho thuê phòng trọ, Căn hộ mini, Nhà nguyên căn) ──
+            var tabButtons = document.querySelectorAll('.search-tab-btn');
+            var heroRoomType = document.getElementById('heroRoomTypeId');
+            var heroRoomTypeName = document.getElementById('heroRoomTypeName');
+
+            tabButtons.forEach(function (btn) {
+                btn.addEventListener('click', async function (e) {
+                    e.preventDefault();
+                    tabButtons.forEach(function (b) { b.classList.remove('active'); });
+                    this.classList.add('active');
+
+                    var typeName = this.getAttribute('data-type-name') || '';
+                    var typeId = this.getAttribute('data-type-id') || '';
+
+                    if (heroRoomTypeName) {
+                        heroRoomTypeName.value = (typeName === 'Phòng trọ' || typeName === 'Tất cả') ? '' : typeName;
+                    }
+                    if (heroRoomType) {
+                        heroRoomType.value = typeId;
+                    }
+
+                    await filterHomeRooms(typeName, typeId);
+                });
             });
         });
 
-        function toggleFavorite(roomId, btn) {
-            btn.classList.toggle('active');
-            var icon = btn.querySelector('i');
-            if (btn.classList.contains('active')) {
-                icon.className = 'bi bi-heart-fill text-danger';
-            } else {
-                icon.className = 'bi bi-heart';
+        async function filterHomeRooms(typeName, typeId) {
+            var titleEl = document.getElementById('featuredSectionTitle');
+            var viewAllEl = document.getElementById('featuredViewAllBtn');
+            var wrapper = document.getElementById('featuredRoomsWrapper');
+            if (!wrapper) return;
+
+            wrapper.style.opacity = '0.35';
+
+            try {
+                var params = new URLSearchParams();
+                if (typeName && typeName !== 'Tất cả') {
+                    params.set('typeName', typeName);
+                }
+                if (typeId) {
+                    params.set('roomTypeId', typeId);
+                }
+
+                var res = await fetch('/api/rooms/by-tab?' + params.toString());
+                if (!res.ok) throw new Error('Failed to fetch rooms');
+                var data = await res.json();
+
+                if (titleEl && data.title) {
+                    titleEl.textContent = data.title;
+                }
+                if (viewAllEl && data.viewAllUrl) {
+                    viewAllEl.href = data.viewAllUrl;
+                    viewAllEl.innerHTML = 'Xem thêm ' + (typeName || 'phòng') + ' <i class="bi bi-arrow-right"></i>';
+                }
+
+                if (data.items && data.items.length > 0) {
+                    wrapper.innerHTML = '<div class="row g-4" id="featuredRoomsContainer">' +
+                        data.items.map(function(r) { return renderCardHtml(r); }).join('') +
+                        '</div>';
+                    // Cập nhật trạng thái active cho các nút so sánh và yêu thích vừa render
+                    if (window.updateFavoriteUI) window.updateFavoriteUI();
+                    if (window.updateCompareUI) window.updateCompareUI();
+                    if (window.initScrollReveal) window.initScrollReveal();
+                } else {
+                    wrapper.innerHTML = [
+                        '<div class="empty-state py-5 text-center">',
+                        '  <div class="empty-state-icon mb-3"><i class="bi bi-house-door text-muted display-4"></i></div>',
+                        '  <h4 class="fw-bold">Chưa có tin đăng ' + escapeHtml(typeName || 'phòng trọ') + '</h4>',
+                        '  <p class="text-muted small max-w-sm mx-auto">Hiện tại danh mục này chưa có tin đăng công khai. Bạn có thể xem các danh mục khác hoặc quay lại sau.</p>',
+                        '  <a href="' + (data.viewAllUrl || '/phong-tro') + '" class="btn btn-brand mt-2">Xem danh sách toàn bộ</a>',
+                        '</div>'
+                    ].join('');
+                }
+            } catch (err) {
+                console.error(err);
+            } finally {
+                wrapper.style.opacity = '1';
             }
+        }
+
+        function setupCascadingDropdown(provId, distId, wardId) {
+            var prov = document.getElementById(provId);
+            var dist = document.getElementById(distId);
+            if (!prov || !dist) return;
+
+            prov.addEventListener('change', async function () {
+                var pId = this.value;
+                dist.innerHTML = '<option value="">-- Tất cả quận/huyện --</option>';
+                if (wardId) {
+                    var w = document.getElementById(wardId);
+                    if (w) w.innerHTML = '<option value="">-- Tất cả phường/xã --</option>';
+                }
+                if (!pId) return;
+
+                try {
+                    var res = await fetch('/Home/GetDistricts?provinceId=' + pId);
+                    var data = await res.json();
+                    data.forEach(function (d) {
+                        var opt = document.createElement('option');
+                        opt.value = d.id;
+                        opt.textContent = d.name;
+                        dist.appendChild(opt);
+                    });
+                } catch (e) { }
+            });
+
+            if (wardId) {
+                var w = document.getElementById(wardId);
+                dist.addEventListener('change', async function () {
+                    var dId = this.value;
+                    w.innerHTML = '<option value="">-- Tất cả phường/xã --</option>';
+                    if (!dId) return;
+
+                    try {
+                        var res = await fetch('/Home/GetWards?districtId=' + dId);
+                        var data = await res.json();
+                        data.forEach(function (ward) {
+                            var opt = document.createElement('option');
+                            opt.value = ward.id;
+                            opt.textContent = ward.name;
+                            w.appendChild(opt);
+                        });
+                    } catch (e) { }
+                });
+            }
+        }
+
+        function setHomePriceRange(btn, min, max) {
+            var f = document.getElementById('homeDesktopFilterForm');
+            if (!f) return;
+            f.querySelector('input[name="MinPrice"]').value = min > 0 ? min : '';
+            f.querySelector('input[name="MaxPrice"]').value = max > 0 ? max : '';
+
+            if (btn && btn.parentElement) {
+                btn.parentElement.querySelectorAll('.filter-chip-btn').forEach(function(b) {
+                    b.classList.remove('active');
+                });
+                btn.classList.add('active');
+            }
+            // Chỉ điền giá trị vào form, không tự động chuyển trang. Người dùng nhấn "Áp dụng bộ lọc" mới submit.
+        }
+
+        function setHomeAreaRange(btn, min, max) {
+            var f = document.getElementById('homeDesktopFilterForm');
+            if (!f) return;
+            f.querySelector('input[name="MinArea"]').value = min > 0 ? min : '';
+            f.querySelector('input[name="MaxArea"]').value = max > 0 ? max : '';
+
+            if (btn && btn.parentElement) {
+                btn.parentElement.querySelectorAll('.filter-chip-btn').forEach(function(b) {
+                    b.classList.remove('active');
+                });
+                btn.classList.add('active');
+            }
+            // Chỉ điền giá trị vào form, không tự động chuyển trang. Người dùng nhấn "Áp dụng bộ lọc" mới submit.
+        }
+
+        function renderCardHtml(r) {
+            var detailUrl = r.slug ? '/phong/' + r.slug + '-' + r.roomId : '/phong/phong-tro-' + r.roomId;
+            var landlordUrl = r.landlordSlug ? '/chu-tro/' + r.landlordSlug : '/chu-tro/' + (r.landlordId || 0);
+            var thumb = r.thumbnailUrl || '/images/no-image.png';
+            var price = r.formattedPrice || (r.roomPrice ? r.roomPrice.toLocaleString('vi-VN') + ' đ/tháng' : 'Thỏa thuận');
+            var area = r.formattedArea || (r.area ? r.area + ' m²' : '');
+            var title = escapeHtml(r.title || r.roomName || 'Phòng cho thuê');
+            var address = escapeHtml(r.shortAddress || r.fullAddress || '');
+            var landlordName = escapeHtml(r.landlordName || 'Chủ trọ');
+            var favIconClass = r.isFavorite ? 'bi-heart-fill text-danger' : 'bi-heart';
+            var favActiveClass = r.isFavorite ? 'active' : '';
+
+            var amenitiesHtml = '';
+            if (r.amenityNames && r.amenityNames.length > 0) {
+                amenitiesHtml = '<div class="room-card-amenities">' +
+                    r.amenityNames.slice(0, 3).map(function(a) {
+                        return '<span class="room-card-amenity-pill">' + escapeHtml(a) + '</span>';
+                    }).join('') +
+                    '</div>';
+            }
+
+            var avatarHtml = r.landlordAvatar 
+                ? '<img src="' + r.landlordAvatar + '" alt="' + landlordName + '" class="room-card-landlord-avatar" />'
+                : '<span class="room-card-landlord-avatar d-flex align-items-center justify-content-center text-muted small"><i class="bi bi-person-fill"></i></span>';
+
+            return [
+                '<div class="col-12 col-md-6">',
+                '  <div class="room-card" data-room-id="' + r.roomId + '">',
+                '    <div class="room-card-img-wrap">',
+                '      <a href="' + detailUrl + '" tabindex="-1" aria-label="' + title + '">',
+                '        <img src="' + thumb + '" alt="' + title + '" class="room-card-img" loading="lazy" onerror="this.src=\'https://placehold.co/600x450/f3f4f6/9ca3af?text=Phong+Tro+Moi\';" />',
+                '      </a>',
+                '      <div class="room-card-badge-top">',
+                (r.isFeatured ? '        <span class="badge-status badge-status-featured"><i class="bi bi-star-fill text-danger me-1"></i>Nổi bật</span>' : ''),
+                '        <span class="badge-status badge-status-available"><i class="bi bi-check-circle-fill me-1"></i>Đang trống</span>',
+                '      </div>',
+                '      <button type="button" class="room-card-favorite-btn ' + favActiveClass + '" onclick="toggleFavorite(' + r.roomId + ', this, event)" title="Lưu tin yêu thích" aria-label="Yêu thích">',
+                '        <i class="bi ' + favIconClass + '"></i>',
+                '      </button>',
+                '      <button type="button" class="room-card-compare-btn" onclick="toggleCompare(' + r.roomId + ', this, event)" title="So sánh phòng" aria-label="So sánh">',
+                '        <i class="bi bi-arrow-left-right"></i>',
+                '      </button>',
+                (r.imageCount > 0 ? '      <div class="room-card-img-count"><i class="bi bi-camera"></i> <span>' + r.imageCount + '</span></div>' : ''),
+                '    </div>',
+                '    <div class="room-card-body">',
+                '      <h3 class="room-card-title"><a href="' + detailUrl + '" title="' + title + '">' + title + '</a></h3>',
+                '      <div class="room-card-meta">',
+                '        <span class="room-card-price">' + price + '</span>',
+                (area ? '        <span class="room-card-area">&bull; ' + area + '</span>' : ''),
+                '      </div>',
+                '      <div class="room-card-location" title="' + escapeHtml(r.fullAddress || address) + '"><i class="bi bi-geo-alt text-danger"></i> <span>' + address + '</span></div>',
+                amenitiesHtml,
+                '      <div class="room-card-footer">',
+                '        <a href="' + landlordUrl + '" class="room-card-landlord" title="Xem trang chủ trọ ' + landlordName + '">',
+                avatarHtml,
+                '          <span class="text-truncate" style="max-width: 140px;">' + landlordName + '</span>',
+                '        </a>',
+                '        <span><i class="bi bi-clock me-1"></i>Mới đăng</span>',
+                '      </div>',
+                '    </div>',
+                '  </div>',
+                '</div>'
+            ].join('\n');
+        }
+
+        function escapeHtml(s) {
+            if (!s) return '';
+            return s.toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
     </script>
 }

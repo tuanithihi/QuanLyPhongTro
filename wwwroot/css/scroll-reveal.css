@@ -1,0 +1,144 @@
+/* ═══════════════════════════════════════════════════════════════
+   MODERN ULTRA-SMOOTH SCROLL REVEAL & PROGRESS BAR
+   Z-Stay UI / UX Experience
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Top Scroll Progress Bar (Thanh tiến trình cuộn mượt mà đỉnh trang) ── */
+#scrollProgressBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0%;
+  background: linear-gradient(90deg, var(--brand-primary, #e03c31) 0%, #ff6b6b 50%, #f59e0b 100%);
+  z-index: 99999;
+  transition: width 0.1s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 10px rgba(224, 60, 49, 0.4);
+  pointer-events: none;
+}
+
+/* ── Smooth Scrollbar Styling (Thanh cuộn trang thanh lịch) ── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+  border: 2px solid #f8fafc;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-primary, #e03c31);
+}
+
+/* ── Base Reveal Classes ── */
+.js-reveal-ready .reveal,
+.js-reveal-ready .reveal-up {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.js-reveal-ready .reveal-fade {
+  opacity: 0;
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity;
+}
+
+.js-reveal-ready .reveal-scale {
+  opacity: 0;
+  transform: scale(0.95) translateY(18px);
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.js-reveal-ready .reveal-left {
+  opacity: 0;
+  transform: translateX(-32px);
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.js-reveal-ready .reveal-right {
+  opacity: 0;
+  transform: translateX(32px);
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+/* ── Khi phần tử đã cuộn tới và xuất hiện ── */
+.js-reveal-ready .is-revealed {
+  opacity: 1 !important;
+  transform: translate(0, 0) scale(1) !important;
+}
+
+/* ── Delays cho hiệu ứng gối sóng (Staggered Animation) ── */
+.reveal-delay-1 { transition-delay: 0.06s !important; }
+.reveal-delay-2 { transition-delay: 0.12s !important; }
+.reveal-delay-3 { transition-delay: 0.18s !important; }
+.reveal-delay-4 { transition-delay: 0.24s !important; }
+.reveal-delay-5 { transition-delay: 0.30s !important; }
+.reveal-delay-6 { transition-delay: 0.36s !important; }
+
+/* ── Nút Cuộn Mượt Lên Đầu Trang (Back to Top) ── */
+#btnBackToTop {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  width: 42px;
+  height: 42px;
+  background: #ffffff;
+  color: var(--gray-900, #0f172a);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 50%;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  cursor: pointer;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(16px);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#btnBackToTop.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+#btnBackToTop:hover {
+  background: var(--brand-primary, #e03c31);
+  color: #ffffff;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(224, 60, 49, 0.3);
+}
+
+/* Tôn trọng cài đặt giảm chuyển động của người dùng */
+@media (prefers-reduced-motion: reduce) {
+  .js-reveal-ready .reveal,
+  .js-reveal-ready .reveal-up,
+  .js-reveal-ready .reveal-fade,
+  .js-reveal-ready .reveal-scale,
+  .js-reveal-ready .reveal-left,
+  .js-reveal-ready .reveal-right {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}

@@ -9,6 +9,7 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
 {
     [Area("Admin")]
     [AdminOnly]
+    [IgnoreAntiforgeryToken]
     public class ChatController : Controller
     {
         private readonly DataContext _db;
@@ -28,7 +29,7 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             if (!_currentLandlordService.IsSuperAdmin())
             {
                 int currentLandlordId = _currentLandlordService.GetCurrentLandlordId() ?? 0;
-                query = query.Where(s => s.LandlordId == currentLandlordId);
+                query = query.Where(s => s.LandlordId == currentLandlordId || s.LandlordId == null);
             }
 
             var sessions = await query
@@ -63,7 +64,7 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             if (!_currentLandlordService.IsSuperAdmin())
             {
                 int currentLandlordId = _currentLandlordService.GetCurrentLandlordId() ?? 0;
-                if (session.LandlordId != currentLandlordId)
+                if (session.LandlordId != null && session.LandlordId != currentLandlordId)
                 {
                     return StatusCode(StatusCodes.Status403Forbidden, new { messages = Array.Empty<object>(), error = "Không có quyền truy cập phiên chat của chủ trọ khác." });
                 }
@@ -92,26 +93,38 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 await _db.SaveChangesAsync();
             }
 
-            return Json(new { messages = msgs });
+            return Json(new
+            {
+                guestName  = session.GuestName ?? "Khách",
+                guestPhone = session.GuestPhone ?? "",
+                messages   = msgs
+            });
         }
 
-        // POST: /Admin/Chat/Send
+        // POST: /Admin/Chat/Send & POST: /Admin/Chat/Reply
         [HttpPost]
+        [ActionName("Send")]
         public async Task<IActionResult> Send([FromBody] AdminSendRequest req)
         {
-            if (req.SessionId <= 0 || string.IsNullOrWhiteSpace(req.Content))
-                return Json(new { success = false });
+            if (req == null || req.SessionId <= 0 || string.IsNullOrWhiteSpace(req.Content))
+                return Json(new { success = false, message = "Nội dung tin nhắn không được để trống." });
 
             var session = await _db.ChatSessions.FirstOrDefaultAsync(s => s.SessionId == req.SessionId);
             if (session == null) return Json(new { success = false, message = "Phiên chat không tồn tại." });
 
-            // Chống IDOR: Chủ trọ chỉ trả lời phiên của mình
+            // Chống IDOR: Chủ trọ chỉ trả lời phiên của mình (hoặc nhận phiên chưa gán)
             if (!_currentLandlordService.IsSuperAdmin())
             {
                 int currentLandlordId = _currentLandlordService.GetCurrentLandlordId() ?? 0;
-                if (session.LandlordId != currentLandlordId)
+                if (session.LandlordId != null && session.LandlordId != currentLandlordId)
                 {
                     return StatusCode(StatusCodes.Status403Forbidden, new { success = false, message = "Bạn không có quyền gửi tin nhắn trong phiên chat này." });
+                }
+
+                // Nếu phiên chưa gán chủ trọ cụ thể thì tự động gán cho chủ trọ đang trả lời
+                if (session.LandlordId == null && currentLandlordId > 0)
+                {
+                    session.LandlordId = currentLandlordId;
                 }
             }
 
@@ -126,6 +139,7 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
             };
             _db.ChatMessages.Add(msg);
 
+            session.IsOpen    = true;
             session.LastMsgAt = DateTime.Now;
             await _db.SaveChangesAsync();
 
@@ -136,6 +150,10 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 createdAt = msg.CreatedAt.ToString("HH:mm dd/MM")
             });
         }
+
+        [HttpPost]
+        [ActionName("Reply")]
+        public async Task<IActionResult> Reply([FromBody] AdminSendRequest req) => await Send(req);
 
         // POST: /Admin/Chat/Close
         [HttpPost]

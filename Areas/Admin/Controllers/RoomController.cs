@@ -35,7 +35,7 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
 
         // ── INDEX ────────────────────────────────────────────────────────
         public async Task<IActionResult> Index(
-            string? searchTerm, int? propertyId, int? status, int? approvalStatus)
+            string? searchTerm, int? propertyId, int? status, int? approvalStatus, int? roomTypeId)
         {
             int? landlordId = _currentLandlordService.IsSuperAdmin() ? null : _currentLandlordService.GetCurrentLandlordId();
             if (!_currentLandlordService.IsSuperAdmin() && !landlordId.HasValue)
@@ -48,14 +48,23 @@ namespace QuanLyPhongTro.Areas.Admin.Controllers
                 propertyId,
                 searchTerm,
                 status.HasValue ? (RoomStatus)status.Value : null,
-                approvalStatus.HasValue ? (RoomApprovalStatus)approvalStatus.Value : null);
+                approvalStatus.HasValue ? (RoomApprovalStatus)approvalStatus.Value : null,
+                roomTypeId);
 
             var properties = await _propertyService.GetPropertiesByLandlordAsync(landlordId);
             ViewBag.PropertyList = new SelectList(properties, "PropertyId", "Name", propertyId);
+
+            var roomTypes = await _context.RoomTypes
+                .Where(rt => rt.IsActive)
+                .OrderBy(rt => rt.SortOrder)
+                .ToListAsync();
+            ViewBag.RoomTypeList = new SelectList(roomTypes, "RoomTypeId", "RoomTypeName", roomTypeId);
+
             ViewBag.SearchTerm = searchTerm ?? string.Empty;
             ViewBag.PropertyId = propertyId;
             ViewBag.Status = status;
             ViewBag.ApprovalStatus = approvalStatus;
+            ViewBag.RoomTypeId = roomTypeId;
 
             return View(rooms);
         }

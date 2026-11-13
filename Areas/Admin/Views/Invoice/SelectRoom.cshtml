@@ -89,8 +89,9 @@
                             }
                         </td>
                         <td class="text-center pe-3">
-                            <a asp-area="Admin" asp-controller="Invoice" asp-action="Create"
+                            <a asp-area="Admin" asp-controller="Invoice" asp-action="Generate"
                                asp-route-contractId="@c.ContractId"
+                               asp-route-from="select"
                                class="btn btn-primary btn-sm">
                                 <i class="bi bi-file-earmark-plus me-1"></i>Lập hóa đơn
                             </a>

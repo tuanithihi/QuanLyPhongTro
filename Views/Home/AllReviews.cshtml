@@ -1,7 +1,7 @@
 @model List<QuanLyPhongTro.Models.tblReview>
 
 @{
-    ViewData["Title"] = "Tất Cả Đánh Giá - Phòng Trọ Mới";
+    ViewData["Title"] = "Tất Cả Đánh Giá - Z-Stay";
     int currentPage = ViewBag.Page ?? 1;
     int totalPages = ViewBag.TotalPages ?? 1;
 }
@@ -10,7 +10,7 @@
     <div class="container">
         <div class="mb-5">
             <h1 class="display-5 fw-bold text-dark mb-2" style="color: #1E8449;">Tất Cả Đánh Giá</h1>
-            <p class="fs-5 text-muted">Những phản hồi mới nhất từ khách hàng của Phòng Trọ Mới</p>
+            <p class="fs-5 text-muted">Những phản hồi mới nhất từ khách hàng của Z-Stay</p>
         </div>
 
         @if (Model.Count > 0)
